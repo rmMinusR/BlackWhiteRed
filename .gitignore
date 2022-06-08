@@ -155,6 +155,6 @@ fmod_editor.log
 
 
 ## this is literally just gut instict that this may help, we'll see
-/Assets/Plugins/FMOD/Resources/FMODStudioSettings.asset
+#/Assets/Plugins/FMOD/Resources/FMODStudioSettings.asset
 ## this is also just because it's annoying
 /ProjectSettings/Packages/com.unity.probuilder/Settings.json
