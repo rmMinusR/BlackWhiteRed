@@ -4,17 +4,23 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.Services.Core;
 using Unity.Services.Authentication;
+using Unity.Services.Lobbies;
 using System.Threading.Tasks;
+using Unity.Services.Lobbies.Models;
 
 public class GameManager : MonoBehaviour
 {
     //Player Customization
     private const string PLAYER_NAME_KEY = "PLAYERNAME";
-    private string playerName = "[Shade]";
+    private string playerName = "Shade";
 
     //Authentication
     private string playerId = "Not signed in";
     private string accessToken = "No access token";
+
+    //Lobbies
+    private Lobby hostedLobby;
+    private Coroutine heartbeatCoroutine;
 
     public static GameManager Instance;
 
@@ -95,4 +101,59 @@ public class GameManager : MonoBehaviour
 
         return results;
     }
+
+    #region lobby
+
+    public async Task HostLobby()
+    {
+        string lobbyName = playerName+"'s Lobby";
+        int maxPlayers = 10;
+        CreateLobbyOptions options = new CreateLobbyOptions();
+        options.IsPrivate = true;
+
+        hostedLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
+
+        heartbeatCoroutine = StartCoroutine(HeartbeatLobbyCoroutine(hostedLobby.Id, 15));
+    }
+
+    IEnumerator HeartbeatLobbyCoroutine(string lobbyId, float waitTimeSeconds)
+    {
+        var delay = new WaitForSecondsRealtime(waitTimeSeconds);
+
+        while (true)
+        {
+            Debug.Log("heartbeat");
+            LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
+            yield return delay;
+        }
+    }
+
+        public string GetLobbyCode()
+    {
+        return hostedLobby.LobbyCode;
+    }
+
+    public string GetLobbySize()
+    {
+        return (10 - hostedLobby.AvailableSlots)+"/10";
+    }
+
+    public async Task<bool> AttemptJoinWithCode(string code)
+    {
+        bool success = true;
+
+        try
+        {
+            await LobbyService.Instance.JoinLobbyByCodeAsync(code);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.Log(e);
+            success = false;
+        }
+
+        return success;
+    }
+
+    #endregion
 }

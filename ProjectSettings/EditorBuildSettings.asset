@@ -11,4 +11,16 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/In Build/Level1-Area0-Menus.unity
     guid: 8d4fa4d8a18653f4abade87611857187
+  - enabled: 1
+    path: Assets/Scenes/In Build/Level2-Area0-Lobby.unity
+    guid: 3c127a612af56374082c0726c1a83db7
+  - enabled: 1
+    path: Assets/Scenes/In Build/Level3-Area0-Players.unity
+    guid: 4e8dc94c18e10f5419b3cd68914d4b27
+  - enabled: 1
+    path: Assets/Scenes/In Build/Level3-Area0-LevelDesign.unity
+    guid: 1ffb0975888e5f841b675f22ba0475d1
+  - enabled: 1
+    path: Assets/Scenes/In Build/Level3-Area0-EnvironmentArt.unity
+    guid: 1780d923f4586a84fafc5390a2c3a0c6
   m_configObjects: {}
