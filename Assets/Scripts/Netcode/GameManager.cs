@@ -8,16 +8,11 @@ using System.Threading.Tasks;
 
 public class GameManager : MonoBehaviour
 {
-    //private Guid hostAllocationId;
-    //private Guid playerAllocationId;
-    //private string allocationRegion = "";
-    //private string joinCode = "n/a";
-    //private string playerId = "Not signed in";
-    //private string autoSelectRegionName = "auto-select (QoS)";
-    //private int RegionAutoSelectIndex = 0;
-    //private List<Region> regions = new List<Region>();
-    //private List<string> regionOptions = new List<string>();
+    //Player Customization
+    private const string PLAYER_NAME_KEY = "PLAYERNAME";
+    private string playerName = "[Shade]";
 
+    //Authentication
     private string playerId = "Not signed in";
     private string accessToken = "No access token";
 
@@ -44,6 +39,8 @@ public class GameManager : MonoBehaviour
 
         Debug.Log(playerId);
         Debug.Log(accessToken);
+
+        CheckForPrefs();
     }
 
     async Task AttemptSignIn()
@@ -53,9 +50,49 @@ public class GameManager : MonoBehaviour
         accessToken = AuthenticationService.Instance.AccessToken;
     }
 
-    // Update is called once per frame
-    void Update()
+    //TODO: move to some other script or manager for the player character customization
+    void CheckForPrefs()
     {
-        
+        if (PlayerPrefs.HasKey(PLAYER_NAME_KEY))
+        {
+            playerName = PlayerPrefs.GetString(PLAYER_NAME_KEY);
+        }
+        else
+        {
+            PlayerPrefs.SetString(PLAYER_NAME_KEY, playerName);
+        }
+    }
+
+    public string GetPlayerName()
+    {
+        return playerName;
+    }
+
+    public bool AttemptSetPlayerName(string input)
+    {
+        bool results = true;
+        if (input.Length >= 3 && input.Length <= 15)
+        { 
+            foreach(char e in input.ToCharArray())
+            {
+                if(!char.IsLetterOrDigit(e) && e != '_')
+                {
+                    results = false;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            results = false;
+        }
+
+        if(results)
+        {
+            playerName = input;
+            PlayerPrefs.SetString(PLAYER_NAME_KEY, input);
+        }
+
+        return results;
     }
 }
