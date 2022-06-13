@@ -32,9 +32,19 @@ public class LobbyMenuManager : MonoBehaviour
     TextMeshProUGUI lobbyRoomCodeDataDisplay;
     [SerializeField]
     TextMeshProUGUI lobbySizeDataDisplay;
+    [SerializeField]
+    TextMeshProUGUI lobbyNameDataDisplay;
+    [SerializeField]
+    RectTransform lobbyPlayerScrollContent;
+    [SerializeField]
+    GameObject lobbyPlayerBarPrefab;
+
+    float lobbyPlayerBarHeight;
 
     private void OnEnable()
     {
+        lobbyPlayerBarHeight = lobbyPlayerBarPrefab.GetComponent<RectTransform>().sizeDelta.y;
+
         roomCodeEntryField.onSubmit.AddListener(OnSubmitRoomCode);
     }
 
@@ -79,6 +89,7 @@ public class LobbyMenuManager : MonoBehaviour
 
         lobbyRoomCodeDataDisplay.text = GameManager.Instance.GetLobbyCode();
         lobbySizeDataDisplay.text = GameManager.Instance.GetLobbySize();
+        lobbyNameDataDisplay.text = GameManager.Instance.GetLobbyName();
         ToLobbyPanel();
     }
 
@@ -101,5 +112,11 @@ public class LobbyMenuManager : MonoBehaviour
     public void BackToMainMenu()
     {
         SceneManager.LoadScene(1);
+    }
+
+    private void AddPlayerBarToLobby()
+    {
+        Instantiate(lobbyPlayerBarPrefab,lobbyPlayerScrollContent.transform);
+        lobbyPlayerScrollContent.sizeDelta = new Vector2(lobbyPlayerScrollContent.sizeDelta.x, lobbyPlayerBarHeight * lobbyPlayerScrollContent.transform.childCount);
     }
 }

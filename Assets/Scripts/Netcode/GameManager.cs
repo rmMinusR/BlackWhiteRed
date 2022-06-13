@@ -19,7 +19,8 @@ public class GameManager : MonoBehaviour
     private string accessToken = "No access token";
 
     //Lobbies
-    private Lobby hostedLobby;
+    private bool isHost;
+    private Lobby inLobby;
     private Coroutine heartbeatCoroutine;
 
     public static GameManager Instance;
@@ -111,9 +112,9 @@ public class GameManager : MonoBehaviour
         CreateLobbyOptions options = new CreateLobbyOptions();
         options.IsPrivate = true;
 
-        hostedLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
+        inLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
 
-        heartbeatCoroutine = StartCoroutine(HeartbeatLobbyCoroutine(hostedLobby.Id, 15));
+        heartbeatCoroutine = StartCoroutine(HeartbeatLobbyCoroutine(inLobby.Id, 15));
     }
 
     IEnumerator HeartbeatLobbyCoroutine(string lobbyId, float waitTimeSeconds)
@@ -122,20 +123,24 @@ public class GameManager : MonoBehaviour
 
         while (true)
         {
-            Debug.Log("heartbeat");
             LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
             yield return delay;
         }
     }
 
-        public string GetLobbyCode()
+    public string GetLobbyCode()
     {
-        return hostedLobby.LobbyCode;
+        return inLobby.LobbyCode;
     }
 
     public string GetLobbySize()
     {
-        return (10 - hostedLobby.AvailableSlots)+"/10";
+        return (10 - inLobby.AvailableSlots)+"/10";
+    }
+
+    public string GetLobbyName()
+    {
+        return inLobby.Name;
     }
 
     public async Task<bool> AttemptJoinWithCode(string code)
@@ -144,7 +149,7 @@ public class GameManager : MonoBehaviour
 
         try
         {
-            await LobbyService.Instance.JoinLobbyByCodeAsync(code);
+            inLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(code);
         }
         catch (LobbyServiceException e)
         {
