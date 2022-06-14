@@ -11,7 +11,7 @@ using Unity.Services.Lobbies.Models;
 public class GameManager : MonoBehaviour
 {
     //Player Customization
-    private const string PLAYER_NAME_KEY = "PLAYERNAME";
+    public const string PLAYER_NAME_KEY = "PLAYERNAME";
     private string playerName = "Shade";
 
     //Authentication
@@ -21,6 +21,7 @@ public class GameManager : MonoBehaviour
     //Lobbies
     private bool isHost;
     private Lobby inLobby;
+    private Player inLobbyPlayer;
     private Coroutine heartbeatCoroutine;
 
     public static GameManager Instance;
@@ -128,21 +129,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public string GetLobbyCode()
-    {
-        return inLobby.LobbyCode;
-    }
-
-    public string GetLobbySize()
-    {
-        return (10 - inLobby.AvailableSlots)+"/10";
-    }
-
-    public string GetLobbyName()
-    {
-        return inLobby.Name;
-    }
-
     public async Task<bool> AttemptJoinWithCode(string code)
     {
         bool success = true;
@@ -158,6 +144,49 @@ public class GameManager : MonoBehaviour
         }
 
         return success;
+    }
+
+    public string GetLobbyCode()
+    {
+        return inLobby.LobbyCode;
+    }
+
+    public string GetLobbySize()
+    {
+        return (10 - inLobby.AvailableSlots)+"/10";
+    }
+
+    public string GetLobbyName()
+    {
+        return inLobby.Name;
+    }
+
+    public List<Player> GetLobbyPlayers()
+    {
+        return inLobby.Players;
+    }
+
+    public async Task UpdateLocalPlayer()
+    {
+        try
+        {
+            UpdatePlayerOptions options = new UpdatePlayerOptions();
+
+            options.Data = new Dictionary<string, PlayerDataObject>()
+            {
+                {
+                    PLAYER_NAME_KEY, new PlayerDataObject(
+                        visibility: PlayerDataObject.VisibilityOptions.Public,
+                        value: playerName)
+                }
+            };
+
+            inLobby = await LobbyService.Instance.UpdatePlayerAsync(inLobby.Id, playerId, options);
+        }
+        catch (LobbyServiceException e)
+        {
+            Debug.Log(e);
+        }
     }
 
     #endregion

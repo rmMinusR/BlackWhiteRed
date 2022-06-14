@@ -4,6 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using Unity.Services.Core;
+using Unity.Services.Authentication;
+using Unity.Services.Lobbies;
+using Unity.Services.Lobbies.Models;
 using TMPro;
 
 public class LobbyMenuManager : MonoBehaviour
@@ -40,6 +44,7 @@ public class LobbyMenuManager : MonoBehaviour
     GameObject lobbyPlayerBarPrefab;
 
     float lobbyPlayerBarHeight;
+    Dictionary<string, GameObject> playerIdToLobbyBar;
 
     private void OnEnable()
     {
@@ -53,27 +58,43 @@ public class LobbyMenuManager : MonoBehaviour
         roomCodeEntryField.onSubmit.RemoveListener(OnSubmitRoomCode);
     }
 
-    public void ToInitialChoices()
+    public void ClearPanels()
     {
-        initialChoicesPanel.SetActive(true);
+        initialChoicesPanel.SetActive(false);
         roomCodePanel.SetActive(false);
         lobbyPanel.SetActive(false);
+    }
+
+    public void ToInitialChoices()
+    {
+        ClearPanels();
+        initialChoicesPanel.SetActive(true);
     }
 
     public void ToRoomCode()
     {
         roomCodeEntryField.text = "";
-        initialChoicesPanel.SetActive(false);
+        ClearPanels();
         roomCodePanel.SetActive(true);
-        lobbyPanel.SetActive(false);
         eventSystem.SetSelectedGameObject(roomCodeEntryField.gameObject);
     }
 
-    public void ToLobbyPanel()
+    private void ToLobbyPanel()
     {
-        initialChoicesPanel.SetActive(false);
-        roomCodePanel.SetActive(false);
+        ClearPanels();
         lobbyPanel.SetActive(true);
+
+        //Set up display for lobby data
+        lobbyRoomCodeDataDisplay.text = GameManager.Instance.GetLobbyCode();
+        lobbySizeDataDisplay.text = GameManager.Instance.GetLobbySize();
+        lobbyNameDataDisplay.text = GameManager.Instance.GetLobbyName();
+
+        //Set up display for player data
+        playerIdToLobbyBar = new Dictionary<string, GameObject>();
+        foreach (Player p in GameManager.Instance.GetLobbyPlayers())
+        {
+            AddPlayerBarToLobby(p);
+        }
     }
 
     public void GoBackRoomCode()
@@ -87,9 +108,8 @@ public class LobbyMenuManager : MonoBehaviour
     {
         await GameManager.Instance.HostLobby();
 
-        lobbyRoomCodeDataDisplay.text = GameManager.Instance.GetLobbyCode();
-        lobbySizeDataDisplay.text = GameManager.Instance.GetLobbySize();
-        lobbyNameDataDisplay.text = GameManager.Instance.GetLobbyName();
+        await GameManager.Instance.UpdateLocalPlayer();
+
         ToLobbyPanel();
     }
 
@@ -104,6 +124,8 @@ public class LobbyMenuManager : MonoBehaviour
 
         if (success)
         {
+            await GameManager.Instance.UpdateLocalPlayer();
+
             lobbyRoomCodeDataDisplay.text = input;
             ToLobbyPanel();
         }
@@ -114,9 +136,21 @@ public class LobbyMenuManager : MonoBehaviour
         SceneManager.LoadScene(1);
     }
 
-    private void AddPlayerBarToLobby()
+    private void AddPlayerBarToLobby(Player player)
     {
-        Instantiate(lobbyPlayerBarPrefab,lobbyPlayerScrollContent.transform);
+        GameObject playerBarObj = Instantiate(lobbyPlayerBarPrefab,lobbyPlayerScrollContent.transform);
+
+        playerIdToLobbyBar.Add(player.Id, playerBarObj);
+
+        LobbyPlayerBarController lobbyPlayerBarController = playerBarObj.GetComponent<LobbyPlayerBarController>();
+        lobbyPlayerBarController.playerNameText.text = player.Data[GameManager.PLAYER_NAME_KEY].Value;
+
         lobbyPlayerScrollContent.sizeDelta = new Vector2(lobbyPlayerScrollContent.sizeDelta.x, lobbyPlayerBarHeight * lobbyPlayerScrollContent.transform.childCount);
+    }
+
+    private void RemovePlayerBarFromLobby(Player player)
+    {
+        Destroy(playerIdToLobbyBar[player.Id]);
+        playerIdToLobbyBar.Remove(player.Id);
     }
 }
