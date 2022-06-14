@@ -21,7 +21,6 @@ public class GameManager : MonoBehaviour
     //Lobbies
     private bool isHost;
     private Lobby inLobby;
-    private Player inLobbyPlayer;
     private Coroutine heartbeatCoroutine;
 
     public static GameManager Instance;
