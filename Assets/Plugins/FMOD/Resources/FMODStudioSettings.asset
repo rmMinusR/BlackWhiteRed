@@ -491,10 +491,10 @@ MonoBehaviour:
   m_Name: FMODStudioSettings
   m_EditorClassIdentifier: 
   SwitchSettingsMigration: 1
-  HasSourceProject: 0
-  HasPlatforms: 0
-  sourceProjectPath: 
-  sourceBankPath: FMOD Banks
+  HasSourceProject: 1
+  HasPlatforms: 1
+  sourceProjectPath: BWR FMOD SESSION/BWR FMOD SESSION.fspro
+  sourceBankPath: BWR FMOD SESSION/Build
   SourceBankPathUnformatted: 
   BankRefreshCooldown: 5
   ShowBankRefreshWindow: 1
