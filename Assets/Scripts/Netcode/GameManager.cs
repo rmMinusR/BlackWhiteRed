@@ -5,11 +5,19 @@ using UnityEngine.SceneManagement;
 using Unity.Services.Core;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
-using System.Threading.Tasks;
 using Unity.Services.Lobbies.Models;
+using Unity.Services.Relay;
+using Unity.Services.Relay.Models;
+using System.Threading.Tasks;
+using System;
+using Unity.Netcode.Transports.UTP;
 
 public class GameManager : MonoBehaviour
 {
+    public const int MAX_PLAYERS = 10;
+
+    private Dictionary<string, Coroutine> coroutines;
+
     //Player Customization
     public const string PLAYER_NAME_KEY = "PLAYERNAME";
     private string playerName = "Shade";
@@ -19,9 +27,16 @@ public class GameManager : MonoBehaviour
     private string accessToken = "No access token";
 
     //Lobbies
+    private const string LOBBY_RELAY_CODE_KEY = "relay code";
     private bool isHost;
     private Lobby inLobby;
     private Coroutine heartbeatCoroutine;
+
+    //Relay
+    private const string ENVIRONMENT = "production";
+    private Guid playerAllocationId;
+    private string relayJoinCode;
+    RelayHostData relayHostData;
 
     public static GameManager Instance;
 
@@ -38,8 +53,30 @@ public class GameManager : MonoBehaviour
         Destroy(this);
     }
 
-    // Start is called before the first frame update
-    async void Start()
+    public void PromptCoroutine(string key, IEnumerator routine)
+    {
+        Coroutine value = StartCoroutine(routine);
+        if(coroutines == null)
+        {
+            coroutines = new Dictionary<string, Coroutine>();
+        }
+        else if (coroutines.ContainsKey(key))
+        {
+            PromptEndCoroutine(key);
+        }
+        coroutines.Add(key, value);
+    }
+
+    public void PromptEndCoroutine(string key)
+    {
+        if(coroutines.ContainsKey(key))
+        {
+            StopCoroutine(coroutines[key]);
+            coroutines.Remove(key);
+        }
+    }
+
+    private async void Start()
     {
         await UnityServices.InitializeAsync();
         await AttemptSignIn();
@@ -50,14 +87,19 @@ public class GameManager : MonoBehaviour
         CheckForPrefs();
     }
 
-    async Task AttemptSignIn()
+    private async Task AttemptSignIn()
     {
         await AuthenticationService.Instance.SignInAnonymouslyAsync();
         playerId = AuthenticationService.Instance.PlayerId;
         accessToken = AuthenticationService.Instance.AccessToken;
     }
 
-    //TODO: move to some other script or manager for the player character customization
+    public string GetPlayerID()
+    {
+        return playerId;
+    }
+
+    #region player_customization
     void CheckForPrefs()
     {
         if (PlayerPrefs.HasKey(PLAYER_NAME_KEY))
@@ -102,89 +144,65 @@ public class GameManager : MonoBehaviour
 
         return results;
     }
+    #endregion
 
-    #region lobby
-
-    public async Task HostLobby()
+    public async Task BecomeHost()
     {
-        string lobbyName = playerName+"'s Lobby";
-        int maxPlayers = 10;
-        CreateLobbyOptions options = new CreateLobbyOptions();
-        options.IsPrivate = true;
-
-        inLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
-
-        heartbeatCoroutine = StartCoroutine(HeartbeatLobbyCoroutine(inLobby.Id, 15));
-    }
-
-    IEnumerator HeartbeatLobbyCoroutine(string lobbyId, float waitTimeSeconds)
-    {
-        var delay = new WaitForSecondsRealtime(waitTimeSeconds);
-
-        while (true)
-        {
-            LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
-            yield return delay;
-        }
+        await LobbyManager.Instance.HostLobby();
+        await HostRelay();
+        await LobbyManager.Instance.SetLobbyRelayCode(relayJoinCode);
     }
 
     public async Task<bool> AttemptJoinWithCode(string code)
     {
-        bool success = true;
+        bool success = await LobbyManager.Instance.AttemptJoinLobbyWithCode(code);
 
-        try
+        if (success)
         {
-            inLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(code);
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.Log(e);
-            success = false;
+            relayJoinCode = LobbyManager.Instance.GetLobbyRelayCode();
+            await ClientRelay();
         }
 
         return success;
     }
 
-    public string GetLobbyCode()
+    #region relay
+
+    public async Task HostRelay()
     {
-        return inLobby.LobbyCode;
+        //The host player requests an allocation
+        Allocation relayAllocation = await Relay.Instance.CreateAllocationAsync(MAX_PLAYERS);
+
+        relayHostData = new RelayHostData();
+        relayHostData.mIPv4Address = relayAllocation.RelayServer.IpV4;
+        relayHostData.mPort = relayAllocation.RelayServer.Port;
+        relayHostData.mAllocationID = relayAllocation.AllocationId;
+        relayHostData.mAllocationIDBytes = relayAllocation.AllocationIdBytes;
+        relayHostData.mConnectionData = relayAllocation.ConnectionData;
+        relayHostData.mKey = relayAllocation.Key;
+
+        relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(relayHostData.mAllocationID);
+        relayHostData.mJoinCode = relayJoinCode;
+
+        //TODO: Work with transport
+        //UnityTransport.SetRelayServerData();
     }
 
-    public string GetLobbySize()
+    public async Task ClientRelay()
     {
-        return (10 - inLobby.AvailableSlots)+"/10";
+        await JoinRelayWithCode(relayJoinCode);
     }
 
-    public string GetLobbyName()
-    {
-        return inLobby.Name;
-    }
-
-    public List<Player> GetLobbyPlayers()
-    {
-        return inLobby.Players;
-    }
-
-    public async Task UpdateLocalPlayer()
+    private async Task JoinRelayWithCode(string relayJoinCode)
     {
         try
         {
-            UpdatePlayerOptions options = new UpdatePlayerOptions();
-
-            options.Data = new Dictionary<string, PlayerDataObject>()
-            {
-                {
-                    PLAYER_NAME_KEY, new PlayerDataObject(
-                        visibility: PlayerDataObject.VisibilityOptions.Public,
-                        value: playerName)
-                }
-            };
-
-            inLobby = await LobbyService.Instance.UpdatePlayerAsync(inLobby.Id, playerId, options);
+            JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(relayJoinCode);
+            playerAllocationId = joinAllocation.AllocationId;
         }
-        catch (LobbyServiceException e)
+        catch (RelayServiceException ex)
         {
-            Debug.Log(e);
+            Debug.LogError(ex.Message + "\n" + ex.StackTrace);
         }
     }
 

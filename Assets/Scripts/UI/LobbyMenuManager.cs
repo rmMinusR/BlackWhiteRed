@@ -85,13 +85,13 @@ public class LobbyMenuManager : MonoBehaviour
         lobbyPanel.SetActive(true);
 
         //Set up display for lobby data
-        lobbyRoomCodeDataDisplay.text = GameManager.Instance.GetLobbyCode();
-        lobbySizeDataDisplay.text = GameManager.Instance.GetLobbySize();
-        lobbyNameDataDisplay.text = GameManager.Instance.GetLobbyName();
+        lobbyRoomCodeDataDisplay.text = LobbyManager.Instance.GetLobbyCode();
+        lobbySizeDataDisplay.text = LobbyManager.Instance.GetLobbySize();
+        lobbyNameDataDisplay.text = LobbyManager.Instance.GetLobbyName();
 
         //Set up display for player data
         playerIdToLobbyBar = new Dictionary<string, GameObject>();
-        foreach (Player p in GameManager.Instance.GetLobbyPlayers())
+        foreach (Player p in LobbyManager.Instance.GetLobbyPlayers())
         {
             AddPlayerBarToLobby(p);
         }
@@ -106,9 +106,9 @@ public class LobbyMenuManager : MonoBehaviour
 
     public async void HostButton()
     {
-        await GameManager.Instance.HostLobby();
+        await GameManager.Instance.BecomeHost();
 
-        await GameManager.Instance.UpdateLocalPlayer();
+        await LobbyManager.Instance.UpdateLocalPlayer();
 
         ToLobbyPanel();
     }
@@ -124,7 +124,7 @@ public class LobbyMenuManager : MonoBehaviour
 
         if (success)
         {
-            await GameManager.Instance.UpdateLocalPlayer();
+            await LobbyManager.Instance.UpdateLocalPlayer();
 
             lobbyRoomCodeDataDisplay.text = input;
             ToLobbyPanel();
