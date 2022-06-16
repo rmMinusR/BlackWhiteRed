@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
+using Unity.Services.Core;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using UnityEngine;
@@ -9,13 +11,27 @@ using UnityEngine;
 [RequireComponent(typeof(RelayManager))]
 public sealed class RelayConnectionHost : RelayConnection
 {
+    private async void Start()
+    {
+        await ConnectToAllocation();
+        Debug.Log(joinCode);
+        ConnectTransport();
+    }
+
+    private void OnDestroy()
+    {
+        Close();
+    }
+
     private Allocation allocation = null;
     private string joinCode = null;
     private RelayServerEndpoint endpoint = null;
 
-    private async void ConnectToAllocation()
+    private async Task ConnectToAllocation()
     {
         // TODO safety assert, validate that we should be the host
+
+        if (UnityServices.State == ServicesInitializationState.Uninitialized) await UnityServices.InitializeAsync();
 
         if (allocation == null)
         {
@@ -52,5 +68,10 @@ public sealed class RelayConnectionHost : RelayConnection
             NetworkManager.Singleton.StartHost();
         }
         else throw new System.InvalidOperationException("Cannot connect transport before resolving allocation/endpoint!");
+    }
+
+    private void Close()
+    {
+        NetworkManager.Singleton.Shutdown();
     }
 }
