@@ -45,7 +45,7 @@ public class MenuManager : MonoBehaviour
         //Close All Windows
         changeNamePanel.SetActive(false);
 
-        nameTagDisplay.text = GameManager.Instance.GetPlayerName();
+        nameTagDisplay.text = PlayerAuthenticationManager.Instance.GetPlayerName();
     }
 
     public void OpenNameTagChange()
@@ -57,7 +57,7 @@ public class MenuManager : MonoBehaviour
 
     public void SubmitChangeNametag(string input)
     {
-        bool success = GameManager.Instance.AttemptSetPlayerName(input);
+        bool success = PlayerAuthenticationManager.Instance.AttemptSetPlayerName(input);
 
         if (success)
         {

@@ -18,20 +18,6 @@ public class GameManager : MonoBehaviour
 
     private Dictionary<string, Coroutine> coroutines;
 
-    //Player Customization
-    public const string PLAYER_NAME_KEY = "PLAYERNAME";
-    private string playerName = "Shade";
-
-    //Authentication
-    private string playerId = "Not signed in";
-    private string accessToken = "No access token";
-
-    //Lobbies
-    private const string LOBBY_RELAY_CODE_KEY = "relay code";
-    private bool isHost;
-    private Lobby inLobby;
-    private Coroutine heartbeatCoroutine;
-
     //Relay
     private const string ENVIRONMENT = "production";
     private Guid playerAllocationId;
@@ -79,91 +65,59 @@ public class GameManager : MonoBehaviour
     private async void Start()
     {
         await UnityServices.InitializeAsync();
-        await AttemptSignIn();
+        await PlayerAuthenticationManager.Instance.AttemptSignIn();
 
-        Debug.Log(playerId);
-        Debug.Log(accessToken);
-
-        CheckForPrefs();
+        PlayerAuthenticationManager.Instance.CheckForPrefs();
     }
 
-    private async Task AttemptSignIn()
+    private void OnEnable()
     {
-        await AuthenticationService.Instance.SignInAnonymouslyAsync();
-        playerId = AuthenticationService.Instance.PlayerId;
-        accessToken = AuthenticationService.Instance.AccessToken;
+        LobbyManager.Instance.onGameStartChanged += JoinStartingMatch;
     }
 
-    public string GetPlayerID()
+    private void OnDisable()
     {
-        return playerId;
+        
     }
-
-    #region player_customization
-    void CheckForPrefs()
-    {
-        if (PlayerPrefs.HasKey(PLAYER_NAME_KEY))
-        {
-            playerName = PlayerPrefs.GetString(PLAYER_NAME_KEY);
-        }
-        else
-        {
-            PlayerPrefs.SetString(PLAYER_NAME_KEY, playerName);
-        }
-    }
-
-    public string GetPlayerName()
-    {
-        return playerName;
-    }
-
-    public bool AttemptSetPlayerName(string input)
-    {
-        bool results = true;
-        if (input.Length >= 3 && input.Length <= 15)
-        { 
-            foreach(char e in input.ToCharArray())
-            {
-                if(!char.IsLetterOrDigit(e) && e != '_')
-                {
-                    results = false;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            results = false;
-        }
-
-        if(results)
-        {
-            playerName = input;
-            PlayerPrefs.SetString(PLAYER_NAME_KEY, input);
-        }
-
-        return results;
-    }
-    #endregion
 
     public async Task BecomeHost()
     {
         await LobbyManager.Instance.HostLobby();
-        await HostRelay();
-        await LobbyManager.Instance.SetLobbyRelayCode(relayJoinCode);
     }
 
     public async Task<bool> AttemptJoinWithCode(string code)
     {
         bool success = await LobbyManager.Instance.AttemptJoinLobbyWithCode(code);
 
-        if (success)
-        {
-            relayJoinCode = LobbyManager.Instance.GetLobbyRelayCode();
-            await ClientRelay();
-        }
+        //if (success)
+        //{
+        //    relayJoinCode = LobbyManager.Instance.GetLobbyRelayCode();
+        //    await ClientRelay();
+        //}
 
         return success;
+    }
+
+    public void AttemptStartMatch()
+    {
+        StartCoroutine(RelaySetUp());
+    }
+
+    IEnumerator RelaySetUp()
+    {
+        HostRelay();
+
+        var delay = new WaitForSecondsRealtime(1.0f);
+
+        yield return delay;
+
+        LobbyManager.Instance.SetLobbyRelayCode(relayJoinCode);
+    }
+
+    public async void JoinStartingMatch()
+    {
+        relayJoinCode = LobbyManager.Instance.GetLobbyRelayCode();
+        await ClientRelay();
     }
 
     #region relay
@@ -184,12 +138,18 @@ public class GameManager : MonoBehaviour
         relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(relayHostData.mAllocationID);
         relayHostData.mJoinCode = relayJoinCode;
 
+        Debug.Log(relayJoinCode);
+        Debug.LogError(relayJoinCode);
+
         //TODO: Work with transport
         //UnityTransport.SetRelayServerData();
     }
 
     public async Task ClientRelay()
     {
+        Debug.Log(relayJoinCode);
+        Debug.LogError(relayJoinCode);
+
         await JoinRelayWithCode(relayJoinCode);
     }
 

@@ -26,16 +26,24 @@ public class LobbyManager
     }
 
     private const string LOBBY_RELAY_CODE_KEY = "relay code";
+    private const string LOBBY_GAME_START_KEY = "game started";
     private const string LOBBY_HEARTBEAT_COROUTINE_KEY = "heartbeat coroutine";
+    private const string LOBBY_POLL_COROUTINE_KEY = "poll lobby coroutine";
     private bool isHost;
     private Lobby inLobby;
     private Coroutine heartbeatCoroutine;
 
-    private string playerId => GameManager.Instance.GetPlayerID();
-    private string playerName => GameManager.Instance.GetPlayerName();
+    //Events
+    public delegate void TriggerEvent();
+    public event TriggerEvent onPlayersChanged;
+    public event TriggerEvent onGameStartChanged;
+
+    private string playerId => PlayerAuthenticationManager.Instance.GetPlayerID();
+    private string playerName => PlayerAuthenticationManager.Instance.GetPlayerName();
 
     private LobbyManager()
     {
+        isHost = false;
     }
 
     public async Task HostLobby()
@@ -43,10 +51,21 @@ public class LobbyManager
         string lobbyName = playerName + "'s Lobby";
         CreateLobbyOptions options = new CreateLobbyOptions();
         options.IsPrivate = true;
+        options.Data = new Dictionary<string, DataObject>()
+            {
+                {
+                    LOBBY_GAME_START_KEY, new DataObject(
+                        visibility: DataObject.VisibilityOptions.Public,
+                        value: "FALSE")
+                }
+            };
 
         inLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, GameManager.MAX_PLAYERS, options);
 
+        isHost = true;
+
         GameManager.Instance.PromptCoroutine(LOBBY_HEARTBEAT_COROUTINE_KEY, HeartbeatLobbyCoroutine(inLobby.Id, 15));
+        GameManager.Instance.PromptCoroutine(LOBBY_POLL_COROUTINE_KEY, PollLobbyCoroutine(3.0f));
     }
 
     IEnumerator HeartbeatLobbyCoroutine(string lobbyId, float waitTimeSeconds)
@@ -60,6 +79,37 @@ public class LobbyManager
         }
     }
 
+    IEnumerator PollLobbyCoroutine(float waitTimeSeconds)
+    {
+        var delay = new WaitForSecondsRealtime(waitTimeSeconds);
+
+        while (true)
+        {
+            LobbyManager.Instance.PollForLobbyUpdates();
+            yield return delay;
+        }
+    }
+
+    public async void PollForLobbyUpdates()
+    {
+        Lobby oldInLobby = inLobby;
+        inLobby = await LobbyService.Instance.GetLobbyAsync(inLobby.Id);
+
+        //Has the game started?
+        if(inLobby.Data[LOBBY_GAME_START_KEY].Value != oldInLobby.Data[LOBBY_GAME_START_KEY].Value)
+        {
+            if(inLobby.Data[LOBBY_GAME_START_KEY].Value == "TRUE" && !isHost)
+            {
+                onGameStartChanged?.Invoke();
+            }
+        }
+
+        if(inLobby.Players != oldInLobby.Players)
+        {
+            onPlayersChanged?.Invoke();
+        }
+    }
+
     public async Task<bool> AttemptJoinLobbyWithCode(string code)
     {
         bool success = true;
@@ -67,6 +117,7 @@ public class LobbyManager
         try
         {
             inLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(code);
+            GameManager.Instance.PromptCoroutine(LOBBY_POLL_COROUTINE_KEY, PollLobbyCoroutine(3.0f));
         }
         catch (LobbyServiceException e)
         {
@@ -106,7 +157,7 @@ public class LobbyManager
             options.Data = new Dictionary<string, PlayerDataObject>()
             {
                 {
-                    GameManager.PLAYER_NAME_KEY, new PlayerDataObject(
+                    PlayerAuthenticationManager.PLAYER_NAME_KEY, new PlayerDataObject(
                         visibility: PlayerDataObject.VisibilityOptions.Public,
                         value: playerName)
                 }
@@ -134,6 +185,11 @@ public class LobbyManager
             options.Data = new Dictionary<string, DataObject>()
             {
                 {
+                    LOBBY_GAME_START_KEY, new DataObject(
+                        visibility: DataObject.VisibilityOptions.Public,
+                        value: "TRUE")
+                },
+                {
                     LOBBY_RELAY_CODE_KEY, new DataObject(
                         visibility: DataObject.VisibilityOptions.Member,
                         value: relayJoinCode)
@@ -151,5 +207,10 @@ public class LobbyManager
     public string GetLobbyRelayCode()
     {
         return inLobby.Data[LOBBY_RELAY_CODE_KEY].Value;
+    }
+
+    public bool GetIsHost()
+    {
+        return isHost;
     }
 }

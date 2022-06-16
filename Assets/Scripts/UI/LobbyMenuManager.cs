@@ -42,6 +42,8 @@ public class LobbyMenuManager : MonoBehaviour
     RectTransform lobbyPlayerScrollContent;
     [SerializeField]
     GameObject lobbyPlayerBarPrefab;
+    [SerializeField]
+    Button lobbyStartGameButton;
 
     float lobbyPlayerBarHeight;
     Dictionary<string, GameObject> playerIdToLobbyBar;
@@ -51,11 +53,13 @@ public class LobbyMenuManager : MonoBehaviour
         lobbyPlayerBarHeight = lobbyPlayerBarPrefab.GetComponent<RectTransform>().sizeDelta.y;
 
         roomCodeEntryField.onSubmit.AddListener(OnSubmitRoomCode);
+        LobbyManager.Instance.onPlayersChanged += HandlePlayerChange;
     }
 
     private void OnDisable()
     {
         roomCodeEntryField.onSubmit.RemoveListener(OnSubmitRoomCode);
+        LobbyManager.Instance.onPlayersChanged -= HandlePlayerChange;
     }
 
     public void ClearPanels()
@@ -95,6 +99,8 @@ public class LobbyMenuManager : MonoBehaviour
         {
             AddPlayerBarToLobby(p);
         }
+
+        lobbyStartGameButton.interactable = LobbyManager.Instance.GetIsHost();
     }
 
     public void GoBackRoomCode()
@@ -111,6 +117,14 @@ public class LobbyMenuManager : MonoBehaviour
         await LobbyManager.Instance.UpdateLocalPlayer();
 
         ToLobbyPanel();
+    }
+
+    public void StartMatchButton()
+    {
+        if(playerIdToLobbyBar.Count > 1)
+        {
+            GameManager.Instance.AttemptStartMatch();
+        }
     }
 
     public void SubmitRoomCodeButton()
@@ -138,19 +152,62 @@ public class LobbyMenuManager : MonoBehaviour
 
     private void AddPlayerBarToLobby(Player player)
     {
+        if(playerIdToLobbyBar.ContainsKey(player.Id))
+        {
+            return;
+        }
+
         GameObject playerBarObj = Instantiate(lobbyPlayerBarPrefab,lobbyPlayerScrollContent.transform);
 
         playerIdToLobbyBar.Add(player.Id, playerBarObj);
 
         LobbyPlayerBarController lobbyPlayerBarController = playerBarObj.GetComponent<LobbyPlayerBarController>();
-        lobbyPlayerBarController.playerNameText.text = player.Data[GameManager.PLAYER_NAME_KEY].Value;
+        lobbyPlayerBarController.playerNameText.text = player.Data[PlayerAuthenticationManager.PLAYER_NAME_KEY].Value;
 
         lobbyPlayerScrollContent.sizeDelta = new Vector2(lobbyPlayerScrollContent.sizeDelta.x, lobbyPlayerBarHeight * lobbyPlayerScrollContent.transform.childCount);
     }
 
     private void RemovePlayerBarFromLobby(Player player)
     {
-        Destroy(playerIdToLobbyBar[player.Id]);
-        playerIdToLobbyBar.Remove(player.Id);
+        RemovePlayerBarFromLobby(player.Id);
+    }
+
+    private void RemovePlayerBarFromLobby(string id)
+    {
+        Destroy(playerIdToLobbyBar[id]);
+        playerIdToLobbyBar.Remove(id);
+    }
+
+    private void HandlePlayerChange()
+    {
+        List<Player> players = LobbyManager.Instance.GetLobbyPlayers();
+        List<string> toDelete = new List<string>();
+
+        if(playerIdToLobbyBar == null)
+        {
+            playerIdToLobbyBar = new Dictionary<string, GameObject>();
+        }
+
+        foreach (KeyValuePair<string, GameObject> entry in playerIdToLobbyBar)
+        {
+            toDelete.Add(entry.Key);
+        }
+
+        foreach (Player p in players)
+        {
+            if (toDelete.Contains(p.Id))
+            {
+                toDelete.Remove(p.Id);
+            }
+            else
+            { 
+                AddPlayerBarToLobby(p);
+            }
+        }
+
+        foreach(string id in toDelete)
+        {
+            RemovePlayerBarFromLobby(id);
+        }
     }
 }
