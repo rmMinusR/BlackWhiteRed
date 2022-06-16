@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
+using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
@@ -31,8 +32,12 @@ public sealed class RelayConnectionHost : RelayConnection
     {
         // TODO safety assert, validate that we should be the host
 
+        //TESTING ONLY
         if (UnityServices.State == ServicesInitializationState.Uninitialized) await UnityServices.InitializeAsync();
 
+        //TESTING ONLY
+        if (!AuthenticationService.Instance.IsSignedIn) await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        
         if (allocation == null)
         {
             allocation = await RelayService.Instance.CreateAllocationAsync(RelayManager.Instance.maxConnections - 1); // Number of *peers*, does not include host - FIXME special case for server vs integrated host?

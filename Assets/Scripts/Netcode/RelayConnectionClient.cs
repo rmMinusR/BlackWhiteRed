@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
+using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
@@ -11,10 +12,32 @@ using UnityEngine;
 [RequireComponent(typeof(RelayManager))]
 public sealed class RelayConnectionClient : RelayConnection
 {
+    [SerializeField] private string tmpJoinCode;
+
+    /*
     private async void Start()
     {
-        //await ConnectToAllocation();
+        await ConnectToAllocation(tmpJoinCode);
         ConnectTransport();
+    }
+    */
+
+    [ContextMenu("Test connect using tmpJoinCode")]
+    private void TmpTest()
+    {
+        StartCoroutine(Connect());
+    }
+
+    private IEnumerator Connect()
+    {
+        Task alloc = ConnectToAllocation(tmpJoinCode);
+        while (!alloc.IsCompleted) yield return null;
+
+        if (!alloc.IsFaulted) ConnectTransport();
+        else {
+            Debug.LogError("Failed to connect to allocation!");
+            Debug.LogException(alloc.Exception);
+        }
     }
 
     private void OnDestroy()
@@ -30,7 +53,11 @@ public sealed class RelayConnectionClient : RelayConnection
     {
         // TODO safety assert, validate that we should create a client connection (aren't already hosting)
 
+        //TESTING ONLY
         if (UnityServices.State == ServicesInitializationState.Uninitialized) await UnityServices.InitializeAsync();
+
+        //TESTING ONLY
+        if (!AuthenticationService.Instance.IsSignedIn) await AuthenticationService.Instance.SignInAnonymouslyAsync();
 
         if (allocationConnection == null)
         {
