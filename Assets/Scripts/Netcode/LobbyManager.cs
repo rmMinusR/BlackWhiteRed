@@ -74,8 +74,8 @@ public class LobbyManager
 
         while (true)
         {
-            LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
             yield return delay;
+            LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
         }
     }
 
@@ -85,8 +85,8 @@ public class LobbyManager
 
         while (true)
         {
-            LobbyManager.Instance.PollForLobbyUpdates();
             yield return delay;
+            LobbyManager.Instance.PollForLobbyUpdates();
         }
     }
 

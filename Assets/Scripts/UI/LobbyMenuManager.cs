@@ -90,8 +90,8 @@ public class LobbyMenuManager : MonoBehaviour
 
         //Set up display for lobby data
         lobbyRoomCodeDataDisplay.text = LobbyManager.Instance.GetLobbyCode();
-        lobbySizeDataDisplay.text = LobbyManager.Instance.GetLobbySize();
         lobbyNameDataDisplay.text = LobbyManager.Instance.GetLobbyName();
+        UpdateLobbySize();
 
         //Set up display for player data
         playerIdToLobbyBar = new Dictionary<string, GameObject>();
@@ -180,6 +180,7 @@ public class LobbyMenuManager : MonoBehaviour
 
     private void HandlePlayerChange()
     {
+        UpdateLobbySize();
         List<Player> players = LobbyManager.Instance.GetLobbyPlayers();
         List<string> toDelete = new List<string>();
 
@@ -209,5 +210,10 @@ public class LobbyMenuManager : MonoBehaviour
         {
             RemovePlayerBarFromLobby(id);
         }
+    }
+
+    void UpdateLobbySize()
+    {
+        lobbySizeDataDisplay.text = LobbyManager.Instance.GetLobbySize();
     }
 }
