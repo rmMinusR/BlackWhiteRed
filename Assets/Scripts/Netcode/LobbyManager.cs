@@ -31,12 +31,12 @@ public class LobbyManager
     private const string LOBBY_POLL_COROUTINE_KEY = "poll lobby coroutine";
     private bool isHost;
     private Lobby inLobby;
-    private Coroutine heartbeatCoroutine;
 
     //Events
     public delegate void TriggerEvent();
     public event TriggerEvent onPlayersChanged;
     public event TriggerEvent onGameStartChanged;
+    public event TriggerEvent onLobbyShutdown;
 
     private string playerId => PlayerAuthenticationManager.Instance.GetPlayerID();
     private string playerName => PlayerAuthenticationManager.Instance.GetPlayerName();
@@ -44,6 +44,12 @@ public class LobbyManager
     private LobbyManager()
     {
         isHost = false;
+        inLobby = null;
+    }
+
+    public void HandleApplicationClose()
+    {
+        DisconnectFromLobby();
     }
 
     public async Task HostLobby()
@@ -93,7 +99,24 @@ public class LobbyManager
     public async void PollForLobbyUpdates()
     {
         Lobby oldInLobby = inLobby;
-        inLobby = await LobbyService.Instance.GetLobbyAsync(inLobby.Id);
+
+        try
+        {
+            if (inLobby != null)
+            {
+                inLobby = await LobbyService.Instance.GetLobbyAsync(inLobby.Id);
+            }
+        }
+        catch(LobbyServiceException e)
+        {
+            if (e.Reason == LobbyExceptionReason.LobbyNotFound)
+            {
+                inLobby = null;
+                onLobbyShutdown?.Invoke();
+                GameManager.Instance.PromptEndCoroutine(LOBBY_POLL_COROUTINE_KEY);
+                return;
+            }
+        }
 
         //Has the game started?
         if(inLobby.Data[LOBBY_GAME_START_KEY].Value != oldInLobby.Data[LOBBY_GAME_START_KEY].Value)
@@ -128,6 +151,23 @@ public class LobbyManager
         return success;
     }
 
+    public async void DisconnectFromLobby()
+    {
+        if (isHost)
+        {
+            await LobbyService.Instance.DeleteLobbyAsync(inLobby.Id);
+        GameManager.Instance.PromptEndCoroutine(LOBBY_HEARTBEAT_COROUTINE_KEY);
+        }
+        else
+        {
+            await LobbyService.Instance.RemovePlayerAsync(inLobby.Id, playerId);
+        }
+
+        GameManager.Instance.PromptEndCoroutine(LOBBY_POLL_COROUTINE_KEY);
+
+        inLobby = null;
+    }
+
     public string GetLobbyCode()
     {
         return inLobby.LobbyCode;
@@ -141,6 +181,11 @@ public class LobbyManager
     public string GetLobbyName()
     {
         return inLobby.Name;
+    }
+
+    public string GetLobbyId()
+    {
+        return inLobby.Id;
     }
 
     public List<Player> GetLobbyPlayers()
@@ -213,4 +258,10 @@ public class LobbyManager
     {
         return isHost;
     }
+
+    public bool GetIsInLobby()
+    {
+        return inLobby != null;
+    }
+
 }

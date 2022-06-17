@@ -32,11 +32,40 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(this.gameObject);
+
+            Application.wantsToQuit += OnWantToQuit;
+
             return;
         }
 
         Debug.LogError("Game Manager Instance Already Exists");
         Destroy(this);
+    }
+
+    private void OnDestroy()
+    {
+        SeverConnections();
+    }
+
+    private bool OnWantToQuit()
+    {
+        bool canQuit = !LobbyManager.Instance.GetIsInLobby();
+
+        StartCoroutine(SeverConnectionsBeforeQuiting());
+
+        return canQuit;
+    }
+
+    IEnumerator SeverConnectionsBeforeQuiting()
+    {
+        SeverConnections();
+        yield return null;
+        Application.Quit();
+    }
+
+    void SeverConnections()
+    {
+        LobbyManager.Instance.DisconnectFromLobby();
     }
 
     public void PromptCoroutine(string key, IEnumerator routine)
@@ -77,7 +106,7 @@ public class GameManager : MonoBehaviour
 
     private void OnDisable()
     {
-        
+        LobbyManager.Instance.onGameStartChanged -= JoinStartingMatch;
     }
 
     public async Task BecomeHost()
@@ -167,4 +196,5 @@ public class GameManager : MonoBehaviour
     }
 
     #endregion
+
 }

@@ -54,12 +54,14 @@ public class LobbyMenuManager : MonoBehaviour
 
         roomCodeEntryField.onSubmit.AddListener(OnSubmitRoomCode);
         LobbyManager.Instance.onPlayersChanged += HandlePlayerChange;
+        LobbyManager.Instance.onLobbyShutdown += HandleLobbyShutdown;
     }
 
     private void OnDisable()
     {
         roomCodeEntryField.onSubmit.RemoveListener(OnSubmitRoomCode);
         LobbyManager.Instance.onPlayersChanged -= HandlePlayerChange;
+        LobbyManager.Instance.onLobbyShutdown -= HandleLobbyShutdown;
     }
 
     public void ClearPanels()
@@ -207,6 +209,36 @@ public class LobbyMenuManager : MonoBehaviour
         }
 
         foreach(string id in toDelete)
+        {
+            RemovePlayerBarFromLobby(id);
+        }
+    }
+
+    private void HandleLobbyShutdown()
+    {
+        ClearOutPlayerBars();
+        ToInitialChoices();
+
+        //TODO: Add a pop up that informs the player why that just happened
+    }
+
+    public void LeaveLobbyButton()
+    {
+        LobbyManager.Instance.DisconnectFromLobby();
+        ClearOutPlayerBars();
+        ToInitialChoices();
+    }
+
+    private void ClearOutPlayerBars()
+    {
+        List<string> toDelete = new List<string>();
+
+        foreach (KeyValuePair<string, GameObject> entry in playerIdToLobbyBar)
+        {
+            toDelete.Add(entry.Key);
+        }
+
+        foreach (string id in toDelete)
         {
             RemovePlayerBarFromLobby(id);
         }
