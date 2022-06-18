@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using TMPro;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Services.Authentication;
@@ -22,6 +23,16 @@ public sealed class RelayConnectionHost : RelayConnection
     private void OnDestroy()
     {
         Close();
+    }
+
+    private void OnApplicationQuit()
+    {
+        Close();
+    }
+
+    private void OnGUI()
+    {
+        GUILayout.Label("Joincode: "+joinCode);
     }
 
     private Allocation allocation = null;
@@ -69,7 +80,7 @@ public sealed class RelayConnectionHost : RelayConnection
     {
         if (allocation != null && endpoint != null)
         {
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetHostRelayData(endpoint.Host, (ushort)endpoint.Port, allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData);
+            ((UnityTransport) NetworkManager.Singleton.NetworkConfig.NetworkTransport).SetHostRelayData(endpoint.Host, (ushort)endpoint.Port, allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData);
             NetworkManager.Singleton.StartHost();
         }
         else throw new System.InvalidOperationException("Cannot connect transport before resolving allocation/endpoint!");

@@ -12,35 +12,20 @@ using UnityEngine;
 [RequireComponent(typeof(RelayManager))]
 public sealed class RelayConnectionClient : RelayConnection
 {
-    [SerializeField] private string tmpJoinCode;
+    public string tmpJoinCode;
 
-    /*
     private async void Start()
     {
         await ConnectToAllocation(tmpJoinCode);
         ConnectTransport();
     }
-    */
-
-    [ContextMenu("Test connect using tmpJoinCode")]
-    private void TmpTest()
-    {
-        StartCoroutine(Connect());
-    }
-
-    private IEnumerator Connect()
-    {
-        Task alloc = ConnectToAllocation(tmpJoinCode);
-        while (!alloc.IsCompleted) yield return null;
-
-        if (!alloc.IsFaulted) ConnectTransport();
-        else {
-            Debug.LogError("Failed to connect to allocation!");
-            Debug.LogException(alloc.Exception);
-        }
-    }
 
     private void OnDestroy()
+    {
+        Close();
+    }
+
+    private void OnApplicationQuit()
     {
         Close();
     }
@@ -82,7 +67,7 @@ public sealed class RelayConnectionClient : RelayConnection
     {
         if (allocationConnection != null && endpoint != null)
         {
-            NetworkManager.Singleton.GetComponent<UnityTransport>().SetClientRelayData(endpoint.Host, (ushort)endpoint.Port, allocationConnection.AllocationIdBytes, allocationConnection.Key, allocationConnection.ConnectionData, allocationConnection.HostConnectionData);
+            ((UnityTransport)NetworkManager.Singleton.NetworkConfig.NetworkTransport).SetClientRelayData(endpoint.Host, (ushort)endpoint.Port, allocationConnection.AllocationIdBytes, allocationConnection.Key, allocationConnection.ConnectionData, allocationConnection.HostConnectionData);
             NetworkManager.Singleton.StartClient();
         }
         else throw new System.InvalidOperationException("Cannot connect transport before resolving allocation/endpoint!");
