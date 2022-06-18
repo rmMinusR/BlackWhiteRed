@@ -10,7 +10,7 @@ using Unity.Services.Relay.Models;
 using UnityEngine;
 
 [RequireComponent(typeof(RelayManager))]
-public sealed class RelayConnectionClient : RelayConnection
+public sealed class RelayConnectionClient : BaseRelayConnection
 {
     public string tmpJoinCode;
 

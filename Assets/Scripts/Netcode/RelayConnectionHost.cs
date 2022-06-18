@@ -11,7 +11,7 @@ using Unity.Services.Relay.Models;
 using UnityEngine;
 
 [RequireComponent(typeof(RelayManager))]
-public sealed class RelayConnectionHost : RelayConnection
+public sealed class RelayConnectionHost : BaseRelayConnection
 {
     private async void Start()
     {
