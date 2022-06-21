@@ -39,15 +39,31 @@ public class ScoreboardDisplayController : MonoBehaviour
     [Space]
     [Header("Animation Timings")]
     [SerializeField]
+    float timeToFill = 0.5f;
 
+    class FillLerpInfo
+    {
+        public float oldFillAmount;
+        public Image fillImage;
+        public float newFillAmount;
+        public float fillTimer;
+    }
 
-    void Start()
+    List<FillLerpInfo> fillsPerforming;
+
+    private void Start()
     {
         Init();
     }
 
+    private void Update()
+    {
+        HandleFillLerp();
+    }
+
     private void Init()
     {
+        fillsPerforming = new List<FillLerpInfo>();
         scoreToWinMessageTextDisplay.text = "Score " + scoreToWin + " to Win!";
         MakeDottedLines();
         RefreshScoreDisplay();
@@ -55,12 +71,6 @@ public class ScoreboardDisplayController : MonoBehaviour
 
     private void MakeDottedLines()
     {
-        //Reset Children
-        while(dottedLineParentPanel.childCount > 0)
-        {
-            Destroy(dottedLineParentPanel.GetChild(0));
-        }
-
         int dotsTotal = scoreToWin * 2 - 2;
         float distancePerAnchor = 1.0f / (dotsTotal+1);
 
@@ -72,6 +82,7 @@ public class ScoreboardDisplayController : MonoBehaviour
         }
     }
 
+    [ContextMenu("Refresh Fills")]
     private void RefreshScoreDisplay()
     {
         RefreshTeamScoreDisplay(blackTeam, blackScore);
@@ -81,7 +92,35 @@ public class ScoreboardDisplayController : MonoBehaviour
     private void RefreshTeamScoreDisplay(TeamUiItems teamUi, int teamScore)
     {
         teamUi.scoreTextDisplay.text = "" + teamScore;
-        teamUi.fillBar.fillAmount = 1.0f * teamScore / (scoreToWin * 2 - 1);
 
+        //teamUi.fillBar.fillAmount = 1.0f * teamScore / (scoreToWin * 2 - 1);
+        FillLerpInfo temp = new FillLerpInfo();
+        temp.oldFillAmount = teamUi.fillBar.fillAmount;
+        temp.newFillAmount= 1.0f * teamScore / (scoreToWin * 2 - 1);
+        temp.fillImage = teamUi.fillBar;
+        temp.fillTimer = timeToFill;
+
+        fillsPerforming.Add(temp);
+    }
+
+    private void HandleFillLerp()
+    {
+        for (int i = fillsPerforming.Count - 1; i >= 0; i--)
+        {
+            if (fillsPerforming[i].fillTimer > 0)
+            {
+                fillsPerforming[i].fillTimer -= Time.deltaTime;
+
+                if (fillsPerforming[i].fillTimer <= 0)
+                {
+                    fillsPerforming[i].fillImage.fillAmount = fillsPerforming[i].newFillAmount;
+                    fillsPerforming.RemoveAt(i);
+                }
+                else
+                {
+                    fillsPerforming[i].fillImage.fillAmount = Mathf.Lerp(fillsPerforming[i].newFillAmount, fillsPerforming[i].oldFillAmount, fillsPerforming[i].fillTimer / timeToFill);
+                }
+            }
+        }
     }
 }

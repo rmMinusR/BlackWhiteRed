@@ -1266,7 +1266,8 @@ MonoBehaviour:
   dottedLinePrefab: {fileID: 1223536428706467703, guid: 8c1cdaacd610f9f4f9cc6b9b37c95452, type: 3}
   scoreToWin: 5
   blackScore: 2
-  whiteScore: 5
+  whiteScore: 3
+  timeToFill: 0.5
 --- !u!1 &1747014971
 GameObject:
   m_ObjectHideFlags: 0
@@ -1330,7 +1331,7 @@ MonoBehaviour:
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
-  m_FillAmount: 0.25
+  m_FillAmount: 0
   m_FillClockwise: 1
   m_FillOrigin: 1
   m_UseSpriteMesh: 0
@@ -1697,7 +1698,7 @@ MonoBehaviour:
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 0
-  m_FillAmount: 0.25
+  m_FillAmount: 0
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
