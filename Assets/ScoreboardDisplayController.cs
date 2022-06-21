@@ -36,6 +36,11 @@ public class ScoreboardDisplayController : MonoBehaviour
     [Min(0)]
     int whiteScore;
 
+    [Space]
+    [Header("Animation Timings")]
+    [SerializeField]
+
+
     void Start()
     {
         Init();
@@ -56,17 +61,14 @@ public class ScoreboardDisplayController : MonoBehaviour
             Destroy(dottedLineParentPanel.GetChild(0));
         }
 
-        int dotsPerTeam = scoreToWin - 1;
-        float distancePerAnchor = 1.0f / scoreToWin * 0.5f;
+        int dotsTotal = scoreToWin * 2 - 2;
+        float distancePerAnchor = 1.0f / (dotsTotal+1);
 
-        for(int i = 1; i <= dotsPerTeam; i++)
+        for (int i = 1; i <= dotsTotal; i++)
         {
-            RectTransform positiveObj = Instantiate(dottedLinePrefab,dottedLineParentPanel).GetComponent<RectTransform>();
-            positiveObj.anchorMin = new Vector2(0.5f + (distancePerAnchor * i), positiveObj.anchorMin.y);
-            positiveObj.anchorMax = new Vector2(0.5f + (distancePerAnchor * i), positiveObj.anchorMax.y);
-            RectTransform negativeObj = Instantiate(dottedLinePrefab, dottedLineParentPanel).GetComponent<RectTransform>();
-            negativeObj.anchorMin = new Vector2(0.5f - (distancePerAnchor * i), negativeObj.anchorMin.y);
-            negativeObj.anchorMax = new Vector2(0.5f - (distancePerAnchor * i), negativeObj.anchorMax.y);
+            RectTransform dottedLineObj = Instantiate(dottedLinePrefab,dottedLineParentPanel).GetComponent<RectTransform>();
+            dottedLineObj.anchorMin = new Vector2(distancePerAnchor * i, dottedLineObj.anchorMin.y);
+            dottedLineObj.anchorMax = new Vector2(distancePerAnchor * i, dottedLineObj.anchorMax.y);
         }
     }
 
@@ -79,7 +81,7 @@ public class ScoreboardDisplayController : MonoBehaviour
     private void RefreshTeamScoreDisplay(TeamUiItems teamUi, int teamScore)
     {
         teamUi.scoreTextDisplay.text = "" + teamScore;
-        teamUi.fillBar.fillAmount = 1.0f * teamScore / scoreToWin;
+        teamUi.fillBar.fillAmount = 1.0f * teamScore / (scoreToWin * 2 - 1);
 
     }
 }
