@@ -19,10 +19,10 @@ public class GameManager : MonoBehaviour
     private Dictionary<string, Coroutine> coroutines;
 
     //Relay
-    private const string ENVIRONMENT = "production";
-    private Guid playerAllocationId;
-    private string relayJoinCode;
-    RelayHostData relayHostData;
+    //private const string ENVIRONMENT = "production";
+    //private Guid playerAllocationId;
+    //private string relayJoinCode;
+    //RelayHostData relayHostData;
 
     public static GameManager Instance;
 
@@ -118,12 +118,6 @@ public class GameManager : MonoBehaviour
     {
         bool success = await LobbyManager.Instance.AttemptJoinLobbyWithCode(code);
 
-        //if (success)
-        //{
-        //    relayJoinCode = LobbyManager.Instance.GetLobbyRelayCode();
-        //    await ClientRelay();
-        //}
-
         return success;
     }
 
@@ -134,67 +128,69 @@ public class GameManager : MonoBehaviour
 
     IEnumerator RelaySetUp()
     {
-        HostRelay();
+        RelayManager.Instance.StartAsHost();
 
         var delay = new WaitForSecondsRealtime(1.0f);
-
         yield return delay;
 
-        LobbyManager.Instance.SetLobbyRelayCode(relayJoinCode);
+        RelayConnectionHost temp = (RelayConnectionHost)(RelayManager.Instance.Connection);
+        Debug.Assert(temp.JoinCode != null && temp.JoinCode != "", "Join code did not load up in our allotted timeframe (1 second)");
+
+        LobbyManager.Instance.SetLobbyRelayCode(temp.JoinCode);
     }
 
-    public async void JoinStartingMatch()
+    public void JoinStartingMatch()
     {
-        relayJoinCode = LobbyManager.Instance.GetLobbyRelayCode();
-        await ClientRelay();
+        string relayJoinCode = LobbyManager.Instance.GetLobbyRelayCode();
+        RelayManager.Instance.StartAsClient(relayJoinCode);
     }
 
-    #region relay
+    //#region relay
 
-    public async Task HostRelay()
-    {
-        //The host player requests an allocation
-        Allocation relayAllocation = await Relay.Instance.CreateAllocationAsync(MAX_PLAYERS);
+    //public async Task HostRelay()
+    //{
+    //    //The host player requests an allocation
+    //    Allocation relayAllocation = await Relay.Instance.CreateAllocationAsync(MAX_PLAYERS);
 
-        relayHostData = new RelayHostData();
-        relayHostData.mIPv4Address = relayAllocation.RelayServer.IpV4;
-        relayHostData.mPort = relayAllocation.RelayServer.Port;
-        relayHostData.mAllocationID = relayAllocation.AllocationId;
-        relayHostData.mAllocationIDBytes = relayAllocation.AllocationIdBytes;
-        relayHostData.mConnectionData = relayAllocation.ConnectionData;
-        relayHostData.mKey = relayAllocation.Key;
+    //    relayHostData = new RelayHostData();
+    //    relayHostData.mIPv4Address = relayAllocation.RelayServer.IpV4;
+    //    relayHostData.mPort = relayAllocation.RelayServer.Port;
+    //    relayHostData.mAllocationID = relayAllocation.AllocationId;
+    //    relayHostData.mAllocationIDBytes = relayAllocation.AllocationIdBytes;
+    //    relayHostData.mConnectionData = relayAllocation.ConnectionData;
+    //    relayHostData.mKey = relayAllocation.Key;
 
-        relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(relayHostData.mAllocationID);
-        relayHostData.mJoinCode = relayJoinCode;
+    //    relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(relayHostData.mAllocationID);
+    //    relayHostData.mJoinCode = relayJoinCode;
 
-        Debug.Log(relayJoinCode);
-        Debug.LogError(relayJoinCode);
+    //    Debug.Log(relayJoinCode);
+    //    Debug.LogError(relayJoinCode);
 
-        //TODO: Work with transport
-        //UnityTransport.SetRelayServerData();
-    }
+    //    //TODO: Work with transport
+    //    //UnityTransport.SetRelayServerData();
+    //}
 
-    public async Task ClientRelay()
-    {
-        Debug.Log(relayJoinCode);
-        Debug.LogError(relayJoinCode);
+    //public async Task ClientRelay()
+    //{
+    //    Debug.Log(relayJoinCode);
+    //    Debug.LogError(relayJoinCode);
 
-        await JoinRelayWithCode(relayJoinCode);
-    }
+    //    await JoinRelayWithCode(relayJoinCode);
+    //}
 
-    private async Task JoinRelayWithCode(string relayJoinCode)
-    {
-        try
-        {
-            JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(relayJoinCode);
-            playerAllocationId = joinAllocation.AllocationId;
-        }
-        catch (RelayServiceException ex)
-        {
-            Debug.LogError(ex.Message + "\n" + ex.StackTrace);
-        }
-    }
+    //private async Task JoinRelayWithCode(string relayJoinCode)
+    //{
+    //    try
+    //    {
+    //        JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(relayJoinCode);
+    //        playerAllocationId = joinAllocation.AllocationId;
+    //    }
+    //    catch (RelayServiceException ex)
+    //    {
+    //        Debug.LogError(ex.Message + "\n" + ex.StackTrace);
+    //    }
+    //}
 
-    #endregion
+    //#endregion
 
 }
