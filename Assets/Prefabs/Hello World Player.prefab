@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2364114655917780065}
   - component: {fileID: 6480706605459321255}
   - component: {fileID: -900406027661336430}
+  - component: {fileID: 4032180774641767200}
   m_Layer: 0
   m_Name: Hello World Player
   m_TagString: Untagged
@@ -130,3 +131,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Position:
     m_InternalValue: {x: 0, y: 0, z: 0}
+--- !u!114 &4032180774641767200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 491176079305168064}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ae994b724365d247a565ad2cce11a1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pastPings: []
+  travelingPings: []

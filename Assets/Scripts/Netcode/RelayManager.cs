@@ -10,9 +10,6 @@ public class RelayManager : MonoBehaviour
     [SerializeField] private BaseRelayConnection _connection; //TODO make inspector read-only
     public BaseRelayConnection Connection => _connection;
 
-    [SerializeField] [Range(5, 20)] public float heartbeatsPerSecond = 10;
-    [SerializeField] [Min(1)] public int rttHistory = 30;
-
     private void Awake()
     {
         if (Instance == null)
