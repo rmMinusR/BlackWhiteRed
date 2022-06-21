@@ -19,9 +19,6 @@ public class RelayManager : MonoBehaviour
     [SerializeField] [Range(5, 20)] public float heartbeatsPerSecond = 10;
     [SerializeField] [Min(1)] public int rttHistory = 30;
 
-    // Helper for RelayConnection
-    internal static RelayServerEndpoint SelectEndpoint(List<RelayServerEndpoint> endpoints) => endpoints.Find(e => e.ConnectionType == "dtls"); // Use DTLS encryption
-
     private void Awake()
     {
         if (Instance == null)
@@ -38,18 +35,16 @@ public class RelayManager : MonoBehaviour
 
     public void StartAsHost()
     {
-        if (_connection) throw new InvalidOperationException("Already running!");
+        if (_connection) throw new InvalidOperationException("Already connected!");
 
-        _connection = gameObject.AddComponent<RelayConnectionHost>();
+        _connection = RelayConnectionHost.New(gameObject);
     }
 
     public void StartAsClient(string relayJoinCode)
     {
-        if (_connection) throw new InvalidOperationException("Already running!");
+        if (_connection) throw new InvalidOperationException("Already connected!");
 
-        RelayConnectionClient c = gameObject.AddComponent<RelayConnectionClient>();
-        _connection = c;
-        c.tmpJoinCode = relayJoinCode;
+        _connection = RelayConnectionClient.New(gameObject, relayJoinCode);
     }
 
     #region Testing-only code
@@ -85,13 +80,12 @@ public class RelayManager : MonoBehaviour
 [RequireComponent(typeof(RelayManager))]
 public abstract class BaseRelayConnection : MonoBehaviour
 {
-    protected RelayManager manager;
+    protected static RelayServerEndpoint SelectEndpoint(List<RelayServerEndpoint> endpoints) => endpoints.Find(e => e.ConnectionType == "dtls"); // Use DTLS encryption
 
     #region Heartbeat / RTT
 
     protected virtual void OnEnable()
     {
-        manager = GetComponent<RelayManager>();
         heartbeatPingWorker = StartCoroutine(HeartbeatPingWorker());
     }
 
@@ -121,31 +115,37 @@ public abstract class BaseRelayConnection : MonoBehaviour
     [SerializeField] protected List<OutgoingPing> travelingPings = new List<OutgoingPing>();
 
     [SerializeField] private Coroutine heartbeatPingWorker;
-    protected virtual IEnumerator HeartbeatPingWorker()
+    private IEnumerator HeartbeatPingWorker()
     {
         // FIXME heartbeat might not work in dedicated server mode
         while (true)
         {
             SendHeartbeatPing();
 
-            yield return new WaitForSecondsRealtime(1/manager.heartbeatsPerSecond);
+            yield return new WaitForSecondsRealtime(1/RelayManager.Instance.heartbeatsPerSecond);
         }
     }
 
     protected readonly static System.Random pingRNG = new System.Random();
-    private void SendHeartbeatPing()
+    protected virtual void SendHeartbeatPing()
     {
         OutgoingPing ping = new OutgoingPing { id = pingRNG.Next(), sendTime = Time.realtimeSinceStartupAsDouble };
         travelingPings.Add(ping);
         Ping(ping.id);
     }
 
-    [ServerRpc]
-    protected virtual void Ping(int id) => Pong(id);
+    [ServerRpc(Delivery = RpcDelivery.Unreliable)]
+    protected virtual void Ping(int id)
+    {
+        Pong(id);
+        Debug.Log("PING serverside #"+id);
+    }
 
-    [ClientRpc]
+    [ClientRpc(Delivery = RpcDelivery.Unreliable)]
     protected virtual void Pong(int id)
     {
+        Debug.Log("PING clientside #" + id);
+
         IEnumerable<OutgoingPing> query = travelingPings.Where(d => d.id == id);
         if(query.Any())
         {
@@ -161,7 +161,7 @@ public abstract class BaseRelayConnection : MonoBehaviour
             complete.rtt = complete.recieveTime-complete.sendTime;
 
             pastPings.Add(complete);
-            while (pastPings.Count > manager.rttHistory) pastPings.RemoveAt(0);
+            while (pastPings.Count > RelayManager.Instance.rttHistory) pastPings.RemoveAt(0);
         }
         else Debug.LogWarning("PING packet recieved twice: " + id);
     }

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Netcode;
@@ -12,11 +13,18 @@ using UnityEngine;
 [RequireComponent(typeof(RelayManager))]
 public sealed class RelayConnectionClient : BaseRelayConnection
 {
-    public string tmpJoinCode;
+    public static RelayConnectionClient New(GameObject gameObject, string joinCode)
+    {
+        if (gameObject.TryGetComponent<BaseRelayConnection>(out _)) throw new InvalidOperationException("Cannot create a connection, since one already exists!");
+
+        RelayConnectionClient c = gameObject.AddComponent<RelayConnectionClient>();
+        c.joinCode = joinCode;
+        return c;
+    }
 
     private async void Start()
     {
-        await ConnectToAllocation(tmpJoinCode);
+        await ConnectToAllocation();
         ConnectTransport();
     }
 
@@ -34,7 +42,7 @@ public sealed class RelayConnectionClient : BaseRelayConnection
     private string joinCode = null;
     private RelayServerEndpoint endpoint = null;
 
-    private async Task ConnectToAllocation(string joinCode)
+    private async Task ConnectToAllocation()
     {
         // TODO safety assert, validate that we should create a client connection (aren't already hosting)
 
@@ -48,15 +56,13 @@ public sealed class RelayConnectionClient : BaseRelayConnection
         {
             allocationConnection = await RelayService.Instance.JoinAllocationAsync(joinCode);
             Debug.Assert(allocationConnection != null, "Failed to create Relay allocation");
-
-            this.joinCode = joinCode;
         }
 
         if (endpoint == null)
         {
             if (allocationConnection != null)
             {
-                endpoint = RelayManager.SelectEndpoint(allocationConnection.ServerEndpoints);
+                endpoint = SelectEndpoint(allocationConnection.ServerEndpoints);
                 Debug.Assert(endpoint != null, "Failed to select a Relay endpoint");
             }
             else Debug.LogWarning("Cannot locate endpoint without allocation");
@@ -75,6 +81,6 @@ public sealed class RelayConnectionClient : BaseRelayConnection
 
     private void Close()
     {
-        NetworkManager.Singleton.Shutdown();
+        if (NetworkManager.Singleton) NetworkManager.Singleton.Shutdown();
     }
 }

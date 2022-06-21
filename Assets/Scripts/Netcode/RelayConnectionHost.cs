@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -13,6 +14,13 @@ using UnityEngine;
 [RequireComponent(typeof(RelayManager))]
 public sealed class RelayConnectionHost : BaseRelayConnection
 {
+    public static RelayConnectionHost New(GameObject gameObject)
+    {
+        if (gameObject.TryGetComponent<BaseRelayConnection>(out _)) throw new InvalidOperationException("Cannot create a connection, since one already exists!");
+
+        return gameObject.AddComponent<RelayConnectionHost>();
+    }
+
     private async void Start()
     {
         await ConnectToAllocation();
@@ -33,10 +41,15 @@ public sealed class RelayConnectionHost : BaseRelayConnection
     private void OnGUI()
     {
         GUILayout.Label("Joincode: "+joinCode);
+        if (GUILayout.Button("Copy"))
+        {
+            GUIUtility.systemCopyBuffer = joinCode;
+        }
     }
 
     private Allocation allocation = null;
     private string joinCode = null;
+    public string JoinCode => joinCode;
     private RelayServerEndpoint endpoint = null;
 
     private async Task ConnectToAllocation()
@@ -69,7 +82,7 @@ public sealed class RelayConnectionHost : BaseRelayConnection
         {
             if (allocation != null)
             {
-                endpoint = RelayManager.SelectEndpoint(allocation.ServerEndpoints);
+                endpoint = SelectEndpoint(allocation.ServerEndpoints);
                 Debug.Assert(endpoint != null, "Failed to select a Relay endpoint");
             }
             else Debug.LogWarning("Cannot locate endpoint without allocation");
@@ -88,6 +101,17 @@ public sealed class RelayConnectionHost : BaseRelayConnection
 
     private void Close()
     {
-        NetworkManager.Singleton.Shutdown();
+        if (NetworkManager.Singleton)
+        {
+            //Disconnect clients from NGO
+            List<ulong> clients = new List<ulong>(NetworkManager.Singleton.ConnectedClientsIds);
+            foreach (ulong client in clients) NetworkManager.Singleton.DisconnectClient(client);
+
+            //Disconnect clients from Relay
+            //TODO
+
+            System.Threading.Thread.Sleep(50); //Give time for disconnect signal to go out
+            NetworkManager.Singleton.Shutdown();
+        }
     }
 }
