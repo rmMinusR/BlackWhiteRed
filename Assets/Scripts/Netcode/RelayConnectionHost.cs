@@ -28,6 +28,16 @@ public sealed class RelayConnectionHost : BaseRelayConnection
         ConnectTransport();
     }
 
+    private void _OnClientConnected(ulong id)
+    {
+        Debug.Log("Player "+id+" connected");
+    }
+
+    private void _OnClientDisconnected(ulong id)
+    {
+        Debug.Log("Player " + id + " disconnected");
+    }
+
     private void OnDestroy()
     {
         Close();
@@ -95,6 +105,11 @@ public sealed class RelayConnectionHost : BaseRelayConnection
         {
             ((UnityTransport) NetworkManager.Singleton.NetworkConfig.NetworkTransport).SetHostRelayData(endpoint.Host, (ushort)endpoint.Port, allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData);
             NetworkManager.Singleton.StartHost();
+
+            NetworkManager.Singleton.OnClientConnectedCallback -= _OnClientConnected;
+            NetworkManager.Singleton.OnClientConnectedCallback += _OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= _OnClientDisconnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback += _OnClientDisconnected;
         }
         else throw new System.InvalidOperationException("Cannot connect transport before resolving allocation/endpoint!");
     }
@@ -111,6 +126,10 @@ public sealed class RelayConnectionHost : BaseRelayConnection
             //TODO
 
             System.Threading.Thread.Sleep(50); //Give time for disconnect signal to go out
+
+            NetworkManager.Singleton.OnClientConnectedCallback -= _OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= _OnClientDisconnected;
+
             NetworkManager.Singleton.Shutdown();
         }
     }

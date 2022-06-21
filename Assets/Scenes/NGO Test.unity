@@ -547,7 +547,7 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1942161239}
-    PlayerPrefab: {fileID: 491176079305168064, guid: 8f2a487ab5bbe0143a39883dddd2135e, type: 3}
+    PlayerPrefab: {fileID: 0}
     NetworkPrefabs: []
     TickRate: 30
     ClientConnectionBufferTimeout: 10
@@ -602,10 +602,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 887667746}
     m_Modifications:
-    - target: {fileID: 6267093269265980188, guid: c2c5cdac89b9af142ba785b211f4496d, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 6267093269403524562, guid: c2c5cdac89b9af142ba785b211f4496d, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5

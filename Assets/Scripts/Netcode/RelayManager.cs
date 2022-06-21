@@ -138,13 +138,13 @@ public abstract class BaseRelayConnection : MonoBehaviour
     protected virtual void Ping(int id)
     {
         Pong(id);
-        Debug.Log("PING serverside #"+id);
+        //Debug.Log("PING serverside #"+id);
     }
 
     [ClientRpc(Delivery = RpcDelivery.Unreliable)]
     protected virtual void Pong(int id)
     {
-        Debug.Log("PING clientside #" + id);
+        //Debug.Log("PING clientside #" + id);
 
         IEnumerable<OutgoingPing> query = travelingPings.Where(d => d.id == id);
         if(query.Any())
