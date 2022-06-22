@@ -1,0 +1,13 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+* text=auto
+
+# macOS .bundle textfiles should always have LF endings
+**/*.bundle/** eol=lf
+**/*.bundle/*.plist text eol=lf
+**/*.bundle/*/CodeResources text eol=lf
+
+# macOS .bundle binaries are not text but still should show up in diff
+**/*.bundle/Contents/MacOS/* -text diff
+
+# .meta files should always use native line endings
+*.meta text eol=native
