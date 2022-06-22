@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -22,14 +20,19 @@ public sealed class RelayConnectionClient : BaseRelayConnection
         return c;
     }
 
+    [SerializeField] private Status _status = Status.NotConnected; //TODO make inspector readonly
+    public override Status GetStatus() => _status;
+
     private async void Start()
     {
         await ConnectToAllocation();
         ConnectTransport();
     }
 
-    private void OnDestroy()
+    public override void OnDestroy()
     {
+        base.OnDestroy();
+
         Close();
     }
 
@@ -52,6 +55,8 @@ public sealed class RelayConnectionClient : BaseRelayConnection
         //TESTING ONLY
         if (!AuthenticationService.Instance.IsSignedIn) await AuthenticationService.Instance.SignInAnonymouslyAsync();
 
+        _status = Status.AuthGood;
+
         if (allocationConnection == null)
         {
             allocationConnection = await RelayService.Instance.JoinAllocationAsync(joinCode);
@@ -67,20 +72,42 @@ public sealed class RelayConnectionClient : BaseRelayConnection
             }
             else Debug.LogWarning("Cannot locate endpoint without allocation");
         }
+
+        _status = Status.RelayGood;
     }
 
     private void ConnectTransport()
     {
         if (allocationConnection != null && endpoint != null)
         {
+            NetworkManager.Singleton.ConnectionApprovalCallback -= Callback_ConfirmConnection;
+            NetworkManager.Singleton.ConnectionApprovalCallback += Callback_ConfirmConnection;
+
             ((UnityTransport)NetworkManager.Singleton.NetworkConfig.NetworkTransport).SetClientRelayData(endpoint.Host, (ushort)endpoint.Port, allocationConnection.AllocationIdBytes, allocationConnection.Key, allocationConnection.ConnectionData, allocationConnection.HostConnectionData);
             NetworkManager.Singleton.StartClient();
+
         }
-        else throw new System.InvalidOperationException("Cannot connect transport before resolving allocation/endpoint!");
+        else throw new InvalidOperationException("Cannot connect transport before resolving allocation/endpoint!");
     }
 
+    private void Callback_ConfirmConnection(byte[] arg1, ulong arg2, NetworkManager.ConnectionApprovedDelegate arg3)
+    {
+        _status = Status.NGOGood; //TODO check if rejected by server
+    }
+    
     private void Close()
     {
-        if (NetworkManager.Singleton) NetworkManager.Singleton.Shutdown();
+        if (NetworkManager.Singleton)
+        {
+            _status = Status.NotConnected;
+            NetworkManager.Singleton.ConnectionApprovalCallback -= Callback_ConfirmConnection;
+
+            NetworkManager.Singleton.Shutdown();
+
+            //Discard state to prevent covariants
+            allocationConnection = null;
+            joinCode = null;
+            endpoint = null;
+        }
     }
 }

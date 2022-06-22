@@ -130,11 +130,14 @@ public class GameManager : MonoBehaviour
     {
         RelayManager.Instance.StartAsHost();
 
-        var delay = new WaitForSecondsRealtime(1.0f);
-        yield return delay;
+        RelayConnectionHost temp = (RelayConnectionHost)RelayManager.Instance.Connection;
 
-        RelayConnectionHost temp = (RelayConnectionHost)(RelayManager.Instance.Connection);
-        Debug.Assert(temp.JoinCode != null && temp.JoinCode != "", "Join code did not load up in our allotted timeframe (1 second)");
+        while (temp.GetStatus() != BaseRelayConnection.Status.RelayGood && temp.GetStatus() != BaseRelayConnection.Status.NGOGood)
+        {
+            var delay = new WaitForSecondsRealtime(1.0f);
+            yield return delay;
+            temp = (RelayConnectionHost)RelayManager.Instance.Connection;
+        }
 
         LobbyManager.Instance.SetLobbyRelayCode(temp.JoinCode);
     }

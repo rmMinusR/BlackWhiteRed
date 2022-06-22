@@ -494,7 +494,7 @@ GameObject:
   - component: {fileID: 1942161241}
   - component: {fileID: 1942161240}
   - component: {fileID: 1942161239}
-  - component: {fileID: 1942161243}
+  - component: {fileID: 1942161242}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -579,7 +579,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1942161243
+--- !u!114 &1942161242
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -593,7 +593,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxConnections: 10
   _connection: {fileID: 0}
-  heartbeatsPerSecond: 5
+  heartbeatsPerSecond: 2
   rttHistory: 10
 --- !u!1001 &6267093268735729497
 PrefabInstance:
