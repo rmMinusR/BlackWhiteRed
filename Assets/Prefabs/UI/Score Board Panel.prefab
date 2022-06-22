@@ -103,8 +103,8 @@ MonoBehaviour:
   dottedLineParentPanel: {fileID: 7306458984481237402}
   dottedLinePrefab: {fileID: 1223536428706467703, guid: 8c1cdaacd610f9f4f9cc6b9b37c95452, type: 3}
   scoreToWin: 5
-  blackScore: 2
-  whiteScore: 3
+  blackScore: 0
+  whiteScore: 0
   timeToFill: 0.5
 --- !u!1 &7306458984073743346
 GameObject:
