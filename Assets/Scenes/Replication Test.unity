@@ -547,7 +547,7 @@ MonoBehaviour:
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1942161239}
-    PlayerPrefab: {fileID: 491176079305168064, guid: 8f2a487ab5bbe0143a39883dddd2135e, type: 3}
+    PlayerPrefab: {fileID: 491176079305168064, guid: 9370ca25321fdd948855640c2bcdcbb5, type: 3}
     NetworkPrefabs: []
     TickRate: 30
     ClientConnectionBufferTimeout: 10
@@ -593,8 +593,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxConnections: 10
   _connection: {fileID: 0}
-  heartbeatsPerSecond: 2
-  rttHistory: 10
 --- !u!1001 &6267093268735729497
 PrefabInstance:
   m_ObjectHideFlags: 0

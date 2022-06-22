@@ -8,6 +8,10 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkObject))]
 public class NetHeartbeat : NetworkBehaviour
 {
+    public float SmoothedRTT => _smoothedRtt.Value;
+    [SerializeField] //TODO make inspector read-only
+    protected NetworkVariable<float> _smoothedRtt = new NetworkVariable<float>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
@@ -42,8 +46,14 @@ public class NetHeartbeat : NetworkBehaviour
         public double sendTime;
     }
 
-    [SerializeField] [Range(2, 20)] public float heartbeatsPerSecond = 10;
-    [SerializeField] [Min(1)] public int rttHistory = 30;
+    [SerializeField] [Range(2, 20)]
+    public float heartbeatsPerSecond = 10;
+
+    [SerializeField] [Min(1)] [Tooltip("How many pings should we use to find the average? Set to 1 to always use the most recent ping (not recommended.")]
+    public int rttAverageCount = 30;
+
+    [SerializeField] [Min(0.2f)] [Tooltip("How long until a ping should be considered failed? Measured in seconds.")]
+    public double pingTimeout = 10;
 
     [SerializeField] protected List<CompletePing> pastPings = new List<CompletePing>(); // TODO Queue would be more efficient, but List shows in Inspector
     [SerializeField] protected List<OutgoingPing> travelingPings = new List<OutgoingPing>();
@@ -55,6 +65,9 @@ public class NetHeartbeat : NetworkBehaviour
         while (true)
         {
             SendHeartbeatPing();
+
+            //Remove timed-out pings
+            travelingPings.RemoveAll(p => p.sendTime + pingTimeout < Time.realtimeSinceStartupAsDouble);
 
             yield return new WaitForSecondsRealtime(1/heartbeatsPerSecond);
         }
@@ -87,6 +100,7 @@ public class NetHeartbeat : NetworkBehaviour
         IEnumerable<OutgoingPing> query = travelingPings.Where(d => d.id == id);
         if(query.Any())
         {
+            //Retrieve record and calculate RTT
             OutgoingPing received = query.First();
             travelingPings.Remove(received);
 
@@ -99,8 +113,15 @@ public class NetHeartbeat : NetworkBehaviour
             complete.rtt = complete.recieveTime-complete.sendTime;
 
             pastPings.Add(complete);
-            while (pastPings.Count > rttHistory) pastPings.RemoveAt(0);
+            while (pastPings.Count > rttAverageCount) pastPings.RemoveAt(0);
+
+            RecalcAvgRTT();
         }
         else Debug.LogWarning("PING packet recieved twice: " + id);
+    }
+
+    protected void RecalcAvgRTT()
+    {
+        _smoothedRtt.Value = pastPings.Average(c => (float)c.rtt);
     }
 }
