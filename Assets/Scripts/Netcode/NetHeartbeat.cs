@@ -8,27 +8,46 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkObject))]
 public class NetHeartbeat : NetworkBehaviour
 {
-    public float SmoothedRTT => _smoothedRtt.Value;
-    [SerializeField] //TODO make inspector read-only
-    protected NetworkVariable<float> _smoothedRtt = new NetworkVariable<float>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
+    public static NetHeartbeat Self { get; private set; } //Not called 'Instance' because there will be multiple.
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-        
-        if (IsOwner) heartbeatPingWorker = StartCoroutine(HeartbeatPingWorker());
+
+        if (IsOwner)
+        {
+            heartbeatWorker = StartCoroutine(HeartbeatWorker());
+
+            Debug.Assert(Self == null, "There should only be one NetHeartbeat per player!");
+            Self = this;
+        }
     }
 
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
 
-        if (heartbeatPingWorker != null)
+        if (heartbeatWorker != null)
         {
-            StopCoroutine(heartbeatPingWorker);
-            heartbeatPingWorker = null;
+            StopCoroutine(heartbeatWorker);
+            heartbeatWorker = null;
+        }
+
+        if (IsOwner)
+        {
+            Debug.Assert(Self == this, "There should only be one NetHeartbeat per player!");
+            Self = null;
         }
     }
+
+    [SerializeField] [Range(2, 20)]
+    private float heartbeatsPerSecond = 10;
+
+    [SerializeField] [Min(1)] [Tooltip("How many pings should we use to find the average? Set to 1 to always use the most recent ping (not recommended.")]
+    private int rttAverageCount = 30;
+
+    [SerializeField] [Min(0.2f)] [Tooltip("How long until a ping should be considered failed? Measured in seconds.")]
+    private double pingTimeout = 10;
 
     [Serializable]
     protected struct CompletePing
@@ -36,7 +55,7 @@ public class NetHeartbeat : NetworkBehaviour
         public int id;
         public double sendTime;
         public double recieveTime;
-        public double rtt;
+        public float rtt;
     }
 
     [Serializable]
@@ -46,25 +65,20 @@ public class NetHeartbeat : NetworkBehaviour
         public double sendTime;
     }
 
-    [SerializeField] [Range(2, 20)]
-    public float heartbeatsPerSecond = 10;
-
-    [SerializeField] [Min(1)] [Tooltip("How many pings should we use to find the average? Set to 1 to always use the most recent ping (not recommended.")]
-    public int rttAverageCount = 30;
-
-    [SerializeField] [Min(0.2f)] [Tooltip("How long until a ping should be considered failed? Measured in seconds.")]
-    public double pingTimeout = 10;
-
     [SerializeField] protected List<CompletePing> pastPings = new List<CompletePing>(); // TODO Queue would be more efficient, but List shows in Inspector
     [SerializeField] protected List<OutgoingPing> travelingPings = new List<OutgoingPing>();
 
-    [SerializeField] private Coroutine heartbeatPingWorker;
-    private IEnumerator HeartbeatPingWorker()
+    public float SmoothedRTT => _smoothedRtt.Value;
+    [SerializeField] //TODO make inspector read-only
+    protected NetworkVariable<float> _smoothedRtt = new NetworkVariable<float>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
+
+    private Coroutine heartbeatWorker;
+    private IEnumerator HeartbeatWorker()
     {
         // FIXME heartbeat might not keep connection alive in dedicated server mode
         while (true)
         {
-            SendHeartbeatPing();
+            SendHeartbeat();
 
             //Remove timed-out pings
             travelingPings.RemoveAll(p => p.sendTime + pingTimeout < Time.realtimeSinceStartupAsDouble);
@@ -74,28 +88,25 @@ public class NetHeartbeat : NetworkBehaviour
     }
 
     protected readonly static System.Random pingRNG = new System.Random();
-    protected virtual void SendHeartbeatPing()
+    protected virtual void SendHeartbeat()
     {
         OutgoingPing ping = new OutgoingPing { id = pingRNG.Next(), sendTime = Time.realtimeSinceStartupAsDouble };
         travelingPings.Add(ping);
 
-        ServerRpcParams p = new ServerRpcParams();
-        p.Receive.SenderClientId = NetworkManager.Singleton.LocalClientId;
-
-        Ping_ServerRpc(ping.id, p);
+        Heartbeat_ServerRpc(ping.id);
     }
 
     [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = false)]
-    protected virtual void Ping_ServerRpc(int id, ServerRpcParams src)
+    protected virtual void Heartbeat_ServerRpc(int pingID, ServerRpcParams src = default)
     {
-        ClientRpcParams dst = new ClientRpcParams();
+        ClientRpcParams dst = default;
         dst.Send.TargetClientIds = ClientIDCache.Narrowcast(src.Receive.SenderClientId); // Alloc-free version of new ulong[] { src.Receive.SenderClientId };
-
-        Pong_ClientRpc(id, dst);
+        
+        HeartbeatResponse_ClientRpc(pingID, Time.realtimeSinceStartup, dst);  //TODO replace with match timer
     }
 
     [ClientRpc(Delivery = RpcDelivery.Unreliable)]
-    protected virtual void Pong_ClientRpc(int id, ClientRpcParams src)
+    protected virtual void HeartbeatResponse_ClientRpc(int id, float serverTime, ClientRpcParams src = default)
     {
         IEnumerable<OutgoingPing> query = travelingPings.Where(d => d.id == id);
         if(query.Any())
@@ -110,12 +121,16 @@ public class NetHeartbeat : NetworkBehaviour
                 sendTime    = received.sendTime,
                 recieveTime = Time.realtimeSinceStartupAsDouble,
             };
-            complete.rtt = complete.recieveTime-complete.sendTime;
+            complete.rtt = (float) (complete.recieveTime-complete.sendTime);
 
             pastPings.Add(complete);
             while (pastPings.Count > rttAverageCount) pastPings.RemoveAt(0);
 
             RecalcAvgRTT();
+
+            //Recalculate serverside time
+            //TODO should this be put in another RPC method?
+            PushSyncTime(serverTime+complete.rtt/2);
         }
         else Debug.LogWarning("PING packet recieved twice: " + id);
     }
@@ -124,4 +139,23 @@ public class NetHeartbeat : NetworkBehaviour
     {
         _smoothedRtt.Value = pastPings.Average(c => (float)c.rtt);
     }
+
+    [SerializeField] [Min(1)] private int timeSyncAvgCount = 50;
+    [SerializeField] private List<float> timeSyncDeltas = new List<float>();
+
+    [SerializeField] //TODO make inspector read-only
+    private float _smoothedTimeSyncDelta;
+
+    protected void PushSyncTime(float timeOnServer)
+    {
+        //TODO should this be turned off once some point of certainty is reached?
+
+        timeSyncDeltas.Add(Time.realtimeSinceStartup-timeOnServer);
+        while (timeSyncDeltas.Count > timeSyncAvgCount) timeSyncDeltas.Remove(0);
+
+        _smoothedTimeSyncDelta = timeSyncDeltas.Average();
+    }
+
+    public float ConvertTimeServerToLocal(float serverTime) => serverTime + _smoothedTimeSyncDelta;
+    public float ConvertTimeLocalToServer(float localTime ) => localTime  - _smoothedTimeSyncDelta;
 }

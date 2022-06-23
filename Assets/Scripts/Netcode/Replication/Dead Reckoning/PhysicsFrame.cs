@@ -1,11 +1,12 @@
 ﻿using System;
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
 /// Represents a snapshot of a Rigidbody, typically a player or projectile.
 /// </summary>
 [Serializable]
-public struct PhysicsFrame
+public struct PhysicsFrame : INetworkSerializeByMemcpy
 {
     public Vector3 position;
     public Vector3 velocity;
@@ -16,7 +17,7 @@ public struct PhysicsFrame
     /// Convenience method to quickly make a physics frame without repeated boilerplate code
     /// </summary>
     /// <param name="rb">Object to snapshot</param>
-    /// <returns>Snapshot, in *fixed* time</returns>
+    /// <returns>Snapshot, in *local* time</returns>
     public static PhysicsFrame For(Rigidbody rb)
     {
         return new PhysicsFrame
@@ -24,7 +25,7 @@ public struct PhysicsFrame
             position = rb.position,
             velocity = rb.velocity,
             //acceleration = Physics.gravity,
-            time = Time.fixedTime
+            time = Time.realtimeSinceStartup
         };
     }
 }

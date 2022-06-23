@@ -128,8 +128,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0ae994b724365d247a565ad2cce11a1a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  heartbeatsPerSecond: 10
-  rttAverageCount: 10
+  _smoothedRtt:
+    m_InternalValue: 0
+  heartbeatsPerSecond: 15
+  rttAverageCount: 3
   pingTimeout: 10
   pastPings: []
   travelingPings: []

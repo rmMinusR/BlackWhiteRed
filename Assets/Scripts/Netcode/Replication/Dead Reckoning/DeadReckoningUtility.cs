@@ -13,7 +13,7 @@ public static class DeadReckoningUtility
     /// <param name="targetTime">Time to predict</param>
     /// <returns>Predicted position and velocity at the given time</returns>
     public static PhysicsFrame DeadReckon(PhysicsFrame current, float targetTime) => DeadReckonDeg2(current, targetTime);
-
+    
     /// <summary>
     /// 1st degree dead reckoning. Only considers current velocity.
     /// </summary>
