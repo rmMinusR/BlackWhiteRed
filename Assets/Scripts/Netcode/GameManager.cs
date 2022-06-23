@@ -11,6 +11,7 @@ using Unity.Services.Relay.Models;
 using System.Threading.Tasks;
 using System;
 using Unity.Netcode.Transports.UTP;
+using Unity.Netcode;
 
 public class GameManager : MonoBehaviour
 {
@@ -18,11 +19,9 @@ public class GameManager : MonoBehaviour
 
     private Dictionary<string, Coroutine> coroutines;
 
-    //Relay
-    //private const string ENVIRONMENT = "production";
-    //private Guid playerAllocationId;
-    //private string relayJoinCode;
-    //RelayHostData relayHostData;
+    const string SceneNamePlayers = "Level3-Area0-Players";
+    const string SceneNameLevelDesign = "Level3-Area0-LevelDesign";
+    const string SceneNameEnvironmentArt = "Level3-Area0-EnvironmentArt";
 
     public static GameManager Instance;
 
@@ -107,7 +106,10 @@ public class GameManager : MonoBehaviour
     private void OnDisable()
     {
         LobbyManager.Instance.onGameStartChanged -= JoinStartingMatch;
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoadEventCompleted;
     }
+
+    #region lobby relay
 
     public async Task BecomeHost()
     {
@@ -140,60 +142,92 @@ public class GameManager : MonoBehaviour
         }
 
         LobbyManager.Instance.SetLobbyRelayCode(temp.JoinCode);
+
+        while (NetworkManager.Singleton.ConnectedClientsList.Count != LobbyManager.Instance.GetNumberPlayers() - 1)
+        {
+            var delay = new WaitForSecondsRealtime(1.0f);
+            yield return delay;
+        }
+
+        WhenAllPlayersConnected();
     }
 
     public void JoinStartingMatch()
     {
         string relayJoinCode = LobbyManager.Instance.GetLobbyRelayCode();
         RelayManager.Instance.StartAsClient(relayJoinCode);
+
+        StartCoroutine(WaitForClientConnection());
+
     }
 
-    //#region relay
+    IEnumerator WaitForClientConnection()
+    {
+        RelayConnectionClient temp = (RelayConnectionClient)RelayManager.Instance.Connection;
 
-    //public async Task HostRelay()
-    //{
-    //    //The host player requests an allocation
-    //    Allocation relayAllocation = await Relay.Instance.CreateAllocationAsync(MAX_PLAYERS);
+        while (temp.GetStatus() != BaseRelayConnection.Status.RelayGood && temp.GetStatus() != BaseRelayConnection.Status.NGOGood)
+        {
+            yield return null;
+            temp = (RelayConnectionClient)RelayManager.Instance.Connection;
+        }
 
-    //    relayHostData = new RelayHostData();
-    //    relayHostData.mIPv4Address = relayAllocation.RelayServer.IpV4;
-    //    relayHostData.mPort = relayAllocation.RelayServer.Port;
-    //    relayHostData.mAllocationID = relayAllocation.AllocationId;
-    //    relayHostData.mAllocationIDBytes = relayAllocation.AllocationIdBytes;
-    //    relayHostData.mConnectionData = relayAllocation.ConnectionData;
-    //    relayHostData.mKey = relayAllocation.Key;
+        NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Single);
+        NetworkManager.Singleton.SceneManager.OnLoadComplete += HandleSceneLoadCompleted;
+    }
 
-    //    relayJoinCode = await RelayService.Instance.GetJoinCodeAsync(relayHostData.mAllocationID);
-    //    relayHostData.mJoinCode = relayJoinCode;
+    #endregion
 
-    //    Debug.Log(relayJoinCode);
-    //    Debug.LogError(relayJoinCode);
+    #region game start
 
-    //    //TODO: Work with transport
-    //    //UnityTransport.SetRelayServerData();
-    //}
+    private void WhenAllPlayersConnected()
+    {
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoadEventCompleted;
+        NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Single);
+        NetworkManager.Singleton.SceneManager.LoadScene(SceneNamePlayers,LoadSceneMode.Single);
+    }
 
-    //public async Task ClientRelay()
-    //{
-    //    Debug.Log(relayJoinCode);
-    //    Debug.LogError(relayJoinCode);
+    private void HandleSceneLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    {
+        Debug.Log("HandleSceneLoadEventCompleted " + sceneName);
 
-    //    await JoinRelayWithCode(relayJoinCode);
-    //}
+        if (NetworkManager.Singleton.IsHost)
+        {
+            switch (sceneName)
+            {
+                case SceneNamePlayers:
+                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+                    NetworkManager.Singleton.SceneManager.LoadScene(SceneNameLevelDesign, LoadSceneMode.Additive);
+                    break;
+                case SceneNameLevelDesign:
+                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+                    NetworkManager.Singleton.SceneManager.LoadScene(SceneNameEnvironmentArt, LoadSceneMode.Additive);
+                    break;
+                case SceneNameEnvironmentArt:
+                    Debug.Log("MATCH CAN START");
+                    break;
+            }
+        }
+    }
 
-    //private async Task JoinRelayWithCode(string relayJoinCode)
-    //{
-    //    try
-    //    {
-    //        JoinAllocation joinAllocation = await RelayService.Instance.JoinAllocationAsync(relayJoinCode);
-    //        playerAllocationId = joinAllocation.AllocationId;
-    //    }
-    //    catch (RelayServiceException ex)
-    //    {
-    //        Debug.LogError(ex.Message + "\n" + ex.StackTrace);
-    //    }
-    //}
+    private void HandleSceneLoadCompleted(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
+    {
+        Debug.Log("HandleSceneLoadCompleted " + sceneName);
 
-    //#endregion
+        if (!NetworkManager.Singleton.IsHost)
+        {
+            switch (sceneName)
+            {
+                case SceneNamePlayers:
+                case SceneNameLevelDesign:
+                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+                    break;
+                case SceneNameEnvironmentArt:
+                    Debug.Log("MATCH CAN START");
+                    SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
+                    break;
+            }
+        }
+    }
 
+    #endregion
 }

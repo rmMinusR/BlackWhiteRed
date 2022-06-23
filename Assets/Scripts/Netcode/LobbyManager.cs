@@ -71,7 +71,7 @@ public class LobbyManager
         isHost = true;
 
         GameManager.Instance.PromptCoroutine(LOBBY_HEARTBEAT_COROUTINE_KEY, HeartbeatLobbyCoroutine(inLobby.Id, 15));
-        GameManager.Instance.PromptCoroutine(LOBBY_POLL_COROUTINE_KEY, PollLobbyCoroutine(3.0f));
+        GameManager.Instance.PromptCoroutine(LOBBY_POLL_COROUTINE_KEY, PollLobbyCoroutine(1.1f));
     }
 
     IEnumerator HeartbeatLobbyCoroutine(string lobbyId, float waitTimeSeconds)
@@ -140,7 +140,7 @@ public class LobbyManager
         try
         {
             inLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(code);
-            GameManager.Instance.PromptCoroutine(LOBBY_POLL_COROUTINE_KEY, PollLobbyCoroutine(3.0f));
+            GameManager.Instance.PromptCoroutine(LOBBY_POLL_COROUTINE_KEY, PollLobbyCoroutine(1.1f));
         }
         catch (LobbyServiceException e)
         {
@@ -173,9 +173,14 @@ public class LobbyManager
         return inLobby.LobbyCode;
     }
 
+    public int GetNumberPlayers()
+    {
+        return inLobby.MaxPlayers - inLobby.AvailableSlots;
+    }
+
     public string GetLobbySize()
     {
-        return (10 - inLobby.AvailableSlots) + "/10";
+        return GetNumberPlayers() + "/" + inLobby.MaxPlayers;
     }
 
     public string GetLobbyName()
