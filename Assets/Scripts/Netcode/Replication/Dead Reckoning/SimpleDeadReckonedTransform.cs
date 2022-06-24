@@ -33,6 +33,10 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
         DONOTCALL_SendFrame_ServerRpc(serverFrame);
     }
 
+    [Header("Validation (server only)")]
+    [SerializeField] [Min(0)] private float velocityForgiveness = 0.1f; //Should this be a ratio instead?
+    [SerializeField] [Min(0)] private float positionForgiveness = 0.1f;
+
     /// <summary>
     /// DO NOT CALL DIRECTLY, use SendFrame instead, it will handle time conversion.
     /// </summary>
@@ -44,11 +48,11 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
 
         PhysicsFrame currentValAtNewTime = DeadReckoningUtility.DeadReckon(_serverFrame.Value, newFrame.time);
 
-        //TODO Validate velocity
-        Vector3 velDiff = currentValAtNewTime.velocity - newFrame.velocity;
-
-        //TODO Validate position
-        Vector3 posDiff = currentValAtNewTime.position - newFrame.position;
+        //Validate velocity and position
+        ValidationUtility.Bound(out bool velocityOutOfBounds, ref newFrame.velocity, currentValAtNewTime.velocity, velocityForgiveness); //TODO factor in RTT? Would need to clamp to reasonable bounds.
+        ValidationUtility.Bound(out bool positionOutOfBounds, ref newFrame.position, currentValAtNewTime.position, positionForgiveness);
+        if (velocityOutOfBounds) Debug.LogWarning(gameObject.name+" experienced too much acceleration!");
+        if (positionOutOfBounds) Debug.LogWarning(gameObject.name+" moved too quickly!");
         
         //Value is within acceptable bounds, apply
         _serverFrame.Value = newFrame;
