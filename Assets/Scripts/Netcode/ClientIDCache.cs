@@ -7,6 +7,11 @@ public static class ClientIDCache
 {
     private static Dictionary<ulong, ulong[]> cache = new Dictionary<ulong, ulong[]>();
 
+    /// <summary>
+    /// Helper for sending RPCs to one client without constantly setting off GC
+    /// </summary>
+    /// <param name="clientID"></param>
+    /// <returns></returns>
     public static ulong[] Narrowcast(ulong clientID)
     {
         ulong[] v;

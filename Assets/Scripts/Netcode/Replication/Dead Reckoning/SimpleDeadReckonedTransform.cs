@@ -12,8 +12,8 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
 
         if(!IsOwner)
         {
-            _serverFrame.OnValueChanged -= NonOwner_CopyRemoteFrame;
-            _serverFrame.OnValueChanged += NonOwner_CopyRemoteFrame;
+            _serverFrame.OnValueChanged -= Callback_CopyRemoteFrame;
+            _serverFrame.OnValueChanged += Callback_CopyRemoteFrame;
         }
     }
 
@@ -21,8 +21,10 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
     {
         base.OnDestroy();
 
-        _serverFrame.OnValueChanged -= NonOwner_CopyRemoteFrame; //FIXME is this even necessary?
+        _serverFrame.OnValueChanged -= Callback_CopyRemoteFrame; //FIXME is this even necessary?
     }
+
+    #region Owner response and value negotiation
 
     //TODO is delivery guaranteed or not?
     //Uses SERVER time
@@ -52,7 +54,7 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
     {
         //TODO Validate time (no major skips and not in the future!)
 
-        PhysicsFrame currentValAtNewTime = DeadReckoningUtility.DeadReckon(_serverFrame.Value, newFrame.time);
+        PhysicsFrame currentValAtNewTime = DeadReckoningUtility.RawDeadReckon(_serverFrame.Value, newFrame.time);
 
         //Validate velocity and position
         ValidationUtility.Bound(out bool velocityOutOfBounds, ref newFrame.velocity, currentValAtNewTime.velocity, velocityForgiveness); //TODO factor in RTT? Would need to clamp to reasonable bounds.
@@ -75,24 +77,30 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
         if (!IsOwner) throw new AccessViolationException();
 
         @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
-        @new = DeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup);
+        @new = DeadReckoningUtility.RawDeadReckon(@new, Time.realtimeSinceStartup);
 
         //TODO should this be in FixedUpdate?
         if (rejectedPosition) rb.position = @new.position;
         if (rejectedVelocity) rb.velocity = @new.velocity;
     }
 
-    private void NonOwner_CopyRemoteFrame(PhysicsFrame _, PhysicsFrame @new)
+    #endregion
+
+    #region Non-owner response
+
+    private void Callback_CopyRemoteFrame(PhysicsFrame _, PhysicsFrame @new)
     {
-        if (!IsOwner) throw new NotImplementedException("Use "+nameof(FrameRejected_ClientRpc)+" instead");
+        if (!IsOwner) throw new InvalidOperationException("Owner should use "+nameof(FrameRejected_ClientRpc)+" instead");
 
         @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
-        @new = DeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup);
+        @new = DeadReckoningUtility.RawDeadReckon(@new, Time.realtimeSinceStartup);
 
         //TODO should this be in FixedUpdate?
         rb.MovePosition(@new.position);
         rb.velocity = @new.velocity;
     }
+
+    #endregion
 
     private static float cached_fixedDeltaTime = -1;
     private static float cached_smoothLerpAmt = 1;
@@ -108,7 +116,7 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
                 cached_smoothLerpAmt = Mathf.Pow(smoothSharpness, Time.fixedDeltaTime);
             }
             
-            PhysicsFrame targetPos = DeadReckoningUtility.DeadReckon(_serverFrame.Value, Time.realtimeSinceStartup);
+            PhysicsFrame targetPos = DeadReckoningUtility.RawDeadReckon(_serverFrame.Value, Time.realtimeSinceStartup);
             
             //Exponential decay lerp towards correct position
             rb.MovePosition(Vector3.Lerp(rb.position, targetPos.position, cached_smoothLerpAmt));
