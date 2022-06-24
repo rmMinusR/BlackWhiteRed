@@ -10,18 +10,24 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
     {
         rb = GetComponent<Rigidbody>();
 
-        if (IsClient) {
-            _serverFrame.OnValueChanged += ReceiveFrame;
+        if(!IsOwner)
+        {
+            _serverFrame.OnValueChanged -= NonOwner_CopyRemoteFrame;
+            _serverFrame.OnValueChanged += NonOwner_CopyRemoteFrame;
         }
+    }
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+
+        _serverFrame.OnValueChanged -= NonOwner_CopyRemoteFrame; //FIXME is this even necessary?
     }
 
     //TODO is delivery guaranteed or not?
     //Uses SERVER time
     [SerializeField] private NetworkVariable<PhysicsFrame> _serverFrame = new NetworkVariable<PhysicsFrame>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Server);
     
-    //Uses LOCAL time
-    [SerializeField] private PhysicsFrame _localFrame;
-
     [SerializeField] [Range(0.6f, 1)] private float smoothSharpness = 0.95f;
 
     private void SendFrame(PhysicsFrame localFrame) //Under most circumstances, localFrame = PhysicsFrame.For(rb)
@@ -42,7 +48,7 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
     /// </summary>
     /// <param name="newFrame"></param>
     [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
-    private void DONOTCALL_SendFrame_ServerRpc(PhysicsFrame newFrame)
+    private void DONOTCALL_SendFrame_ServerRpc(PhysicsFrame newFrame, ServerRpcParams src = default)
     {
         //TODO Validate time (no major skips and not in the future!)
 
@@ -56,13 +62,36 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
         
         //Value is within acceptable bounds, apply
         _serverFrame.Value = newFrame;
+
+        if (velocityOutOfBounds || positionOutOfBounds)
+        {
+            FrameRejected_ClientRpc(newFrame, velocityOutOfBounds, positionOutOfBounds, src.ReturnToSender());
+        }
     }
 
-    private void ReceiveFrame(PhysicsFrame old, PhysicsFrame @new)
+    [ClientRpc(Delivery = RpcDelivery.Reliable)]
+    private void FrameRejected_ClientRpc(PhysicsFrame @new, bool rejectedVelocity, bool rejectedPosition, ClientRpcParams p = default)
     {
-        //Convert to local time
-        _localFrame = _serverFrame.Value;
-        _localFrame.time = NetHeartbeat.Self.ConvertTimeServerToLocal(_serverFrame.Value.time);
+        if (!IsOwner) throw new AccessViolationException();
+
+        @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
+        @new = DeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup);
+
+        //TODO should this be in FixedUpdate?
+        if (rejectedPosition) rb.position = @new.position;
+        if (rejectedVelocity) rb.velocity = @new.velocity;
+    }
+
+    private void NonOwner_CopyRemoteFrame(PhysicsFrame _, PhysicsFrame @new)
+    {
+        if (!IsOwner) throw new NotImplementedException("Use "+nameof(FrameRejected_ClientRpc)+" instead");
+
+        @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
+        @new = DeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup);
+
+        //TODO should this be in FixedUpdate?
+        rb.MovePosition(@new.position);
+        rb.velocity = @new.velocity;
     }
 
     private static float cached_fixedDeltaTime = -1;
@@ -70,7 +99,8 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if(!IsOwner)
+        if (IsOwner) SendFrame(PhysicsFrame.For(rb));
+        else
         {
             if (cached_fixedDeltaTime != Time.fixedDeltaTime)
             {
@@ -80,7 +110,8 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
             
             PhysicsFrame targetPos = DeadReckoningUtility.DeadReckon(_serverFrame.Value, Time.realtimeSinceStartup);
             
-            rb.position = Vector3.Lerp(rb.position, targetPos.position, cached_smoothLerpAmt);
+            //Exponential decay lerp towards correct position
+            rb.MovePosition(Vector3.Lerp(rb.position, targetPos.position, cached_smoothLerpAmt));
             rb.velocity = Vector3.Lerp(rb.velocity, targetPos.velocity, cached_smoothLerpAmt);
         }
     }

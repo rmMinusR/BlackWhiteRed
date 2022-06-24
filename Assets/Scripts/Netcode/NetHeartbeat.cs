@@ -99,10 +99,7 @@ public class NetHeartbeat : NetworkBehaviour
     [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = false)]
     protected virtual void Heartbeat_ServerRpc(int pingID, ServerRpcParams src = default)
     {
-        ClientRpcParams dst = default;
-        dst.Send.TargetClientIds = ClientIDCache.Narrowcast(src.Receive.SenderClientId); // Alloc-free version of new ulong[] { src.Receive.SenderClientId };
-        
-        HeartbeatResponse_ClientRpc(pingID, Time.realtimeSinceStartup, dst);  //TODO replace with match timer
+        HeartbeatResponse_ClientRpc(pingID, Time.realtimeSinceStartup, src.ReturnToSender());  //TODO replace with match timer
     }
 
     [ClientRpc(Delivery = RpcDelivery.Unreliable)]
@@ -149,6 +146,7 @@ public class NetHeartbeat : NetworkBehaviour
     protected void PushSyncTime(float timeOnServer)
     {
         //TODO should this be turned off once some point of certainty is reached?
+        //TODO standard deviation?
 
         timeSyncDeltas.Add(Time.realtimeSinceStartup-timeOnServer);
         while (timeSyncDeltas.Count > timeSyncAvgCount) timeSyncDeltas.Remove(0);
