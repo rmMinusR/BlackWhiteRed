@@ -188,8 +188,6 @@ public class GameManager : MonoBehaviour
 
     private void HandleSceneLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
-        Debug.Log("HandleSceneLoadEventCompleted " + sceneName);
-
         if (NetworkManager.Singleton.IsHost)
         {
             switch (sceneName)
@@ -204,6 +202,7 @@ public class GameManager : MonoBehaviour
                     break;
                 case SceneNameEnvironmentArt:
                     Debug.Log("MATCH CAN START");
+                    MatchManager.Instance.LogAsReadyServerRpc(NetworkManager.Singleton.LocalClientId);
                     break;
             }
         }
@@ -211,8 +210,6 @@ public class GameManager : MonoBehaviour
 
     private void HandleSceneLoadCompleted(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
     {
-        Debug.Log("HandleSceneLoadCompleted " + sceneName);
-
         if (!NetworkManager.Singleton.IsHost)
         {
             switch (sceneName)
@@ -222,11 +219,18 @@ public class GameManager : MonoBehaviour
                     NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
                     break;
                 case SceneNameEnvironmentArt:
-                    Debug.Log("MATCH CAN START");
-                    SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
+                    AsyncOperation oper = SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
+                    oper.completed += HandleUnloadEnded;
                     break;
             }
         }
+    }
+
+    private void HandleUnloadEnded(AsyncOperation oper)
+    {
+        Debug.Log("MATCH CAN START");
+        MatchManager.Instance.LogAsReadyServerRpc(NetworkManager.Singleton.LocalClientId);
+        oper.completed -= HandleUnloadEnded;
     }
 
     #endregion
