@@ -13,7 +13,8 @@ public enum Team
 
 public class MatchManager : NetworkBehaviour
 {
-
+    [SerializeField]
+    GameObject loadingCanvas;
     [SerializeField]
     List<ulong> readyClientIds;
 
@@ -67,5 +68,7 @@ public class MatchManager : NetworkBehaviour
         {
             NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i]);
         }
+
+        loadingCanvas.SetActive(false);
     }
 }

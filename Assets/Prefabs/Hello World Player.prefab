@@ -160,5 +160,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80dcb7a51ffdbf44bb20ea97c9984a28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  shadeLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  radiusCheck: 0.1
   blackDebug: {fileID: 2100000, guid: 499244d4bd129f748b4d9b3c7a4ab207, type: 2}
   whiteDebug: {fileID: 2100000, guid: a1eade2aed1c01d449b101b3b1ec276b, type: 2}
