@@ -23,6 +23,8 @@ public sealed class CapsuleProjection : ProjectionShape
 
     public CapsuleProjection(CapsuleCollider source) : this(source.center, CapsuleDirToVector(source.direction) * source.height/2, source.radius) { }
 
+    public CapsuleProjection(CharacterController source) : this(source.center, Vector3.up * source.height/2, source.radius) { }
+
     public CapsuleProjection(Vector3 center, Vector3 halfExtents, float radius)
     {
         this.center = center;

@@ -51,7 +51,7 @@ public sealed class KinematicDeadReckonedTransform : NetworkBehaviour
     /// <summary>
     /// DO NOT CALL DIRECTLY, use SendFrame instead, it will handle time conversion.
     /// </summary>
-    /// <param name="newFrame"></param>
+    /// <param name="newFrame">Physics frame in server's time</param>
     [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
     private void DONOTCALL_SendFrame_ServerRpc(KinematicPhysicsFrame newFrame, ServerRpcParams src = default)
     {

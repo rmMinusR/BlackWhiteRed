@@ -145,7 +145,7 @@ public class NetHeartbeat : NetworkBehaviour
 
     protected void PushSyncTime(float timeOnServer)
     {
-        //TODO should this be turned off once some point of certainty is reached?
+        //TODO should this be turned off or limited once some point of certainty is reached?
         //TODO standard deviation?
 
         timeSyncDeltas.Add(Time.realtimeSinceStartup-timeOnServer);

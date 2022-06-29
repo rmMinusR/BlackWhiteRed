@@ -20,8 +20,9 @@ public abstract class ProjectionShape
     {
         if(coll is SphereCollider s) return new SphereProjection(s);
         if(coll is CapsuleCollider c) return new CapsuleProjection(c);
+        if(coll is CharacterController ch) return new CapsuleProjection(ch);
         if(coll is BoxCollider b) return new BoxProjection(b);
-
+        
         throw new NotImplementedException("Unhandled type: " + coll.GetType());
     }
 
