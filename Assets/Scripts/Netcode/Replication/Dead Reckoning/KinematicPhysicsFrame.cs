@@ -6,7 +6,7 @@ using UnityEngine;
 /// Represents a snapshot of a Rigidbody, typically a player or projectile.
 /// </summary>
 [Serializable]
-public struct PhysicsFrame : INetworkSerializeByMemcpy
+public struct KinematicPhysicsFrame : INetworkSerializeByMemcpy
 {
     public Vector3 position;
     public Vector3 velocity;
@@ -18,9 +18,9 @@ public struct PhysicsFrame : INetworkSerializeByMemcpy
     /// </summary>
     /// <param name="rb">Object to snapshot</param>
     /// <returns>Snapshot, in *local* time</returns>
-    public static PhysicsFrame For(Rigidbody rb)
+    public static KinematicPhysicsFrame For(Rigidbody rb)
     {
-        return new PhysicsFrame
+        return new KinematicPhysicsFrame
         {
             position = rb.position,
             velocity = rb.velocity,

@@ -2,7 +2,7 @@
 using UnityEngine;
 
 [Serializable]
-public sealed class BoxProjection : PhysicsProjection
+public sealed class BoxProjection : ProjectionShape
 {
     public Vector3 center;
     public Vector3 size;

@@ -3,12 +3,15 @@ using Unity.Netcode;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
-public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
+public sealed class KinematicDeadReckonedTransform : NetworkBehaviour
 {
     private Rigidbody rb;
+    private ProjectionShape proj;
+
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
+        proj = ProjectionShape.Build(gameObject);
 
         if(!IsOwner)
         {
@@ -28,15 +31,15 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
 
     //TODO is delivery guaranteed or not?
     //Uses SERVER time
-    [SerializeField] private NetworkVariable<PhysicsFrame> _serverFrame = new NetworkVariable<PhysicsFrame>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Server);
+    [SerializeField] private NetworkVariable<KinematicPhysicsFrame> _serverFrame = new NetworkVariable<KinematicPhysicsFrame>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Server);
     
     [SerializeField] [Range(0.6f, 1)] private float smoothSharpness = 0.95f;
 
-    private void SendFrame(PhysicsFrame localFrame) //Under most circumstances, localFrame = PhysicsFrame.For(rb)
+    private void SendFrame(KinematicPhysicsFrame localFrame) //Under most circumstances, localFrame = PhysicsFrame.For(rb)
     {
         if (!IsOwner) throw new AccessViolationException();
 
-        PhysicsFrame serverFrame = localFrame;
+        KinematicPhysicsFrame serverFrame = localFrame;
         serverFrame.time = NetHeartbeat.Self.ConvertTimeLocalToServer(serverFrame.time);
         DONOTCALL_SendFrame_ServerRpc(serverFrame);
     }
@@ -50,11 +53,11 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
     /// </summary>
     /// <param name="newFrame"></param>
     [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
-    private void DONOTCALL_SendFrame_ServerRpc(PhysicsFrame newFrame, ServerRpcParams src = default)
+    private void DONOTCALL_SendFrame_ServerRpc(KinematicPhysicsFrame newFrame, ServerRpcParams src = default)
     {
         //TODO Validate time (no major skips and not in the future!)
 
-        PhysicsFrame currentValAtNewTime = DeadReckoningUtility.RawDeadReckon(_serverFrame.Value, newFrame.time);
+        KinematicPhysicsFrame currentValAtNewTime = KinematicDeadReckoningUtility.DeadReckon(_serverFrame.Value, newFrame.time, proj, transform.rotation);
 
         //Validate velocity and position
         ValidationUtility.Bound(out bool velocityOutOfBounds, ref newFrame.velocity, currentValAtNewTime.velocity, velocityForgiveness); //TODO factor in RTT? Would need to clamp to reasonable bounds.
@@ -72,12 +75,12 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
     }
 
     [ClientRpc(Delivery = RpcDelivery.Reliable)]
-    private void FrameRejected_ClientRpc(PhysicsFrame @new, bool rejectedVelocity, bool rejectedPosition, ClientRpcParams p = default)
+    private void FrameRejected_ClientRpc(KinematicPhysicsFrame @new, bool rejectedVelocity, bool rejectedPosition, ClientRpcParams p = default)
     {
         if (!IsOwner) throw new AccessViolationException();
 
         @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
-        @new = DeadReckoningUtility.RawDeadReckon(@new, Time.realtimeSinceStartup);
+        @new = KinematicDeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup, proj, transform.rotation);
 
         //TODO should this be in FixedUpdate?
         if (rejectedPosition) rb.position = @new.position;
@@ -88,12 +91,12 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
 
     #region Non-owner response
 
-    private void Callback_CopyRemoteFrame(PhysicsFrame _, PhysicsFrame @new)
+    private void Callback_CopyRemoteFrame(KinematicPhysicsFrame _, KinematicPhysicsFrame @new)
     {
         if (!IsOwner) throw new InvalidOperationException("Owner should use "+nameof(FrameRejected_ClientRpc)+" instead");
 
         @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
-        @new = DeadReckoningUtility.RawDeadReckon(@new, Time.realtimeSinceStartup);
+        @new = KinematicDeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup, proj, transform.rotation);
 
         //TODO should this be in FixedUpdate?
         rb.MovePosition(@new.position);
@@ -107,7 +110,7 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (IsOwner) SendFrame(PhysicsFrame.For(rb));
+        if (IsOwner) SendFrame(KinematicPhysicsFrame.For(rb));
         else
         {
             if (cached_fixedDeltaTime != Time.fixedDeltaTime)
@@ -116,7 +119,8 @@ public sealed class SimpleDeadReckonedTransform : NetworkBehaviour
                 cached_smoothLerpAmt = Mathf.Pow(smoothSharpness, Time.fixedDeltaTime);
             }
             
-            PhysicsFrame targetPos = DeadReckoningUtility.RawDeadReckon(_serverFrame.Value, Time.realtimeSinceStartup);
+            //FIXME expensive, run only on value change?
+            KinematicPhysicsFrame targetPos = KinematicDeadReckoningUtility.DeadReckon(_serverFrame.Value, Time.realtimeSinceStartup, proj, transform.rotation);
             
             //Exponential decay lerp towards correct position
             rb.MovePosition(Vector3.Lerp(rb.position, targetPos.position, cached_smoothLerpAmt));

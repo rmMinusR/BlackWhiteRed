@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class DeadReckoningUtility
+public static class KinematicDeadReckoningUtility
 {
     /// <summary>
     /// Alias to preferred dead reckoning method. Does NOT consider collisions.
@@ -12,7 +12,7 @@ public static class DeadReckoningUtility
     /// <param name="current">Current position, velocity, and time</param>
     /// <param name="targetTime">Time to predict</param>
     /// <returns>Predicted position and velocity at the given time</returns>
-    public static PhysicsFrame RawDeadReckon(PhysicsFrame current, float targetTime) => RawDeadReckonDeg2(current, targetTime);
+    public static KinematicPhysicsFrame RawDeadReckon(KinematicPhysicsFrame current, float targetTime) => RawDeadReckonDeg2(current, targetTime);
 
     /// <summary>
     /// 1st degree dead reckoning. Only considers current velocity. Does NOT consider collisions.
@@ -20,13 +20,13 @@ public static class DeadReckoningUtility
     /// <param name="current">Current position, velocity, and time</param>
     /// <param name="targetTime">Time to predict</param>
     /// <returns>Predicted position and velocity at the given time</returns>
-    public static PhysicsFrame RawDeadReckonDeg1(PhysicsFrame current, float targetTime)
+    public static KinematicPhysicsFrame RawDeadReckonDeg1(KinematicPhysicsFrame current, float targetTime)
     {
         float dt = targetTime - current.time;
 
         if (dt < 0) Debug.LogWarning("Rewinding time is strongly discouraged! (dt="+dt+")");
         
-        return new PhysicsFrame()
+        return new KinematicPhysicsFrame()
         {
             position = current.position + current.velocity*dt, // s = ut
             velocity = current.velocity,
@@ -40,13 +40,13 @@ public static class DeadReckoningUtility
     /// <param name="current">Current position, velocity, and time</param>
     /// <param name="targetTime">Time to predict</param>
     /// <returns>Predicted position and velocity at the given time</returns>
-    public static PhysicsFrame RawDeadReckonDeg2(PhysicsFrame current, float targetTime)
+    public static KinematicPhysicsFrame RawDeadReckonDeg2(KinematicPhysicsFrame current, float targetTime)
     {
         float dt = targetTime - current.time;
 
         if (dt < 0) Debug.LogWarning("Rewinding time is strongly discouraged! (dt="+dt+")");
         
-        return new PhysicsFrame()
+        return new KinematicPhysicsFrame()
         {
             position = current.position + current.velocity*dt + 1/2*Physics.gravity*dt*dt, // s = ut + 1/2 at^2
             velocity = current.velocity + Physics.gravity*dt, // v = u + at
@@ -57,7 +57,7 @@ public static class DeadReckoningUtility
     private const int MAX_COLLISIONS = 3;
     private const int COLLISION_PRECISION = 8;
 
-    public static PhysicsFrame DeadReckon(PhysicsFrame current, float targetTime, PhysicsProjection shape, Quaternion rotation)
+    public static KinematicPhysicsFrame DeadReckon(KinematicPhysicsFrame current, float targetTime, ProjectionShape shape, Quaternion rotation)
     {
         int nCollisions = 0;
         do
@@ -72,10 +72,10 @@ public static class DeadReckoningUtility
         return current;
     }
 
-    private static (PhysicsFrame final, RaycastHit? hit) _SimulateUntilCollision(PhysicsFrame arc, float targetTime, PhysicsProjection shape, Quaternion rotation)
+    private static (KinematicPhysicsFrame final, RaycastHit? hit) _SimulateUntilCollision(KinematicPhysicsFrame arc, float targetTime, ProjectionShape shape, Quaternion rotation)
     {
-        PhysicsFrame searchStart = arc;
-        PhysicsFrame searchEnd = RawDeadReckon(searchStart, targetTime);
+        KinematicPhysicsFrame searchStart = arc;
+        KinematicPhysicsFrame searchEnd = RawDeadReckon(searchStart, targetTime);
 
         //Binary search to find time of collision (if any)
         //TODO can this be improved with Newton's approximation method?
@@ -97,7 +97,7 @@ public static class DeadReckoningUtility
         return (searchStart, hit);
     }
 
-    private static PhysicsFrame _CalcCollisionResponse(PhysicsFrame current, RaycastHit hit)
+    private static KinematicPhysicsFrame _CalcCollisionResponse(KinematicPhysicsFrame current, RaycastHit hit)
     {
         current.velocity = Vector3.ProjectOnPlane(current.velocity, hit.normal); //TODO is this correct?
         return current;

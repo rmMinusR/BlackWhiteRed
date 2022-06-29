@@ -2,7 +2,7 @@
 using UnityEngine;
 
 [Serializable]
-public sealed class CapsuleProjection : PhysicsProjection
+public sealed class CapsuleProjection : ProjectionShape
 {
     public Vector3 center;
     public float radius;

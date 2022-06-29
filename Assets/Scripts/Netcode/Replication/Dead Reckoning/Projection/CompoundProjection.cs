@@ -3,25 +3,25 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
-public sealed class CompoundProjection : PhysicsProjection
+public sealed class CompoundProjection : ProjectionShape
 {
-    public List<PhysicsProjection> contents;
+    public List<ProjectionShape> contents;
 
-    public CompoundProjection(List<PhysicsProjection> source)
+    public CompoundProjection(List<ProjectionShape> source)
     {
         contents = source;
     }
 
     public override bool Check(Vector3 pos, Quaternion rotation)
     {
-        foreach (PhysicsProjection c in contents) if(c.Check(pos, rotation)) return true;
+        foreach (ProjectionShape c in contents) if(c.Check(pos, rotation)) return true;
         return false;
     }
 
     public override Collider[] Overlap(Vector3 pos, Quaternion rotation)
     {
         List<Collider> vals = new List<Collider>();
-        foreach (PhysicsProjection c in contents) vals.AddRange(c.Overlap(pos, rotation));
+        foreach (ProjectionShape c in contents) vals.AddRange(c.Overlap(pos, rotation));
         return vals.ToArray();
     }
 
@@ -29,7 +29,7 @@ public sealed class CompoundProjection : PhysicsProjection
     {
         //Gather all hits
         List<RaycastHit> hits = new List<RaycastHit>();
-        foreach (PhysicsProjection c in contents) if(c.Shapecast(out RaycastHit h, start, direction, rotation, maxDistance)) hits.Add(h);
+        foreach (ProjectionShape c in contents) if(c.Shapecast(out RaycastHit h, start, direction, rotation, maxDistance)) hits.Add(h);
         
         if (hits.Count == 0)
         {
@@ -51,7 +51,7 @@ public sealed class CompoundProjection : PhysicsProjection
     public override RaycastHit[] ShapecastAll(Vector3 start, Vector3 direction, Quaternion rotation, float maxDistance)
     {
         List<RaycastHit> vals = new List<RaycastHit>();
-        foreach (PhysicsProjection c in contents) vals.AddRange(c.ShapecastAll(start, direction, rotation, maxDistance));
+        foreach (ProjectionShape c in contents) vals.AddRange(c.ShapecastAll(start, direction, rotation, maxDistance));
         return vals.ToArray();
     }
 }
