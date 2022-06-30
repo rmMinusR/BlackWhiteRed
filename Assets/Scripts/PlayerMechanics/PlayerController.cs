@@ -12,6 +12,8 @@ public class PlayerController : NetworkBehaviour
     [SerializeField]
     [InspectorReadOnly]
     int shadeValue;
+    [SerializeField]
+    PlayerKit kit;
 
     [Space]
     [Header("Shade Detection")]
@@ -19,12 +21,16 @@ public class PlayerController : NetworkBehaviour
     LayerMask shadeLayerMask;
     [SerializeField]
     float radiusCheck = 0.1f;
+
     [Space]
     [Header("Debugging")]
     [SerializeField]
     Material blackDebug;
     [SerializeField]
     Material whiteDebug;
+
+    private PlayerStats currentStats => kit.playerStats[shadeValue];
+    public int TeamValue => (int)currentTeam;
 
     [ClientRpc]
     public void AssignTeamClientRpc(Team _team)

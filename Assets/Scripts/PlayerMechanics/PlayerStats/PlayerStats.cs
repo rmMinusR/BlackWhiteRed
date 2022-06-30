@@ -6,18 +6,34 @@ using UnityEngine;
 public class PlayerStats : ScriptableObject
 {
     //Armor
-    float armorStrength;
+    [Header("Armor")]
+    [SerializeField]
+    public float armorStrength;
 
     //Movement
-    float speedMultiplier;
-    float jumpMultiplier;
+    [Space]
+    [Header("Movement")]
+    [SerializeField]
+    public float speedMultiplier;
+    [SerializeField]
+    public float jumpMultiplier;
 
     //Swordplay
-    int damageDealt;
-    float swordKnockbackMultiplier;
+    [Space]
+    [Header("Swords")]
+    [SerializeField]
+    public float damageDealt;
+    [SerializeField]
+    public float swordKnockbackMultiplier;
 
     //Archery
-    bool armedWithBow;
-    float damageMultiplier;
-    float bowKnockbackMultiplier;
+    //TODO: Make the archery stats not pop up in inspector if armedWithBow is set to false
+    [Space]
+    [Header("Archery")]
+    [SerializeField]
+    public bool armedWithBow;
+    [SerializeField]
+    public float damageMultiplier;
+    [SerializeField]
+    public float bowKnockbackMultiplier;
 }

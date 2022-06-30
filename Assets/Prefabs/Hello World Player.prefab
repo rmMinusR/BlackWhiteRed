@@ -160,6 +160,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80dcb7a51ffdbf44bb20ea97c9984a28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  currentTeam: 2
+  shadeValue: 0
+  kit: {fileID: 11400000, guid: 489ad468404e6e146b658ff8e5bab986, type: 2}
   shadeLayerMask:
     serializedVersion: 2
     m_Bits: 8
