@@ -39,10 +39,15 @@ public class PlayerMoveController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        Vector3 localRight = frameOfReference.right;
+        localRight.y = 0;
+        localRight.Normalize();
+        Vector3 localForward = new Vector3(-localRight.z, 0, localRight.x);
+
         //Handle horizontal movement
         Vector3 targetVelocity = speed * (
-                frameOfReference.right   * rawInput.x
-              + frameOfReference.forward * rawInput.y
+                localRight * rawInput.x
+              + localForward * rawInput.y
             );
 
         float slippageThisFrame = Mathf.Pow(kinematicsLayer.coll.isGrounded ? groundSlipperiness : airSlipperiness, Time.fixedDeltaTime);
