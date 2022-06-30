@@ -10,9 +10,6 @@ public class PlayerMoveController : MonoBehaviour
     [SerializeField] [Min(0)] private float speed = 5f;
     [SerializeField] [Min(0)] private float jumpPower = 5f;
 
-    [Header("Network")]
-    [SerializeField] private ulong playerID;
-
     [Header("Bindings")]
     [SerializeField] private KinematicCharacter kinematicsLayer;
     [SerializeField] private Transform frameOfReference;

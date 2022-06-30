@@ -19,8 +19,23 @@ public sealed class KinematicCharacter : MonoBehaviour
     }
 
     //Transient I/O
-    [NonSerialized] public Vector3 velocity;
-    public CollisionFlags contactAreas { get; private set; }
+#if UNITY_EDITOR
+    [InspectorReadOnly]
+#else
+    [NonSerialized]
+#endif
+    public Vector3 velocity;
+
+#if UNITY_EDITOR
+    [InspectorReadOnly]
+#else
+    [NonSerialized]
+#endif
+    public CollisionFlags _contactAreas;
+    public CollisionFlags contactAreas {
+        get => _contactAreas;
+        private set => _contactAreas = value;
+    }
 
     //Tweakable in inspector, but mutable at runtime
     public bool enableGravity = true;
