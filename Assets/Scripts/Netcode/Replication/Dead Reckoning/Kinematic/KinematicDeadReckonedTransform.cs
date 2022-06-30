@@ -57,11 +57,11 @@ public sealed class KinematicDeadReckonedTransform : NetworkBehaviour
     {
         //TODO Validate time (no major skips and not in the future!)
 
-        KinematicPhysicsFrame currentValAtNewTime = KinematicDeadReckoningUtility.DeadReckon(_serverFrame.Value, newFrame.time, proj, transform.rotation);
+        KinematicPhysicsFrame currentValAtNewTime = KinematicDeadReckoner.DeadReckon(_serverFrame.Value, newFrame.time, proj, transform.rotation);
 
         //Validate velocity and position
-        ValidationUtility.Bound(out bool velocityOutOfBounds, ref newFrame.velocity, currentValAtNewTime.velocity, velocityForgiveness); //TODO factor in RTT? Would need to clamp to reasonable bounds.
-        ValidationUtility.Bound(out bool positionOutOfBounds, ref newFrame.position, currentValAtNewTime.position, positionForgiveness);
+        newFrame.velocity = ValidationUtility.Bound(out bool velocityOutOfBounds, newFrame.velocity, currentValAtNewTime.velocity, velocityForgiveness); //TODO factor in RTT? Would need to clamp to reasonable bounds.
+        newFrame.position = ValidationUtility.Bound(out bool positionOutOfBounds, newFrame.position, currentValAtNewTime.position, positionForgiveness);
         if (velocityOutOfBounds) Debug.LogWarning(gameObject.name+" experienced too much acceleration!");
         if (positionOutOfBounds) Debug.LogWarning(gameObject.name+" moved too quickly!");
         
@@ -80,7 +80,7 @@ public sealed class KinematicDeadReckonedTransform : NetworkBehaviour
         if (!IsOwner) throw new AccessViolationException();
 
         @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
-        @new = KinematicDeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup, proj, transform.rotation);
+        @new = KinematicDeadReckoner.DeadReckon(@new, Time.realtimeSinceStartup, proj, transform.rotation);
 
         //TODO should this be in FixedUpdate?
         if (rejectedPosition) rb.position = @new.position;
@@ -96,7 +96,7 @@ public sealed class KinematicDeadReckonedTransform : NetworkBehaviour
         if (!IsOwner) throw new InvalidOperationException("Owner should use "+nameof(FrameRejected_ClientRpc)+" instead");
 
         @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
-        @new = KinematicDeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup, proj, transform.rotation);
+        @new = KinematicDeadReckoner.DeadReckon(@new, Time.realtimeSinceStartup, proj, transform.rotation);
 
         //TODO should this be in FixedUpdate?
         rb.MovePosition(@new.position);
@@ -120,7 +120,7 @@ public sealed class KinematicDeadReckonedTransform : NetworkBehaviour
             }
             
             //FIXME expensive, run only on value change?
-            KinematicPhysicsFrame targetPos = KinematicDeadReckoningUtility.DeadReckon(_serverFrame.Value, Time.realtimeSinceStartup, proj, transform.rotation);
+            KinematicPhysicsFrame targetPos = KinematicDeadReckoner.DeadReckon(_serverFrame.Value, Time.realtimeSinceStartup, proj, transform.rotation);
             
             //Exponential decay lerp towards correct position
             rb.MovePosition(Vector3.Lerp(rb.position, targetPos.position, cached_smoothLerpAmt));
