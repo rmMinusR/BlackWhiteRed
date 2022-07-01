@@ -65,20 +65,24 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
         }
     }
 
-    /*
     /// <summary>
-    /// Convenience method to quickly make a physics frame without repeated boilerplate code
+    /// Convenience method to quickly make a player physics frame without repeated boilerplate code
     /// </summary>
     /// <param name="rb">Object to snapshot</param>
     /// <returns>Snapshot, in *local* time</returns>
-    public static PlayerPhysicsFrame For(Rigidbody rb)
+    public static PlayerPhysicsFrame For(CharacterKinematics kinematicsLayer, PlayerMoveController move, PlayerLookController look)
     {
         return new PlayerPhysicsFrame
         {
-            position = rb.position,
-            velocity = rb.velocity,
-            time = Time.realtimeSinceStartup
+            position = kinematicsLayer.transform.position,
+            velocity = kinematicsLayer.velocity,
+            time = Time.realtimeSinceStartup,
+
+            input = move.rawInput,
+            moveSpeed = move.Speed,
+            slipperiness = move.CurrentSlipperiness,
+
+            look = look.Angles
         };
     }
-    // */
 }

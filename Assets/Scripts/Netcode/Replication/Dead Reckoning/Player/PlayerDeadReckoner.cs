@@ -1,88 +1,144 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public static class PlayerDeadReckoner
+[RequireComponent(typeof(CharacterKinematics))]
+public sealed class PlayerDeadReckoner : NetworkBehaviour
 {
-    /// <summary>
-    /// Dead reckon using preferred method. Considers collisions.
-    /// </summary>
-    /// <param name="current">Current frame</param>
-    /// <param name="targetTime">Time to simulate until</param>
-    /// <param name="shape">Representation of colliders. See ProjectionShape.Build</param>
-    /// <param name="rotation"></param>
-    /// <returns>Predicted frame at the given time, assuming no collisions</returns>
-    public static PlayerPhysicsFrame DeadReckon(PlayerPhysicsFrame current, float targetTime, ProjectionShape shape, Quaternion rotation)
+    private ProjectionShape proj;
+    private CharacterKinematics kinematics;
+    [SerializeField] private PlayerMoveController move;
+    [SerializeField] private PlayerLookController look;
+
+    private void Start()
     {
-        return DeadReckoningCollisionHandler<PlayerPhysicsFrame>.DeadReckon(current, targetTime, shape, rotation, RawDeadReckon);
+        proj = ProjectionShape.Build(gameObject);
+        kinematics = GetComponent<CharacterKinematics>();
+
+        if (!IsOwner)
+        {
+            _serverFrame.OnValueChanged -= Callback_CopyRemoteFrame;
+            _serverFrame.OnValueChanged += Callback_CopyRemoteFrame;
+        }
     }
 
-    /// <summary>
-    /// Alias to preferred dead reckoning method. Does NOT consider collisions.
-    /// Current: 3nd degree
-    /// </summary>
-    /// <param name="current">Current frame</param>
-    /// <param name="targetTime">Time to predict</param>
-    /// <returns>Predicted frame at the given time, assuming no collisions</returns>
-    private static PlayerPhysicsFrame RawDeadReckon(PlayerPhysicsFrame current, float targetTime) => RawDeadReckonDeg3(current, targetTime);
-
-    /// <summary>
-    /// 1st degree dead reckoning. Only considers current velocity. Does NOT consider collisions.
-    /// </summary>
-    /// <param name="current">Current frame</param>
-    /// <param name="targetTime">Time to predict</param>
-    /// <returns>Predicted frame at the given time, assuming no collisions</returns>
-    private static PlayerPhysicsFrame RawDeadReckonDeg1(PlayerPhysicsFrame current, float targetTime)
+    public override void OnDestroy()
     {
-        float dt = targetTime - current.time;
+        base.OnDestroy();
 
-        if (dt < 0) throw new InvalidOperationException("Rewinding time is not allowed! (dt="+dt+")");
-
-        current.position += current.velocity*dt;
-        current.time = targetTime;
-
-        return current;
+        _serverFrame.OnValueChanged -= Callback_CopyRemoteFrame; //FIXME is this even necessary?
     }
 
-    /// <summary>
-    /// 2nd degree dead reckoning. Considers both velocity and gravity, but not input. Does NOT consider collisions.
-    /// </summary>
-    /// <param name="current">Current position, velocity, and time</param>
-    /// <param name="targetTime">Time to predict</param>
-    /// <returns>Predicted position and velocity at the given time</returns>
-    private static PlayerPhysicsFrame RawDeadReckonDeg2(PlayerPhysicsFrame current, float targetTime)
+    #region Owner response and value negotiation
+
+    //TODO is delivery guaranteed or not?
+    //Uses SERVER time
+    [SerializeField] private NetworkVariable<PlayerPhysicsFrame> _serverFrame = new NetworkVariable<PlayerPhysicsFrame>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Server);
+
+    [SerializeField] [Range(0.6f, 1)] private float smoothSharpness = 0.95f;
+
+    private void SendFrame(PlayerPhysicsFrame localFrame) //Under most circumstances, localFrame = PhysicsFrame.For(rb)
     {
-        float dt = targetTime - current.time;
+        if (!IsOwner) throw new AccessViolationException();
 
-        if (dt < 0) throw new InvalidOperationException("Rewinding time is not allowed! (dt="+dt+")");
-        
-        current.position += current.velocity*dt + 1/2*Physics.gravity*dt*dt; // s = ut + 1/2 at^2
-        current.velocity += Physics.gravity*dt; // v = u + at
-        current.time = targetTime;
-
-        return current;
+        PlayerPhysicsFrame serverFrame = localFrame;
+        serverFrame.time = NetHeartbeat.Self.ConvertTimeLocalToServer(serverFrame.time);
+        DONOTCALL_SendFrame_ServerRpc(serverFrame);
     }
 
+    [Header("Validation (server only)")]
+    [SerializeField] [Min(0)] private float velocityForgiveness = 0.1f; //Should this be a ratio instead?
+    [SerializeField] [Min(0)] private float positionForgiveness = 0.1f;
+
     /// <summary>
-    /// 3rd degree dead reckoning. Considers velocity, gravity, and input. Does NOT consider collisions.
+    /// DO NOT CALL DIRECTLY, use SendFrame instead, it will handle time conversion.
     /// </summary>
-    /// <param name="current">Current position, velocity, and time</param>
-    /// <param name="targetTime">Time to predict</param>
-    /// <returns>Predicted position and velocity at the given time</returns>
-    private static PlayerPhysicsFrame RawDeadReckonDeg3(PlayerPhysicsFrame current, float targetTime)
+    /// <param name="newFrame">Physics frame in server's time</param>
+    [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
+    private void DONOTCALL_SendFrame_ServerRpc(PlayerPhysicsFrame newFrame, ServerRpcParams src = default)
     {
-        float dt = targetTime - current.time;
+        //Validate time (no major skips and not in the future!)
+        if (Mathf.Abs(_serverFrame.Value.time-newFrame.time) > 2*NetHeartbeat.Of(src.Receive.SenderClientId).SmoothedRTT)
+        {
+            FrameRejected_ClientRpc(_serverFrame.Value, true, true, src.ReturnToSender());
+            return;
+        }
 
-        if (dt < 0) throw new InvalidOperationException("Rewinding time is not allowed! (dt="+dt+")");
+        PlayerPhysicsFrame currentValAtNewTime = PlayerDeadReckoningUtility.DeadReckon(_serverFrame.Value, newFrame.time, proj, transform.rotation);
 
-        Vector3 targetVelocity = current.LookRight * current.input.x + current.LookForward * current.input.y;
-        float px = Mathf.Pow(current.slipperiness, dt);
+        //Validate velocity and position
+        newFrame.velocity = ValidationUtility.Bound(out bool velocityOutOfBounds, newFrame.velocity, currentValAtNewTime.velocity, velocityForgiveness); //TODO factor in RTT? Would need to clamp to reasonable bounds.
+        newFrame.position = ValidationUtility.Bound(out bool positionOutOfBounds, newFrame.position, currentValAtNewTime.position, positionForgiveness);
+        if (velocityOutOfBounds) Debug.LogWarning(gameObject.name + " experienced too much acceleration!");
+        if (positionOutOfBounds) Debug.LogWarning(gameObject.name + " moved too quickly!");
 
-        current.position += targetVelocity*dt+(current.velocity-targetVelocity)*(px-1)/Mathf.Log(current.slipperiness) + 1/2*Physics.gravity*dt*dt;
-        current.velocity = Vector3.Lerp(current.velocity, targetVelocity, px) + Physics.gravity*dt; //NOTE: This will 100% break if gravity ever goes sideways
-        current.time = targetTime;
+        //Value is within acceptable bounds, apply
+        _serverFrame.Value = newFrame;
 
-        return current;
+        if (velocityOutOfBounds || positionOutOfBounds)
+        {
+            FrameRejected_ClientRpc(newFrame, velocityOutOfBounds, positionOutOfBounds, src.ReturnToSender());
+        }
+    }
+
+    [ClientRpc(Delivery = RpcDelivery.Reliable)]
+    private void FrameRejected_ClientRpc(PlayerPhysicsFrame @new, bool rejectedVelocity, bool rejectedPosition, ClientRpcParams p = default)
+    {
+        if (!IsOwner) throw new AccessViolationException();
+
+        @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
+        @new = PlayerDeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup, proj, transform.rotation);
+
+        //TODO should this be in FixedUpdate?
+        if (rejectedPosition) transform .position = @new.position;
+        if (rejectedVelocity) kinematics.velocity = @new.velocity;
+    }
+
+    private void Owner_FixedUpdate()
+    {
+        SendFrame(PlayerPhysicsFrame.For(kinematics, move, look));
+    }
+
+    #endregion
+
+    #region Non-owner response
+
+    private (Vector3 pos, Vector3 vel)? lastKnownRemoteFrame;
+    private void Callback_CopyRemoteFrame(PlayerPhysicsFrame _, PlayerPhysicsFrame @new)
+    {
+        if (!IsOwner) throw new InvalidOperationException("Owner should use "+nameof(FrameRejected_ClientRpc)+" instead");
+
+        @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
+        @new = PlayerDeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup, proj, transform.rotation);
+
+        transform .position = @new.position;
+        kinematics.velocity = @new.velocity;
+    }
+
+    private static float cached_fixedDeltaTime = -1;
+    private static float cached_smoothLerpAmt = 1;
+
+    private void NonOwner_FixedUpdate()
+    {
+        if (cached_fixedDeltaTime != Time.fixedDeltaTime)
+        {
+            cached_fixedDeltaTime = Time.fixedDeltaTime;
+            cached_smoothLerpAmt = Mathf.Pow(smoothSharpness, Time.fixedDeltaTime);
+        }
+
+        //FIXME expensive, run only on value change?
+        PlayerPhysicsFrame targetPos = PlayerDeadReckoningUtility.DeadReckon(_serverFrame.Value, Time.realtimeSinceStartup, proj, transform.rotation);
+
+        //Exponential decay lerp towards correct position
+        transform .position = Vector3.Lerp(transform .position, targetPos.position, cached_smoothLerpAmt);
+        kinematics.velocity = Vector3.Lerp(kinematics.velocity, targetPos.velocity, cached_smoothLerpAmt);
+    }
+
+    #endregion
+    
+    private void FixedUpdate()
+    {
+        if (IsOwner) Owner_FixedUpdate();
+        else NonOwner_FixedUpdate();
     }
 }

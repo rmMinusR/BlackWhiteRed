@@ -7,11 +7,13 @@ public class PlayerMoveController : MonoBehaviour
     [Header("Movement settings")]
     [SerializeField] [Range(0, 1)] private float groundSlipperiness = 0.1f;
     [SerializeField] [Range(0, 1)] private float airSlipperiness = 0.1f;
-    [SerializeField] [Min(0)] private float speed = 5f;
+    [SerializeField] [Min(0)] private float _speed = 5f;
     [SerializeField] [Min(0)] private float jumpPower = 5f;
+    public float Speed => _speed;
+    public float CurrentSlipperiness => kinematicsLayer.coll.isGrounded ? groundSlipperiness : airSlipperiness;
 
     [Header("Bindings")]
-    [SerializeField] private KinematicCharacter kinematicsLayer;
+    [SerializeField] private CharacterKinematics kinematicsLayer;
     [SerializeField] private Transform frameOfReference;
     [SerializeField] private PlayerInput playerInput;
     private InputAction controlMove;
@@ -25,8 +27,8 @@ public class PlayerMoveController : MonoBehaviour
         controlJump = playerInput.currentActionMap.FindAction(controlJumpName);
     }
 
-    private Vector2 rawInput;
-    private bool jumpPressed;
+    public Vector2 rawInput { get; private set; }
+    public bool jumpPressed { get; private set; }
 
     private void Update()
     {
@@ -42,12 +44,12 @@ public class PlayerMoveController : MonoBehaviour
         Vector3 localForward = new Vector3(-localRight.z, 0, localRight.x);
 
         //Handle horizontal movement
-        Vector3 targetVelocity = speed * (
+        Vector3 targetVelocity = Speed * (
                 localRight * rawInput.x
               + localForward * rawInput.y
             );
 
-        float slippageThisFrame = Mathf.Pow(kinematicsLayer.coll.isGrounded ? groundSlipperiness : airSlipperiness, Time.fixedDeltaTime);
+        float slippageThisFrame = Mathf.Pow(CurrentSlipperiness, Time.fixedDeltaTime);
         Vector3 newVel = Vector3.Lerp(targetVelocity, kinematicsLayer.velocity, slippageThisFrame);
         kinematicsLayer.velocity = new Vector3(newVel.x, kinematicsLayer.velocity.y, newVel.z);
 

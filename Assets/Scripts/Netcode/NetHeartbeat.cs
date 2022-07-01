@@ -8,11 +8,22 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkObject))]
 public class NetHeartbeat : NetworkBehaviour
 {
+    #region Pseudo-singleton
+
     public static NetHeartbeat Self { get; private set; } //Not called 'Instance' because there will be multiple.
+
+    private static Dictionary<ulong, NetHeartbeat> __Instances = new Dictionary<ulong, NetHeartbeat>();
+    public static NetHeartbeat Of(ulong playerID)
+    {
+        if (__Instances.TryGetValue(playerID, out NetHeartbeat i)) return i;
+        else throw new IndexOutOfRangeException();
+    }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
+
+        if (!__Instances.TryAdd(OwnerClientId, this)) Debug.LogError("NetHeartbeat already registered for player "+OwnerClientId+"!");
 
         if (IsOwner)
         {
@@ -27,6 +38,8 @@ public class NetHeartbeat : NetworkBehaviour
     {
         base.OnNetworkDespawn();
 
+        if (!__Instances.Remove(OwnerClientId)) Debug.LogError("NetHeartbeat already unregistered for player "+OwnerClientId+"!");
+
         if (heartbeatWorker != null)
         {
             StopCoroutine(heartbeatWorker);
@@ -39,6 +52,8 @@ public class NetHeartbeat : NetworkBehaviour
             Self = null;
         }
     }
+
+    #endregion
 
     [SerializeField] [Range(2, 20)]
     private float heartbeatsPerSecond = 10;

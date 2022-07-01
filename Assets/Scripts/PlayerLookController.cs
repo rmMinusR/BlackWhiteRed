@@ -17,18 +17,19 @@ public sealed class PlayerLookController : MonoBehaviour
     [SerializeField] [Range(  0, 90)] private float maxVerticalAngle = 90;
 
     [Space]
-    [SerializeField] private Vector2 look;
+    [SerializeField] private Vector2 angles;
+    public Vector2 Angles => angles;
 
     private void Update()
     {
         //Add given movement
-        look += controlLook.ReadValue<Vector2>() * sensitivity * Time.deltaTime;
+        angles += controlLook.ReadValue<Vector2>() * sensitivity * Time.deltaTime;
 
         //Limit
-        look.y = Mathf.Clamp(look.y, minVerticalAngle, maxVerticalAngle);
+        angles.y = Mathf.Clamp(angles.y, minVerticalAngle, maxVerticalAngle);
 
         //Apply
-        target.rotation = Quaternion.Euler(look.y, look.x, 0);
+        target.rotation = Quaternion.Euler(angles.y, angles.x, 0);
     }
 
     private void OnEnable()
