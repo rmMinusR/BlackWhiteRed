@@ -8,8 +8,10 @@ public sealed class KinematicDeadReckoner : NetworkBehaviour
     private Rigidbody rb;
     private ProjectionShape proj;
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+
         rb = GetComponent<Rigidbody>();
         proj = ProjectionShape.Build(gameObject);
 
@@ -20,9 +22,9 @@ public sealed class KinematicDeadReckoner : NetworkBehaviour
         }
     }
 
-    public override void OnDestroy()
+    public override void OnNetworkDespawn()
     {
-        base.OnDestroy();
+        base.OnNetworkDespawn();
 
         _serverFrame.OnValueChanged -= Callback_CopyRemoteFrame; //FIXME is this even necessary?
     }

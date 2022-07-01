@@ -94,9 +94,10 @@ GameObject:
   - component: {fileID: 2931471489676092140}
   - component: {fileID: 8538523299642641144}
   - component: {fileID: 3587278699711730041}
+  - component: {fileID: 455297323731713935}
   - component: {fileID: 2709372960629483514}
   - component: {fileID: 1205034768838314728}
-  - component: {fileID: 5390555954143487680}
+  - component: {fileID: -3852071104688765420}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -157,6 +158,32 @@ MonoBehaviour:
   enableGravity: 1
   gravityScale: 1
   suspendGravityOnGround: 1
+--- !u!114 &455297323731713935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfa48d1b74340b54ab95216212e1d728, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  move: {fileID: 2982963223821698430}
+  look: {fileID: 8638030666052046281}
+  _serverFrame:
+    m_InternalValue:
+      _position: {x: 0, y: 0, z: 0}
+      _velocity: {x: 0, y: 0, z: 0}
+      _time: 0
+      look: {x: 0, y: 0}
+      input: {x: 0, y: 0}
+      slipperiness: 0
+      moveSpeed: 0
+  smoothSharpness: 0.95
+  velocityForgiveness: 10
+  positionForgiveness: 1
 --- !u!114 &2709372960629483514
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -195,7 +222,7 @@ MonoBehaviour:
   timeSyncAvgCount: 20
   timeSyncDeltas: []
   _smoothedTimeSyncDelta: 0
---- !u!114 &5390555954143487680
+--- !u!114 &-3852071104688765420
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -204,15 +231,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 2931471489676092143}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a841fdaad712a024584bc82e3226052e, type: 3}
+  m_Script: {fileID: 11500000, guid: 383d474c3e2b0c241bc36adab016e9c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  localGameobjects:
+  selfGameobjects:
   - {fileID: 4977216193079503987}
   - {fileID: 6838974089294005912}
-  localBehaviours: []
-  remoteGameobjects: []
-  remoteBehaviours: []
+  selfBehaviours: []
+  otherGameobjects: []
+  otherBehaviours: []
 --- !u!1 &2931471490281750658
 GameObject:
   m_ObjectHideFlags: 0

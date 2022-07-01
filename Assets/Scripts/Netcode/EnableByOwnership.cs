@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-public sealed class OwnershipEnabler : NetworkBehaviour
+public sealed class EnableByOwnership : NetworkBehaviour
 {
+    [Space]
     [SerializeField] private List<GameObject>  localGameobjects = new List<GameObject>();
     [SerializeField] private List<Behaviour >  localBehaviours  = new List<Behaviour >();
 
@@ -28,12 +29,6 @@ public sealed class OwnershipEnabler : NetworkBehaviour
         foreach (Behaviour  b in  localBehaviours ) bStates[b] = (bStates.TryGetValue(b, out bool en)?en:false) ||  IsOwner;
         foreach (GameObject o in remoteGameobjects) oStates[o] = (oStates.TryGetValue(o, out bool en)?en:false) || !IsOwner;
         foreach (Behaviour  b in remoteBehaviours ) bStates[b] = (bStates.TryGetValue(b, out bool en)?en:false) || !IsOwner;
-
-        //Unused
-        //foreach (GameObject o in localGameobjects) oStates[o] |= IsClient;
-        //foreach (Behaviour  b in localBehaviours ) bStates[b] |= IsClient;
-        //foreach (GameObject o in remoteGameobjects) oStates[o] |= IsServer;
-        //foreach (Behaviour  b in remoteBehaviours ) bStates[b] |= IsServer;
 
         //Apply it
         foreach (KeyValuePair<GameObject, bool> oState in oStates) oState.Key.SetActive(oState.Value);

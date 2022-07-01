@@ -25,7 +25,7 @@ public class NetHeartbeat : NetworkBehaviour
 
         if (!__Instances.TryAdd(OwnerClientId, this)) Debug.LogError("NetHeartbeat already registered for player "+OwnerClientId+"!");
 
-        if (IsOwner)
+        if (IsLocalPlayer)
         {
             heartbeatWorker = StartCoroutine(HeartbeatWorker());
 
@@ -46,7 +46,7 @@ public class NetHeartbeat : NetworkBehaviour
             heartbeatWorker = null;
         }
 
-        if (IsOwner)
+        if (IsLocalPlayer)
         {
             Debug.Assert(Self == this, "There should only be one NetHeartbeat per player!");
             Self = null;

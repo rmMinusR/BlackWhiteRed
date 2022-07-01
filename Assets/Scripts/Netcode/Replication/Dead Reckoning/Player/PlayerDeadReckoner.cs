@@ -10,21 +10,23 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     [SerializeField] private PlayerMoveController move;
     [SerializeField] private PlayerLookController look;
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+
         proj = ProjectionShape.Build(gameObject);
         kinematics = GetComponent<CharacterKinematics>();
         
-        if (!IsOwner)
+        if (!IsLocalPlayer)
         {
             _serverFrame.OnValueChanged -= Callback_CopyRemoteFrame;
             _serverFrame.OnValueChanged += Callback_CopyRemoteFrame;
         }
     }
 
-    public override void OnDestroy()
+    public override void OnNetworkDespawn()
     {
-        base.OnDestroy();
+        base.OnNetworkDespawn();
 
         _serverFrame.OnValueChanged -= Callback_CopyRemoteFrame; //FIXME is this even necessary?
     }
@@ -37,9 +39,14 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
 
     [SerializeField] [Range(0.6f, 1)] private float smoothSharpness = 0.95f;
 
+    private void Owner_FixedUpdate()
+    {
+        SendFrame(PlayerPhysicsFrame.For(kinematics, move, look));
+    }
+
     private void SendFrame(PlayerPhysicsFrame localFrame) //Under most circumstances, localFrame = PhysicsFrame.For(rb)
     {
-        if (!IsOwner) throw new AccessViolationException();
+        if (!IsLocalPlayer) throw new AccessViolationException();
 
         PlayerPhysicsFrame serverFrame = localFrame;
         serverFrame.time = NetHeartbeat.Self.ConvertTimeLocalToServer(serverFrame.time);
@@ -57,9 +64,10 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
     private void DONOTCALL_SendFrame_ServerRpc(PlayerPhysicsFrame newFrame, ServerRpcParams src = default)
     {
-        //Validate time (no major skips and not in the future!)
-        if (Mathf.Abs(_serverFrame.Value.time-newFrame.time) > 2*NetHeartbeat.Of(src.Receive.SenderClientId).SmoothedRTT)
+        //Validate time (no major skips and not too far in the future!)
+        if (newFrame.time-Time.realtimeSinceStartup > 2*NetHeartbeat.Of(src.Receive.SenderClientId).SmoothedRTT)
         {
+            Debug.Log("Serverside: TIME REJECT", this);
             FrameRejected_ClientRpc(_serverFrame.Value, true, true, src.ReturnToSender());
             return;
         }
@@ -69,8 +77,8 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
         //Validate velocity and position
         newFrame.velocity = ValidationUtility.Bound(out bool velocityOutOfBounds, newFrame.velocity, currentValAtNewTime.velocity, velocityForgiveness); //TODO factor in RTT? Would need to clamp to reasonable bounds.
         newFrame.position = ValidationUtility.Bound(out bool positionOutOfBounds, newFrame.position, currentValAtNewTime.position, positionForgiveness);
-        if (velocityOutOfBounds) Debug.LogWarning(gameObject.name + " experienced too much acceleration!");
-        if (positionOutOfBounds) Debug.LogWarning(gameObject.name + " moved too quickly!");
+        if (velocityOutOfBounds) Debug.LogWarning("Player #" +OwnerClientId+ " experienced too much acceleration!");
+        if (positionOutOfBounds) Debug.LogWarning("Player #" +OwnerClientId+ " moved too quickly!");
 
         //Value is within acceptable bounds, apply
         _serverFrame.Value = newFrame;
@@ -84,7 +92,9 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     [ClientRpc(Delivery = RpcDelivery.Reliable)]
     private void FrameRejected_ClientRpc(PlayerPhysicsFrame @new, bool rejectedVelocity, bool rejectedPosition, ClientRpcParams p = default)
     {
-        if (!IsOwner) throw new AccessViolationException();
+        if (!IsLocalPlayer) throw new AccessViolationException();
+
+        Debug.Log("Clientside: REJECTED "+(rejectedPosition?"pos ":"")+(rejectedVelocity?"vel ":"")+"(server time = "+@new.time+")", this);
 
         @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
         @new = PlayerDeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup, proj, transform.rotation);
@@ -94,11 +104,6 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
         if (rejectedVelocity) kinematics.velocity = @new.velocity;
     }
 
-    private void Owner_FixedUpdate()
-    {
-        SendFrame(PlayerPhysicsFrame.For(kinematics, move, look));
-    }
-
     #endregion
 
     #region Non-owner response
@@ -106,7 +111,7 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     private (Vector3 pos, Vector3 vel)? lastKnownRemoteFrame;
     private void Callback_CopyRemoteFrame(PlayerPhysicsFrame _, PlayerPhysicsFrame @new)
     {
-        if (!IsOwner) throw new InvalidOperationException("Owner should use "+nameof(FrameRejected_ClientRpc)+" instead");
+        if (!IsLocalPlayer) throw new InvalidOperationException("Owner should use "+nameof(FrameRejected_ClientRpc)+" instead");
 
         @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
         @new = PlayerDeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup, proj, transform.rotation);
@@ -138,7 +143,7 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     
     private void FixedUpdate()
     {
-        if (IsOwner) Owner_FixedUpdate();
+        if (IsLocalPlayer) Owner_FixedUpdate();
         else NonOwner_FixedUpdate();
     }
 }
