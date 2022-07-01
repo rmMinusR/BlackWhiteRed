@@ -4,7 +4,7 @@ using Unity.Services.Relay.Models;
 using UnityEngine;
 
 [RequireComponent(typeof(RelayManager))]
-public abstract class BaseRelayConnection : NetworkBehaviour
+public abstract class BaseRelayConnection : MonoBehaviour
 {
     //protected static RelayServerEndpoint SelectEndpoint(List<RelayServerEndpoint> endpoints) => endpoints.Find(e => e.ConnectionType == "dtls"); // RSC 6/21/22: DTLS encryption not working
     protected static RelayServerEndpoint SelectEndpoint(List<RelayServerEndpoint> endpoints) => endpoints.Find(e => e.ConnectionType == "udp"); // Use UDP unencrypted

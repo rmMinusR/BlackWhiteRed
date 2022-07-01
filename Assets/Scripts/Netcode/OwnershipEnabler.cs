@@ -24,10 +24,10 @@ public sealed class OwnershipEnabler : NetworkBehaviour
         Dictionary< Behaviour, bool> bStates = new Dictionary< Behaviour, bool>();
 
         //Figure out what should be enabled
-        foreach (GameObject o in localGameobjects) oStates[o] |= IsOwner;
-        foreach (Behaviour  b in localBehaviours ) bStates[b] |= IsOwner;
-        foreach (GameObject o in remoteGameobjects) oStates[o] |= !IsOwner;
-        foreach (Behaviour  b in remoteBehaviours ) bStates[b] |= !IsOwner;
+        foreach (GameObject o in  localGameobjects) oStates[o] = (oStates.TryGetValue(o, out bool en)?en:false) ||  IsOwner;
+        foreach (Behaviour  b in  localBehaviours ) bStates[b] = (bStates.TryGetValue(b, out bool en)?en:false) ||  IsOwner;
+        foreach (GameObject o in remoteGameobjects) oStates[o] = (oStates.TryGetValue(o, out bool en)?en:false) || !IsOwner;
+        foreach (Behaviour  b in remoteBehaviours ) bStates[b] = (bStates.TryGetValue(b, out bool en)?en:false) || !IsOwner;
 
         //Unused
         //foreach (GameObject o in localGameobjects) oStates[o] |= IsClient;

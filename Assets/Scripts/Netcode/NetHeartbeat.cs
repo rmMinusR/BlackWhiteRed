@@ -136,7 +136,7 @@ public class NetHeartbeat : NetworkBehaviour
             complete.rtt = (float) (complete.recieveTime-complete.sendTime);
 
             pastPings.Add(complete);
-            while (pastPings.Count > rttAverageCount) pastPings.RemoveAt(0);
+            pastPings.RemoveRange(0, Mathf.Max(0, pastPings.Count-rttAverageCount));
 
             RecalcAvgRTT();
 
@@ -164,7 +164,7 @@ public class NetHeartbeat : NetworkBehaviour
         //TODO standard deviation?
 
         timeSyncDeltas.Add(Time.realtimeSinceStartup-timeOnServer);
-        while (timeSyncDeltas.Count > timeSyncAvgCount) timeSyncDeltas.Remove(0);
+        timeSyncDeltas.RemoveRange(0, Mathf.Max(0, timeSyncDeltas.Count-timeSyncAvgCount));
 
         _smoothedTimeSyncDelta = timeSyncDeltas.Average();
     }

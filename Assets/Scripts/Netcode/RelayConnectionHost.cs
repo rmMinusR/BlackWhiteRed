@@ -38,10 +38,8 @@ public sealed class RelayConnectionHost : BaseRelayConnection
         Debug.Log("Player#" + id + " disconnected");
     }
 
-    public override void OnDestroy()
+    private void OnDestroy()
     {
-        base.OnDestroy();
-
         Close();
     }
 

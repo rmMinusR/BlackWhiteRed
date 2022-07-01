@@ -29,10 +29,8 @@ public sealed class RelayConnectionClient : BaseRelayConnection
         ConnectTransport();
     }
 
-    public override void OnDestroy()
+    private void OnDestroy()
     {
-        base.OnDestroy();
-
         Close();
     }
 
