@@ -178,6 +178,9 @@ GameObject:
   - component: {fileID: 2931471489676092140}
   - component: {fileID: 8538523299642641144}
   - component: {fileID: 3587278699711730041}
+  - component: {fileID: 2709372960629483514}
+  - component: {fileID: 1205034768838314728}
+  - component: {fileID: 5390555954143487680}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -230,7 +233,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 2931471489676092143}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7ae6a7f9f2bb134a90ba53dcac49a36, type: 3}
+  m_Script: {fileID: 11500000, guid: ccee9f0b91249ba438aeb9529a64d7fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   velocity: {x: 0, y: 0, z: 0}
@@ -238,6 +241,62 @@ MonoBehaviour:
   enableGravity: 1
   gravityScale: 1
   suspendGravityOnGround: 1
+--- !u!114 &2709372960629483514
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 951099334
+  AlwaysReplicateAsRoot: 0
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+--- !u!114 &1205034768838314728
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ae994b724365d247a565ad2cce11a1a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  heartbeatsPerSecond: 10
+  rttAverageCount: 30
+  pingTimeout: 10
+  pastPings: []
+  travelingPings: []
+  _smoothedRtt:
+    m_InternalValue: 0
+  timeSyncAvgCount: 50
+  timeSyncDeltas: []
+  _smoothedTimeSyncDelta: 0
+--- !u!114 &5390555954143487680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a841fdaad712a024584bc82e3226052e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  localGameobjects:
+  - {fileID: 4977216193079503987}
+  - {fileID: 2931471489229834235}
+  localBehaviours: []
+  remoteGameobjects: []
+  remoteBehaviours: []
 --- !u!1 &2931471490281750658
 GameObject:
   m_ObjectHideFlags: 0
@@ -253,7 +312,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2931471490281750659
 Transform:
   m_ObjectHideFlags: 0
@@ -288,7 +347,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &428088673559635742
 Transform:
   m_ObjectHideFlags: 0
@@ -348,9 +407,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   groundSlipperiness: 0.0002
   airSlipperiness: 0.15
-  speed: 5
+  _speed: 5
   jumpPower: 5
-  playerID: 0
   kinematicsLayer: {fileID: 3587278699711730041}
   frameOfReference: {fileID: 2931471490281750659}
   playerInput: {fileID: 1334152775563438803}
@@ -375,4 +433,4 @@ MonoBehaviour:
   sensitivity: {x: 8, y: -8}
   minVerticalAngle: -90
   maxVerticalAngle: 90
-  look: {x: 0, y: 0}
+  angles: {x: 0, y: 0}
