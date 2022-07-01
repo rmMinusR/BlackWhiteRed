@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class ScoreboardDisplayController : MonoBehaviour
+public class SliderScoreboardDisplayController : MonoBehaviour
 {
     [System.Serializable]
     struct TeamUiItems
