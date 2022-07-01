@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -12,9 +13,18 @@ public struct KinematicPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
     [SerializeField] private Vector3 _velocity;
     [SerializeField] private float   _time;
 
-    public Vector3 position { get => position; set => position = value; }
-    public Vector3 velocity { get => velocity; set => velocity = value; }
-    public float   time     { get => time    ; set => time     = value; }
+    public Vector3 position {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] get => _position;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] set => _position = value;
+    }
+    public Vector3 velocity {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] get => _velocity;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] set => _velocity = value;
+    }
+    public float time {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] get => _time;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] set => _time = value;
+    }
 
     /// <summary>
     /// Convenience method to quickly make a physics frame without repeated boilerplate code

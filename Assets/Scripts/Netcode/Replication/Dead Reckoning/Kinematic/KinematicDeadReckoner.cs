@@ -33,18 +33,16 @@ public static class KinematicDeadReckoner
     /// <param name="current">Current frame</param>
     /// <param name="targetTime">Time to predict</param>
     /// <returns>Predicted frame at the given time, assuming no collisions</returns>
-    public static KinematicPhysicsFrame RawDeadReckonDeg1(KinematicPhysicsFrame current, float targetTime)
+    private static KinematicPhysicsFrame RawDeadReckonDeg1(KinematicPhysicsFrame current, float targetTime)
     {
         float dt = targetTime - current.time;
 
         if (dt < 0) Debug.LogWarning("Rewinding time is strongly discouraged! (dt="+dt+")");
         
-        return new KinematicPhysicsFrame()
-        {
-            position = current.position + current.velocity*dt, // s = ut
-            velocity = current.velocity,
-            time = targetTime
-        };
+        current.position += current.velocity*dt; // s = ut
+        current.time = targetTime;
+
+        return current;
     }
 
     /// <summary>
@@ -53,17 +51,16 @@ public static class KinematicDeadReckoner
     /// <param name="current">Current position, velocity, and time</param>
     /// <param name="targetTime">Time to predict</param>
     /// <returns>Predicted position and velocity at the given time</returns>
-    public static KinematicPhysicsFrame RawDeadReckonDeg2(KinematicPhysicsFrame current, float targetTime)
+    private static KinematicPhysicsFrame RawDeadReckonDeg2(KinematicPhysicsFrame current, float targetTime)
     {
         float dt = targetTime - current.time;
 
         if (dt < 0) Debug.LogWarning("Rewinding time is strongly discouraged! (dt="+dt+")");
         
-        return new KinematicPhysicsFrame()
-        {
-            position = current.position + current.velocity*dt + 1/2*Physics.gravity*dt*dt, // s = ut + 1/2 at^2
-            velocity = current.velocity + Physics.gravity*dt, // v = u + at
-            time = targetTime
-        };
+        current.position += current.velocity*dt + 1/2*Physics.gravity*dt*dt; // s = ut + 1/2 at^2
+        current.velocity += Physics.gravity*dt; // v = u + at
+        current.time = targetTime;
+
+        return current;
     }
 }

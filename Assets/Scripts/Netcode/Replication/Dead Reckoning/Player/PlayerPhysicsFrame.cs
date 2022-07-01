@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -13,13 +14,56 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
     [SerializeField] private Vector3 _velocity;
     [SerializeField] private float   _time;
 
-    public Vector3 position { get => position; set => position = value; }
-    public Vector3 velocity { get => velocity; set => velocity = value; }
-    public float   time     { get => time    ; set => time     = value; }
+    public Vector3 position {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] get => _position;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] set => _position = value;
+    }
+    public Vector3 velocity {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] get => _velocity;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] set => _velocity = value;
+    }
+    public float time {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] get => _time;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] set => _time = value;
+    }
 
     //Additional player-specific stuff
     public Vector2 look;
-    public Vector2 input; //Players have variable acceleration based on input
+    public Vector2 input; //Players have variable acceleration
+    public float slipperiness;
+    public float moveSpeed;
+
+    //Cache expensive math
+    private float __lastLookX;
+    private float __sinLookX;
+    private float __cosLookX;
+    private void __RefreshLookTrig()
+    {
+        if(__lastLookX != look.x || (__lastLookX == 0 && __sinLookX == 0 && __cosLookX == 0))
+        {
+            __lastLookX = look.x;
+            __sinLookX = Mathf.Sin(look.x * Mathf.Deg2Rad);
+            __cosLookX = Mathf.Cos(look.x * Mathf.Deg2Rad);
+        }
+    }
+
+    internal Vector3 LookRight
+    {
+        get
+        {
+            __RefreshLookTrig();
+            return new Vector3(__cosLookX, 0, __sinLookX);
+        }
+    }
+
+    internal Vector3 LookForward
+    {
+        get
+        {
+            __RefreshLookTrig();
+            return new Vector3(-__sinLookX, 0, __cosLookX);
+        }
+    }
 
     /*
     /// <summary>
