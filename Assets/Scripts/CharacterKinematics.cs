@@ -8,7 +8,7 @@ public sealed class CharacterKinematics : MonoBehaviour
 {
     public CharacterController coll { get; private set; }
 
-    private void Start()
+    private void Awake()
     {
         coll = GetComponent<CharacterController>();
     }

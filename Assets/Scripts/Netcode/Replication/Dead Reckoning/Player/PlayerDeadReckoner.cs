@@ -22,6 +22,12 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
             _serverFrame.OnValueChanged -= Callback_CopyRemoteFrame;
             _serverFrame.OnValueChanged += Callback_CopyRemoteFrame;
         }
+
+        if (IsServer)
+        {
+            //Set initial value
+            _serverFrame.Value = PlayerPhysicsFrame.For(kinematics, move, look);
+        }
     }
 
     public override void OnNetworkDespawn()
@@ -77,7 +83,7 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
         //Validate velocity and position
         newFrame.velocity = ValidationUtility.Bound(out bool velocityOutOfBounds, newFrame.velocity, currentValAtNewTime.velocity, velocityForgiveness); //TODO factor in RTT? Would need to clamp to reasonable bounds.
         newFrame.position = ValidationUtility.Bound(out bool positionOutOfBounds, newFrame.position, currentValAtNewTime.position, positionForgiveness);
-        if (velocityOutOfBounds) Debug.LogWarning("Player #" +OwnerClientId+ " experienced too much acceleration!");
+        if (velocityOutOfBounds) Debug.LogWarning("Player #" +OwnerClientId+ " accelerated too quickly!");
         if (positionOutOfBounds) Debug.LogWarning("Player #" +OwnerClientId+ " moved too quickly!");
 
         //Value is within acceptable bounds, apply
@@ -94,10 +100,15 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     {
         if (!IsLocalPlayer) throw new AccessViolationException();
 
-        Debug.Log("Clientside: REJECTED "+(rejectedPosition?"pos ":"")+(rejectedVelocity?"vel ":"")+"(server time = "+@new.time+")", this);
-
+        string rejectInfo = "servertime="+@new.time+";";
         @new.time = NetHeartbeat.Self.ConvertTimeServerToLocal(@new.time);
+        rejectInfo += "localtime="+@new.time+";";
+
         @new = PlayerDeadReckoningUtility.DeadReckon(@new, Time.realtimeSinceStartup, proj, transform.rotation);
+        
+        if (rejectedPosition) rejectInfo += " pos d="+Vector3.Distance(transform .position, @new.position)+";";
+        if (rejectedVelocity) rejectInfo += " vel d="+Vector3.Distance(kinematics.velocity, @new.velocity)+";";
+        Debug.Log("Clientside: REJECTED "+rejectInfo, this);
 
         //TODO should this be in FixedUpdate?
         if (rejectedPosition) transform .position = @new.position;
@@ -144,6 +155,6 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     private void FixedUpdate()
     {
         if (IsLocalPlayer) Owner_FixedUpdate();
-        else NonOwner_FixedUpdate();
+        else if (IsClient) NonOwner_FixedUpdate();
     }
 }

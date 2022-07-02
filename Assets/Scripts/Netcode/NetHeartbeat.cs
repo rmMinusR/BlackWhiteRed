@@ -10,14 +10,10 @@ public class NetHeartbeat : NetworkBehaviour
 {
     #region Pseudo-singleton
 
-    public static NetHeartbeat Self { get; private set; } //Not called 'Instance' because there will be multiple.
+    public static NetHeartbeat Self => NetHeartbeat.Of(NetworkManager.Singleton.LocalClientId);
 
     private static Dictionary<ulong, NetHeartbeat> __Instances = new Dictionary<ulong, NetHeartbeat>();
-    public static NetHeartbeat Of(ulong playerID)
-    {
-        if (__Instances.TryGetValue(playerID, out NetHeartbeat i)) return i;
-        else throw new IndexOutOfRangeException();
-    }
+    public static NetHeartbeat Of(ulong playerID) => __Instances.TryGetValue(playerID, out NetHeartbeat i) ? i : throw new IndexOutOfRangeException();
 
     public override void OnNetworkSpawn()
     {
@@ -28,9 +24,6 @@ public class NetHeartbeat : NetworkBehaviour
         if (IsLocalPlayer)
         {
             heartbeatWorker = StartCoroutine(HeartbeatWorker());
-
-            Debug.Assert(Self == null, "There should only be one NetHeartbeat per player!");
-            Self = this;
         }
     }
 
@@ -44,12 +37,6 @@ public class NetHeartbeat : NetworkBehaviour
         {
             StopCoroutine(heartbeatWorker);
             heartbeatWorker = null;
-        }
-
-        if (IsLocalPlayer)
-        {
-            Debug.Assert(Self == this, "There should only be one NetHeartbeat per player!");
-            Self = null;
         }
     }
 
