@@ -5,22 +5,23 @@ using UnityEngine.SceneManagement;
 using Unity.Services.Core;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
-using System.Threading.Tasks;
 using Unity.Services.Lobbies.Models;
+using Unity.Services.Relay;
+using Unity.Services.Relay.Models;
+using System.Threading.Tasks;
+using System;
+using Unity.Netcode.Transports.UTP;
+using Unity.Netcode;
 
 public class GameManager : MonoBehaviour
 {
-    //Player Customization
-    private const string PLAYER_NAME_KEY = "PLAYERNAME";
-    private string playerName = "Shade";
+    public const int MAX_PLAYERS = 10;
 
-    //Authentication
-    private string playerId = "Not signed in";
-    private string accessToken = "No access token";
+    private Dictionary<string, Coroutine> coroutines;
 
-    //Lobbies
-    private Lobby hostedLobby;
-    private Coroutine heartbeatCoroutine;
+    const string SceneNamePlayers = "Level3-Area0-Players";
+    const string SceneNameLevelDesign = "Level3-Area0-LevelDesign";
+    const string SceneNameEnvironmentArt = "Level3-Area0-EnvironmentArt";
 
     public static GameManager Instance;
 
@@ -30,6 +31,9 @@ public class GameManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(this.gameObject);
+
+            Application.wantsToQuit += OnWantToQuit;
+
             return;
         }
 
@@ -37,122 +41,196 @@ public class GameManager : MonoBehaviour
         Destroy(this);
     }
 
-    // Start is called before the first frame update
-    async void Start()
+    private void OnDestroy()
+    {
+        SeverConnections();
+    }
+
+    private bool OnWantToQuit()
+    {
+        bool canQuit = !LobbyManager.Instance.GetIsInLobby();
+
+        StartCoroutine(SeverConnectionsBeforeQuiting());
+
+        return canQuit;
+    }
+
+    IEnumerator SeverConnectionsBeforeQuiting()
+    {
+        SeverConnections();
+        yield return null;
+        Application.Quit();
+    }
+
+    void SeverConnections()
+    {
+        LobbyManager.Instance.DisconnectFromLobby();
+    }
+
+    public void PromptCoroutine(string key, IEnumerator routine)
+    {
+        Coroutine value = StartCoroutine(routine);
+        if(coroutines == null)
+        {
+            coroutines = new Dictionary<string, Coroutine>();
+        }
+        else if (coroutines.ContainsKey(key))
+        {
+            PromptEndCoroutine(key);
+        }
+        coroutines.Add(key, value);
+    }
+
+    public void PromptEndCoroutine(string key)
+    {
+        if(coroutines.ContainsKey(key))
+        {
+            StopCoroutine(coroutines[key]);
+            coroutines.Remove(key);
+        }
+    }
+
+    private async void Start()
     {
         await UnityServices.InitializeAsync();
-        await AttemptSignIn();
+        await PlayerAuthenticationManager.Instance.AttemptSignIn();
 
-        Debug.Log(playerId);
-        Debug.Log(accessToken);
-
-        CheckForPrefs();
+        PlayerAuthenticationManager.Instance.CheckForPrefs();
     }
 
-    async Task AttemptSignIn()
+    private void OnEnable()
     {
-        await AuthenticationService.Instance.SignInAnonymouslyAsync();
-        playerId = AuthenticationService.Instance.PlayerId;
-        accessToken = AuthenticationService.Instance.AccessToken;
+        LobbyManager.Instance.onGameStartChanged += JoinStartingMatch;
     }
 
-    //TODO: move to some other script or manager for the player character customization
-    void CheckForPrefs()
+    private void OnDisable()
     {
-        if (PlayerPrefs.HasKey(PLAYER_NAME_KEY))
-        {
-            playerName = PlayerPrefs.GetString(PLAYER_NAME_KEY);
-        }
-        else
-        {
-            PlayerPrefs.SetString(PLAYER_NAME_KEY, playerName);
-        }
+        LobbyManager.Instance.onGameStartChanged -= JoinStartingMatch;
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoadEventCompleted;
     }
 
-    public string GetPlayerName()
+    #region lobby relay
+
+    public async Task BecomeHost()
     {
-        return playerName;
-    }
-
-    public bool AttemptSetPlayerName(string input)
-    {
-        bool results = true;
-        if (input.Length >= 3 && input.Length <= 15)
-        { 
-            foreach(char e in input.ToCharArray())
-            {
-                if(!char.IsLetterOrDigit(e) && e != '_')
-                {
-                    results = false;
-                    break;
-                }
-            }
-        }
-        else
-        {
-            results = false;
-        }
-
-        if(results)
-        {
-            playerName = input;
-            PlayerPrefs.SetString(PLAYER_NAME_KEY, input);
-        }
-
-        return results;
-    }
-
-    #region lobby
-
-    public async Task HostLobby()
-    {
-        string lobbyName = playerName+"'s Lobby";
-        int maxPlayers = 10;
-        CreateLobbyOptions options = new CreateLobbyOptions();
-        options.IsPrivate = true;
-
-        hostedLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
-
-        heartbeatCoroutine = StartCoroutine(HeartbeatLobbyCoroutine(hostedLobby.Id, 15));
-    }
-
-    IEnumerator HeartbeatLobbyCoroutine(string lobbyId, float waitTimeSeconds)
-    {
-        var delay = new WaitForSecondsRealtime(waitTimeSeconds);
-
-        while (true)
-        {
-            Debug.Log("heartbeat");
-            LobbyService.Instance.SendHeartbeatPingAsync(lobbyId);
-            yield return delay;
-        }
-    }
-
-        public string GetLobbyCode()
-    {
-        return hostedLobby.LobbyCode;
-    }
-
-    public string GetLobbySize()
-    {
-        return (10 - hostedLobby.AvailableSlots)+"/10";
+        await LobbyManager.Instance.HostLobby();
     }
 
     public async Task<bool> AttemptJoinWithCode(string code)
     {
-        bool success = true;
-
-        try
-        {
-            await LobbyService.Instance.JoinLobbyByCodeAsync(code);
-        }
-        catch (LobbyServiceException e)
-        {
-            Debug.Log(e);
-            success = false;
-        }
+        bool success = await LobbyManager.Instance.AttemptJoinLobbyWithCode(code);
 
         return success;
+    }
+
+    public void AttemptStartMatch()
+    {
+        StartCoroutine(RelaySetUp());
+    }
+
+    IEnumerator RelaySetUp()
+    {
+        RelayManager.Instance.StartAsHost();
+
+        RelayConnectionHost temp = (RelayConnectionHost)RelayManager.Instance.Connection;
+
+        while (temp.GetStatus() != BaseRelayConnection.Status.RelayGood && temp.GetStatus() != BaseRelayConnection.Status.NGOGood)
+        {
+            var delay = new WaitForSecondsRealtime(1.0f);
+            yield return delay;
+            temp = (RelayConnectionHost)RelayManager.Instance.Connection;
+        }
+
+        LobbyManager.Instance.SetLobbyRelayCode(temp.JoinCode);
+
+        while (NetworkManager.Singleton.ConnectedClientsList.Count != LobbyManager.Instance.GetNumberPlayers() - 1)
+        {
+            var delay = new WaitForSecondsRealtime(1.0f);
+            yield return delay;
+        }
+
+        WhenAllPlayersConnected();
+    }
+
+    public void JoinStartingMatch()
+    {
+        string relayJoinCode = LobbyManager.Instance.GetLobbyRelayCode();
+        RelayManager.Instance.StartAsClient(relayJoinCode);
+
+        StartCoroutine(WaitForClientConnection());
+
+    }
+
+    IEnumerator WaitForClientConnection()
+    {
+        RelayConnectionClient temp = (RelayConnectionClient)RelayManager.Instance.Connection;
+
+        while (temp.GetStatus() != BaseRelayConnection.Status.RelayGood && temp.GetStatus() != BaseRelayConnection.Status.NGOGood)
+        {
+            yield return null;
+            temp = (RelayConnectionClient)RelayManager.Instance.Connection;
+        }
+
+        NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Single);
+        NetworkManager.Singleton.SceneManager.OnLoadComplete += HandleSceneLoadCompleted;
+    }
+
+    #endregion
+
+    #region game start
+
+    private void WhenAllPlayersConnected()
+    {
+        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoadEventCompleted;
+        NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Single);
+        NetworkManager.Singleton.SceneManager.LoadScene(SceneNamePlayers,LoadSceneMode.Single);
+    }
+
+    private void HandleSceneLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+    {
+        if (NetworkManager.Singleton.IsHost)
+        {
+            switch (sceneName)
+            {
+                case SceneNamePlayers:
+                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+                    NetworkManager.Singleton.SceneManager.LoadScene(SceneNameLevelDesign, LoadSceneMode.Additive);
+                    break;
+                case SceneNameLevelDesign:
+                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+                    NetworkManager.Singleton.SceneManager.LoadScene(SceneNameEnvironmentArt, LoadSceneMode.Additive);
+                    break;
+                case SceneNameEnvironmentArt:
+                    Debug.Log("MATCH CAN START");
+                    MatchManager.Instance.LogAsReadyServerRpc(NetworkManager.Singleton.LocalClientId);
+                    break;
+            }
+        }
+    }
+
+    private void HandleSceneLoadCompleted(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
+    {
+        if (!NetworkManager.Singleton.IsHost)
+        {
+            switch (sceneName)
+            {
+                case SceneNamePlayers:
+                case SceneNameLevelDesign:
+                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+                    break;
+                case SceneNameEnvironmentArt:
+                    AsyncOperation oper = SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
+                    oper.completed += HandleUnloadEnded;
+                    break;
+            }
+        }
+    }
+
+    private void HandleUnloadEnded(AsyncOperation oper)
+    {
+        Debug.Log("MATCH CAN START");
+        MatchManager.Instance.LogAsReadyServerRpc(NetworkManager.Singleton.LocalClientId);
+        oper.completed -= HandleUnloadEnded;
     }
 
     #endregion

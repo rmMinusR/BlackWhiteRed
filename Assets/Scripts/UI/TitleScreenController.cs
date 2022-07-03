@@ -27,6 +27,9 @@ public class TitleScreenController : MonoBehaviour
 
     private void RevealButton()
     {
+        //Skip this splash screen
+        ToMainMenu();
+
         waitingMessage.gameObject.SetActive(false);
         startButton.gameObject.SetActive(true);
     }
