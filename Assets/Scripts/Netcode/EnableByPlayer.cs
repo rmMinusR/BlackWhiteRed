@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
+[RequireComponent(typeof(NetworkObject))]
 public sealed class EnableByPlayer : NetworkBehaviour
 {
     [Space]
@@ -12,6 +13,15 @@ public sealed class EnableByPlayer : NetworkBehaviour
     [Space]
     [SerializeField] private List<GameObject> otherGameobjects = new List<GameObject>();
     [SerializeField] private List<Behaviour > otherBehaviours  = new List<Behaviour >();
+
+    private void Start()
+    {
+        if (!IsSpawned)
+        {
+            //Send to clients
+            GetComponent<NetworkObject>().SpawnAsPlayerObject(OwnerClientId);
+        } else Debug.Log("Already spawned "+this, this);
+    }
 
     public override void OnNetworkSpawn()
     {
@@ -31,17 +41,28 @@ public sealed class EnableByPlayer : NetworkBehaviour
         foreach (Behaviour  b in otherBehaviours ) bStates[b] = (bStates.TryGetValue(b, out bool en)?en:false) || !IsLocalPlayer;
 
         //Apply it
-        foreach (KeyValuePair<GameObject, bool> oState in oStates) oState.Key.SetActive(oState.Value);
+        foreach (KeyValuePair<GameObject, bool> oState in oStates)
+        {
+            Debug.Log((oState.Value?"Enabling ":"Disabling ") + oState.Key);
+            oState.Key.SetActive(oState.Value);
+        }
         foreach (KeyValuePair<Behaviour , bool> bState in bStates) bState.Key.enabled = bState.Value;
     }
 
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        if(selfBehaviours.RemoveAll(b => b is NetworkBehaviour) > 0)
+        //Forbid use of NetworkBehaviour
+        if(selfBehaviours.RemoveAll(b => b is NetworkBehaviour) > 0 || otherBehaviours.RemoveAll(b => b is NetworkBehaviour) > 0)
         {
             UnityEditor.EditorWindow.focusedWindow.ShowNotification(new GUIContent("Toggling NetworkBehaviours is not allowed!"));
         }
+        
+        //Disable all
+        foreach (GameObject o in  selfGameobjects) o.SetActive(false);
+        foreach (Behaviour  b in  selfBehaviours ) b.enabled = false;
+        foreach (GameObject o in otherGameobjects) o.SetActive(false);
+        foreach (Behaviour  b in otherBehaviours ) b.enabled = false;
     }
 #endif
 

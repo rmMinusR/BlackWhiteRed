@@ -13,6 +13,16 @@ public sealed class EnableByOwnership : NetworkBehaviour
     [SerializeField] private List<GameObject> remoteGameobjects = new List<GameObject>();
     [SerializeField] private List<Behaviour > remoteBehaviours  = new List<Behaviour >();
 
+    
+    private void Start()
+    {
+        if(!IsSpawned)
+        {
+            //Send to clients
+            GetComponent<NetworkObject>().Spawn();
+        }
+    }
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
@@ -38,10 +48,17 @@ public sealed class EnableByOwnership : NetworkBehaviour
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        if(localBehaviours.RemoveAll(b => b is NetworkBehaviour) > 0)
+        //Forbid use of NetworkBehaviour
+        if(localBehaviours.RemoveAll(b => b is NetworkBehaviour) > 0 || remoteBehaviours.RemoveAll(b => b is NetworkBehaviour) > 0)
         {
             UnityEditor.EditorWindow.focusedWindow.ShowNotification(new GUIContent("Toggling NetworkBehaviours is not allowed!"));
         }
+
+        //Disable all
+        foreach (GameObject o in  localGameobjects) o.SetActive(false);
+        foreach (Behaviour  b in  localBehaviours ) b.enabled = false;
+        foreach (GameObject o in remoteGameobjects) o.SetActive(false);
+        foreach (Behaviour  b in remoteBehaviours ) b.enabled = false;
     }
 #endif
 

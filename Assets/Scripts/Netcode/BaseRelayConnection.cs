@@ -13,6 +13,7 @@ public abstract class BaseRelayConnection : MonoBehaviour
 
     public enum Status
     {
+        Rejected = -2,
         Failed = -1,
         NotConnected = 0,
 
