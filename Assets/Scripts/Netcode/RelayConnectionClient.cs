@@ -90,7 +90,7 @@ public sealed class RelayConnectionClient : BaseRelayConnection
 
     private void OnConnectionApproved(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
     {
-        if(response.Approved)
+        if (response.Approved)
         {
             _status = Status.NGOGood;
             //respond(true, null, true, Vector3.zero, null);

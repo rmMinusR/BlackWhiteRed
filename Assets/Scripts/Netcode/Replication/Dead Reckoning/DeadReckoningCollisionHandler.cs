@@ -13,8 +13,8 @@ internal static class DeadReckoningCollisionHandler<TFrame> where TFrame : struc
     /// <param name="targetTime">Time to predict</param>
     public delegate TFrame RawPredictFunc(TFrame frame, float targetTime);
 
-    private const int MAX_COLLISIONS = 3;
-    private const int COLLISION_PRECISION = 8;
+    private const int MAX_COLLISIONS = 1;
+    private const int COLLISION_PRECISION = 4;
 
     /// <summary>
     /// Dead reckon using preferred method. Considers collisions.

@@ -16,17 +16,17 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
 
         proj = ProjectionShape.Build(gameObject);
         kinematics = GetComponent<CharacterKinematics>();
-        
-        if (!IsLocalPlayer)
-        {
-            _serverFrame.OnValueChanged -= Callback_CopyRemoteFrame;
-            _serverFrame.OnValueChanged += Callback_CopyRemoteFrame;
-        }
 
         if (IsServer)
         {
             //Set initial value
             _serverFrame.Value = PlayerPhysicsFrame.For(kinematics, move, look);
+        }
+
+        if (!IsLocalPlayer)
+        {
+            _serverFrame.OnValueChanged -= Callback_CopyRemoteFrame;
+            _serverFrame.OnValueChanged += Callback_CopyRemoteFrame;
         }
     }
 

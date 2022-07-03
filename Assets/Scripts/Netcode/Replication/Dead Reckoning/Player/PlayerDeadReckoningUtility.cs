@@ -37,7 +37,7 @@ public static class PlayerDeadReckoningUtility
     {
         float dt = targetTime - current.time;
 
-        if (dt < 0) throw new InvalidOperationException("Rewinding time is not allowed! (dt="+dt+")");
+        if (dt < 0) Debug.LogWarning("Rewinding time is strongly discouraged! (dt="+dt+")");
 
         current.position += current.velocity*dt;
         current.time = targetTime;
@@ -55,7 +55,7 @@ public static class PlayerDeadReckoningUtility
     {
         float dt = targetTime - current.time;
 
-        if (dt < 0) throw new InvalidOperationException("Rewinding time is not allowed! (dt="+dt+")");
+        if (dt < 0) Debug.LogWarning("Rewinding time is strongly discouraged! (dt="+dt+")");
         
         current.position += current.velocity*dt + 1/2*Physics.gravity*dt*dt; // s = ut + 1/2 at^2
         current.velocity += Physics.gravity*dt; // v = u + at
@@ -74,9 +74,15 @@ public static class PlayerDeadReckoningUtility
     {
         float dt = targetTime - current.time;
 
-        if (dt < 0) throw new InvalidOperationException("Rewinding time is not allowed! (dt="+dt+")");
+        //if (dt < 0) throw new InvalidOperationException("Rewinding time is not allowed due to discontinuity! (dt="+dt+")");
+        if (dt < 0)
+        {
+            Debug.LogWarning("Negative DT! Deferring to 2nd degree.");
+            return RawDeadReckonDeg2(current, targetTime);
+        }
 
         Vector3 targetVelocity = current.LookRight * current.input.x + current.LookForward * current.input.y;
+        targetVelocity.y = current.velocity.y;
         float px = Mathf.Pow(current.slipperiness, dt);
 
         current.position += targetVelocity*dt+(current.velocity-targetVelocity)*(px-1)/Mathf.Log(current.slipperiness) + 1/2*Physics.gravity*dt*dt;

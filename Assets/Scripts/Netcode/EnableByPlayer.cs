@@ -14,15 +14,6 @@ public sealed class EnableByPlayer : NetworkBehaviour
     [SerializeField] private List<GameObject> otherGameobjects = new List<GameObject>();
     [SerializeField] private List<Behaviour > otherBehaviours  = new List<Behaviour >();
 
-    private void Start()
-    {
-        if (!IsSpawned)
-        {
-            //Send to clients
-            GetComponent<NetworkObject>().SpawnAsPlayerObject(OwnerClientId);
-        } else Debug.Log("Already spawned "+this, this);
-    }
-
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();

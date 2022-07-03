@@ -116,6 +116,9 @@ public sealed class RelayConnectionHost : BaseRelayConnection
             NetworkManager.Singleton.OnServerStarted -= Callback_OnServerStarted;
             NetworkManager.Singleton.OnServerStarted += Callback_OnServerStarted;
 
+            NetworkManager.Singleton.ConnectionApprovalCallback -= ApproveConnection;
+            NetworkManager.Singleton.ConnectionApprovalCallback += ApproveConnection;
+
             ((UnityTransport) NetworkManager.Singleton.NetworkConfig.NetworkTransport).SetHostRelayData(endpoint.Host, (ushort)endpoint.Port, allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData);
 
             NetworkManager.Singleton.StartHost();
@@ -127,6 +130,12 @@ public sealed class RelayConnectionHost : BaseRelayConnection
     {
         _status = Status.NGOGood;
     }
+    
+    private void ApproveConnection(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+    {
+        response.Approved = true;
+        response.CreatePlayerObject = true;
+    }
 
     private void Close()
     {
@@ -134,6 +143,7 @@ public sealed class RelayConnectionHost : BaseRelayConnection
         {
             _status = Status.NotConnected;
             NetworkManager.Singleton.OnServerStarted -= Callback_OnServerStarted;
+            NetworkManager.Singleton.ConnectionApprovalCallback -= ApproveConnection;
 
             //Disconnect clients from NGO
             List<ulong> clients = new List<ulong>(NetworkManager.Singleton.ConnectedClientsIds);

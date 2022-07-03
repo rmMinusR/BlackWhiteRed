@@ -63,7 +63,7 @@ public sealed class KinematicDeadReckoner : NetworkBehaviour
             FrameRejected_ClientRpc(_serverFrame.Value, true, true, src.ReturnToSender());
             return;
         }
-
+        
         KinematicPhysicsFrame currentValAtNewTime = KinematicDeadReckoningUtility.DeadReckon(_serverFrame.Value, newFrame.time, proj, transform.rotation);
 
         //Validate velocity and position

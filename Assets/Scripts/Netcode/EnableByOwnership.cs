@@ -13,16 +13,6 @@ public sealed class EnableByOwnership : NetworkBehaviour
     [SerializeField] private List<GameObject> remoteGameobjects = new List<GameObject>();
     [SerializeField] private List<Behaviour > remoteBehaviours  = new List<Behaviour >();
 
-    
-    private void Start()
-    {
-        if(!IsSpawned)
-        {
-            //Send to clients
-            GetComponent<NetworkObject>().Spawn();
-        }
-    }
-
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
