@@ -101,11 +101,11 @@ public class NetHeartbeat : NetworkBehaviour
     [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = false)]
     protected virtual void Heartbeat_ServerRpc(int pingID, ServerRpcParams src = default)
     {
-        HeartbeatResponse_ClientRpc(pingID, Time.realtimeSinceStartup, src.ReturnToSender());  //TODO replace with match timer
+        HeartbeatResponse_ClientRpc(pingID, src.ReturnToSender()); //TODO replace with match timer
     }
 
     [ClientRpc(Delivery = RpcDelivery.Unreliable)]
-    protected virtual void HeartbeatResponse_ClientRpc(int id, float serverTime, ClientRpcParams src = default)
+    protected virtual void HeartbeatResponse_ClientRpc(int id, ClientRpcParams src = default)
     {
         IEnumerable<OutgoingPing> query = travelingPings.Where(d => d.id == id);
         if(query.Any())
@@ -113,7 +113,7 @@ public class NetHeartbeat : NetworkBehaviour
             //Retrieve record and calculate RTT
             OutgoingPing received = query.First();
             travelingPings.Remove(received);
-
+            
             CompletePing complete = new CompletePing()
             {
                 id          = received.id,
@@ -126,10 +126,6 @@ public class NetHeartbeat : NetworkBehaviour
             pastPings.RemoveRange(0, Mathf.Max(0, pastPings.Count-rttAverageCount));
 
             RecalcAvgRTT();
-
-            //Recalculate serverside time
-            //TODO should this be put in another RPC method?
-            PushSyncTime(serverTime+complete.rtt/2);
         }
         else Debug.LogWarning("PING packet recieved twice: " + id);
     }
@@ -138,24 +134,4 @@ public class NetHeartbeat : NetworkBehaviour
     {
         _smoothedRtt.Value = pastPings.Average(c => (float)c.rtt);
     }
-
-    [SerializeField] [Min(1)] private int timeSyncAvgCount = 50;
-    [SerializeField] private List<float> timeSyncDeltas = new List<float>();
-
-    [SerializeField] //TODO make inspector read-only
-    private float _smoothedTimeSyncDelta;
-
-    protected void PushSyncTime(float timeOnServer)
-    {
-        //TODO should this be turned off or limited once some point of certainty is reached?
-        //TODO standard deviation?
-
-        timeSyncDeltas.Add(Time.realtimeSinceStartup-timeOnServer);
-        timeSyncDeltas.RemoveRange(0, Mathf.Max(0, timeSyncDeltas.Count-timeSyncAvgCount));
-
-        _smoothedTimeSyncDelta = timeSyncDeltas.Average();
-    }
-
-    public float ConvertTimeServerToLocal(float serverTime) => serverTime + _smoothedTimeSyncDelta;
-    public float ConvertTimeLocalToServer(float localTime ) => localTime  - _smoothedTimeSyncDelta;
 }

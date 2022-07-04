@@ -76,7 +76,7 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
         {
             position = kinematicsLayer.transform.position,
             velocity = kinematicsLayer.velocity,
-            time = Time.realtimeSinceStartup,
+            time = (float) NetworkManager.Singleton.ServerTime.FixedTime,
 
             input = move.rawInput,
             moveSpeed = move.Speed,

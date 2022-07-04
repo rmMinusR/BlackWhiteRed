@@ -54,15 +54,13 @@ internal static class DeadReckoningCollisionHandler<TFrame> where TFrame : struc
             float dist = dir.magnitude;
 
             //Abort early if nothing hit
-            if (!shape.Shapecast(out hit, searchStart.position, dir, rotation, dist))
-                return (searchEnd, null);
+            if (!shape.Shapecast(out hit, searchStart.position, dir, rotation, dist)) return (searchEnd, null);
 
             float guessRatio = hit.distance / dist;
             float guessTime = Mathf.Lerp(searchStart.time, searchEnd.time, guessRatio);
-            if (guessRatio > 0.5f)
-                searchEnd = reckon(arc, guessTime);
-            else
-                searchStart = reckon(arc, guessTime);
+            guessTime = Mathf.Clamp(guessTime, 0.25f, 0.75f); //Prevent guess from approaching extremes and breaking the binary search
+            if (guessRatio > 0.5f) searchEnd   = reckon(arc, guessTime);
+            else                   searchStart = reckon(arc, guessTime);
         }
 
         return (searchStart, hit);

@@ -37,7 +37,7 @@ public struct KinematicPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
         {
             position = rb.position,
             velocity = rb.velocity,
-            time = Time.realtimeSinceStartup
+            time = (float) NetworkManager.Singleton.ServerTime.FixedTime
         };
     }
 }
