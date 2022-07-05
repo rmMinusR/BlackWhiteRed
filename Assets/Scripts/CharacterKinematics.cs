@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(CharacterController))]
 public sealed class CharacterKinematics : MonoBehaviour
 {
-    public CharacterController coll { get; private set; }
+    private CharacterController coll { get; set; }
 
     private void Awake()
     {
@@ -37,19 +37,29 @@ public sealed class CharacterKinematics : MonoBehaviour
         private set => _contactAreas = value;
     }
 
+    private float timeSinceLastGround;
+    private const float coyoteTime = 0.12f;
+    public bool IsGrounded => timeSinceLastGround < coyoteTime;
+    private float GravityCoyoteRatio => suspendGravityOnGround ? 1 : Mathf.Clamp01(1-timeSinceLastGround/coyoteTime);
+    public void MarkUngrounded() => timeSinceLastGround = coyoteTime;
+
     //Tweakable in inspector, but mutable at runtime
     public bool enableGravity = true;
     public float gravityScale = 1;
-    public Vector3 GravityExperienced => enableGravity ? Physics.gravity*gravityScale : Vector3.zero;
+    public Vector3 RawGravityExperienced => enableGravity ? Physics.gravity*gravityScale : Vector3.zero;
 
     //Fixed settings
     [SerializeField] private bool suspendGravityOnGround = true;
 
     private void Step(float t, float dt)
     {
-        //May cause funky behaviour going down slopes. TODO test
-        if (!suspendGravityOnGround || !coll.isGrounded) velocity += GravityExperienced * dt;
+        if (coll.isGrounded) timeSinceLastGround = 0;
+        else timeSinceLastGround += dt;
 
+        //May cause funky behaviour going down slopes. TODO test
+        velocity += RawGravityExperienced * GravityCoyoteRatio * dt;
+
+        //Move step
         contactAreas = coll.Move(velocity * dt);
     }
 

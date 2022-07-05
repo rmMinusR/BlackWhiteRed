@@ -172,7 +172,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   move: {fileID: 2982963223821698430}
   look: {fileID: 8638030666052046281}
-  _serverFrame:
+  authorityFrame:
     m_InternalValue:
       _position: {x: 0, y: 0, z: 0}
       _velocity: {x: 0, y: 0, z: 0}
@@ -181,9 +181,10 @@ MonoBehaviour:
       input: {x: 0, y: 0}
       slipperiness: 0
       moveSpeed: 0
-  smoothSharpness: 0.95
+  smoothSharpness: 0.2
   velocityForgiveness: 10
   positionForgiveness: 1
+  timeForgiveness: 2
 --- !u!114 &2709372960629483514
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -219,9 +220,6 @@ MonoBehaviour:
   travelingPings: []
   _smoothedRtt:
     m_InternalValue: 0
-  timeSyncAvgCount: 20
-  timeSyncDeltas: []
-  _smoothedTimeSyncDelta: 0
 --- !u!114 &-3852071104688765420
 MonoBehaviour:
   m_ObjectHideFlags: 0

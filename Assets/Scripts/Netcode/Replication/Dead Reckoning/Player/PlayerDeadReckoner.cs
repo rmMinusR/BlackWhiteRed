@@ -44,7 +44,7 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     [SerializeField] private NetworkVariable<PlayerPhysicsFrame> authorityFrame = new NetworkVariable<PlayerPhysicsFrame>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Server);
     private float mostRecentFrame = -1;
 
-    [SerializeField] [Range(0.6f, 1)] private float smoothSharpness = 0.95f;
+    [SerializeField] [Range(0, 1)] private float smoothSharpness = 0.95f;
 
     private void Owner_FixedUpdate()
     {
@@ -85,7 +85,7 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
             newFrame = PlayerDeadReckoningUtility.DeadReckon(newFrame, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
 
             //Validate velocity and position
-            newFrame.velocity = ValidationUtility.Bound(out bool velocityOutOfBounds, newFrame.velocity, kinematics.velocity, velocityForgiveness); //TODO factor in RTT? Would need to clamp to reasonable bounds.
+            newFrame.velocity = ValidationUtility.Bound(out bool velocityOutOfBounds, newFrame.velocity, kinematics.velocity, velocityForgiveness);
             if (velocityOutOfBounds) reject |= RejectReason.Velocity;
             newFrame.position = ValidationUtility.Bound(out bool positionOutOfBounds, newFrame.position, transform .position, positionForgiveness);
             if (positionOutOfBounds) reject |= RejectReason.Position;
@@ -119,12 +119,13 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     {
         if (!IsLocalPlayer) throw new AccessViolationException("Only owner can recieve reject messages! Use "+nameof(Callback_CopyRemoteFrame)+" instead.");
 
-        string rejectInfo = "REJECTED ("+rejectReason+") t="+(float)NetworkManager.Singleton.ServerTime.FixedTime+"/"+@new.time+" d"+((float)NetworkManager.Singleton.ServerTime.FixedTime-@new.time);
+        string rejectInfo = "REJECTED ("+rejectReason+")      t="+NetworkManager.Singleton.ServerTime.FixedTime.ToString("F3")+"/"+@new.time.ToString("F3")
+                                                           +" d"+((float)NetworkManager.Singleton.ServerTime.FixedTime-@new.time).ToString("F3");
 
         @new = PlayerDeadReckoningUtility.DeadReckon(@new, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
         
-        rejectInfo += " pos="+Vector3.Distance(transform .position, @new.position)
-                   +  " vel="+Vector3.Distance(kinematics.velocity, @new.velocity);
+        rejectInfo += " pos="+Vector3.Distance(transform .position, @new.position).ToString("F3")
+                   +  " vel="+Vector3.Distance(kinematics.velocity, @new.velocity).ToString("F3");
         Debug.Log(rejectInfo, this);
 
         //TODO should this be in FixedUpdate?
@@ -141,29 +142,22 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     {
         if (IsLocalPlayer) throw new InvalidOperationException("Owner should use "+nameof(FrameRejected_ClientRpc)+" instead");
 
+        /*
         @new = PlayerDeadReckoningUtility.DeadReckon(@new, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
 
         transform .position = @new.position;
         kinematics.velocity = @new.velocity;
+        // */
     }
-
-    private static float cached_fixedDeltaTime = -1;
-    private static float cached_smoothLerpAmt = 1;
 
     private void NonOwner_FixedUpdate()
     {
-        if (cached_fixedDeltaTime != Time.fixedDeltaTime)
-        {
-            cached_fixedDeltaTime = Time.fixedDeltaTime;
-            cached_smoothLerpAmt = Mathf.Pow(smoothSharpness, Time.fixedDeltaTime);
-        }
-
         //FIXME expensive, run only on value change?
         PlayerPhysicsFrame targetPos = PlayerDeadReckoningUtility.DeadReckon(authorityFrame.Value, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
 
         //Exponential decay lerp towards correct position
-        transform .position = Vector3.Lerp(transform .position, targetPos.position, cached_smoothLerpAmt);
-        kinematics.velocity = Vector3.Lerp(kinematics.velocity, targetPos.velocity, cached_smoothLerpAmt);
+        transform .position = Vector3.Lerp(transform .position, targetPos.position, smoothSharpness);
+        kinematics.velocity = Vector3.Lerp(kinematics.velocity, targetPos.velocity, smoothSharpness);
     }
 
     #endregion
