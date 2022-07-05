@@ -137,10 +137,10 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 488cd3b0412cfe54c9833620c4c73d0e, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: 2100000, guid: de7cc2f6eca8f684f93cb1a4d015d882, type: 2}
+      objectReference: {fileID: 2100000, guid: 40d9771ec3a16fb49b0e3d2fd9c96507, type: 2}
     - target: {fileID: 919132149155446097, guid: 488cd3b0412cfe54c9833620c4c73d0e, type: 3}
       propertyPath: m_Name
-      value: Black Gate
+      value: White Gate
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 488cd3b0412cfe54c9833620c4c73d0e, type: 3}
