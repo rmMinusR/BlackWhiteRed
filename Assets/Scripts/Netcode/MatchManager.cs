@@ -14,9 +14,18 @@ public enum Team
 public class MatchManager : NetworkBehaviour
 {
     [SerializeField]
+    [Min(1)]
+    int scoreToWin;
+    [SerializeField]
+    int[] teamScores;
+    [Space]
+    [SerializeField]
     GameObject loadingCanvas;
     [SerializeField]
     List<ulong> readyClientIds;
+    [Space]
+    [SerializeField]
+    Transform[] spawnPoints;
 
     public static MatchManager Instance;
     private void Awake()
@@ -24,11 +33,17 @@ public class MatchManager : NetworkBehaviour
         if (Instance == null)
         {
             Instance = this;
+            Init();
             return;
         }
 
         Debug.LogError("Match Manager Instance already exists, deleting "+ this.name);
         Destroy(this);
+    }
+
+    private void Init()
+    {
+        spawnPoints = new Transform[2];
     }
 
     [ServerRpc(Delivery = RpcDelivery.Reliable,RequireOwnership = false)]
@@ -66,9 +81,54 @@ public class MatchManager : NetworkBehaviour
         //Assign Player Objects to Teams
         for(int i = 0; i < playerCount; i++)
         {
-            NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i]);
+            NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i],spawnPoints[(int)teams[i]].position, spawnPoints[(int)teams[i]].forward);
         }
 
         loadingCanvas.SetActive(false);
+
+        //Set Scores
+        teamScores = new int[]{0,0};
+
+        //Send players to starting locations
+        SendPlayersToSpawnPoints();
+    }
+
+    public void SetSpawnPoint(Team team, Transform point)
+    {
+        if(team == Team.INVALID)
+        {
+            return;
+        }
+
+        spawnPoints[(int)team] = point;
+    }
+
+
+    public void HandlePortalScore(PlayerController pc)
+    {
+        //Increase Score
+        teamScores[pc.TeamValue]++;
+
+        //Check For Win
+        //TODO: Invoke events that things like the sound and UI will be listening for
+        if(teamScores[pc.TeamValue] >= scoreToWin)
+        {
+            Debug.Log(pc.Team + " WON");
+        }
+        else
+        {
+            Debug.Log(pc.Team + " SCORED");
+        }
+
+        //Move Players To Spawn Points
+        SendPlayersToSpawnPoints();
+    }
+
+    void SendPlayersToSpawnPoints()
+    {
+        for (int i = 0; i < readyClientIds.Count; i++)
+        {
+            NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().ResetToSpawnPointClientRpc();
+        }
     }
 }

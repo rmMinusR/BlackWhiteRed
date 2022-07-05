@@ -6,6 +6,8 @@ using System;
 
 public class PlayerController : NetworkBehaviour
 {
+    const int MAX_HEALTH = 20;
+
     [SerializeField]
     [InspectorReadOnly]
     Team currentTeam = Team.INVALID;
@@ -14,6 +16,10 @@ public class PlayerController : NetworkBehaviour
     int shadeValue;
     [SerializeField]
     PlayerKit kit;
+
+    [Space]
+    [SerializeField]
+    int health;
 
     [Space]
     [Header("Shade Detection")]
@@ -29,13 +35,19 @@ public class PlayerController : NetworkBehaviour
     [SerializeField]
     Material whiteDebug;
 
+    Vector3 spawnPos;
+    Vector3 spawnFow;
+
     private PlayerStats currentStats => kit.playerStats[shadeValue];
+    public Team Team => currentTeam;
     public int TeamValue => (int)currentTeam;
 
     [ClientRpc]
-    public void AssignTeamClientRpc(Team _team)
+    public void AssignTeamClientRpc(Team _team, Vector3 _spawnPos, Vector3 _spawnFow)
     {
         currentTeam = _team;
+        spawnPos = _spawnPos;
+        spawnFow = _spawnFow;
 
         //For Debugging Purposes
 
@@ -95,6 +107,14 @@ public class PlayerController : NetworkBehaviour
             }
         }
 
+    }
+
+    [ClientRpc]
+    public void ResetToSpawnPointClientRpc()
+    {
+        health = MAX_HEALTH;
+        transform.position = spawnPos;
+        transform.forward = spawnFow;
     }
 
     private void HandleShadeValueChange()
