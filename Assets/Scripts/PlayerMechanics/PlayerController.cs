@@ -6,7 +6,6 @@ using System;
 
 public class PlayerController : NetworkBehaviour
 {
-    const int MAX_HEALTH = 20;
 
     [SerializeField]
     [InspectorReadOnly]
@@ -16,10 +15,6 @@ public class PlayerController : NetworkBehaviour
     int shadeValue;
     [SerializeField]
     PlayerKit kit;
-
-    [Space]
-    [SerializeField]
-    int health;
 
     [Space]
     [Header("Shade Detection")]
@@ -38,7 +33,11 @@ public class PlayerController : NetworkBehaviour
     Vector3 spawnPos;
     Vector3 spawnFow;
 
+    public delegate void PlayerStatsEvent(PlayerStats _value);
+    public event PlayerStatsEvent onShadeChange;
+
     private PlayerStats currentStats => kit.playerStats[shadeValue];
+    public PlayerStats CurrentStats => currentStats;
     public Team Team => currentTeam;
     public int TeamValue => (int)currentTeam;
 
@@ -66,6 +65,20 @@ public class PlayerController : NetworkBehaviour
         //End of "For Debugging Purposes"
     }
 
+    private void OnEnable()
+    {
+        MatchManager.onMatchStart += HandleMatchStart;
+        MatchManager.onTeamScore += HandleTeamScore;
+        MatchManager.onTeamWin += HandleTeamScore;
+    }
+
+    private void OnDisable()
+    {
+        MatchManager.onMatchStart -= HandleMatchStart;
+        MatchManager.onTeamScore -= HandleTeamScore;
+        MatchManager.onTeamWin -= HandleTeamScore;
+    }
+
     private void FixedUpdate()
     {
         CheckForNewShade();
@@ -73,8 +86,8 @@ public class PlayerController : NetworkBehaviour
 
     private void CheckForNewShade()
     {
-        Ray r = new Ray(transform.position, Vector3.down);
-        RaycastHit hit;
+        //Ray r = new Ray(transform.position, Vector3.down);
+        //RaycastHit hit;
 
         Vector3 pos = transform.position;
 
@@ -103,22 +116,30 @@ public class PlayerController : NetworkBehaviour
 
             if(oldShadeValue != shadeValue)
             {
-                HandleShadeValueChange();
+                OnShadeValueChange();
             }
         }
 
     }
 
-    [ClientRpc]
-    public void ResetToSpawnPointClientRpc()
+    private void ResetToSpawnPoint()
     {
-        health = MAX_HEALTH;
         transform.position = spawnPos;
         transform.forward = spawnFow;
     }
 
-    private void HandleShadeValueChange()
+    private void OnShadeValueChange()
     {
-        //TODO:
+        onShadeChange?.Invoke(currentStats);
+    }
+
+    private void HandleMatchStart()
+    {
+        ResetToSpawnPoint();
+    }
+
+    private void HandleTeamScore(Team team)
+    {
+        ResetToSpawnPoint();
     }
 }

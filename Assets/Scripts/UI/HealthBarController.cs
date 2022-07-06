@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -20,14 +21,32 @@ public class HealthBarController : MonoBehaviour
     GameObject imagePrefab;
     List<Image> images;
 
-    // Start is called before the first frame update
+    PlayerHealth localPlayerHealth;
+
     void Start()
     {
         images = new List<Image>();
-        SetUpChildren();
     }
 
-    private void SetUpChildren()
+    private void OnEnable()
+    {
+        MatchManager.onMatchStart += HandleMatchStart;
+        if (localPlayerHealth != null)
+        {
+            localPlayerHealth.onHealthChange += HandleHealthChange;
+        }
+    }
+
+    private void OnDisable()
+    {
+        MatchManager.onMatchStart -= HandleMatchStart;
+        if (localPlayerHealth != null)
+        {
+            localPlayerHealth.onHealthChange -= HandleHealthChange;
+        }
+    }
+
+    private void SetUpHealthDisplay()
     {
         if(healthIcons.Length < 2)
         {
@@ -42,10 +61,10 @@ public class HealthBarController : MonoBehaviour
             images.Add(Instantiate(imagePrefab,transform).GetComponent<Image>());
         }
 
-        HandleNewCurrentHealth();
+        UpdateHealthDisplay();
     }
 
-    private void HandleNewCurrentHealth()
+    private void UpdateHealthDisplay()
     {
         int pointsPerImage = healthIcons.Length - 1;
         int tempHealth = currentHealth;
@@ -56,5 +75,25 @@ public class HealthBarController : MonoBehaviour
             e.sprite = healthIcons[tempClamp];
             tempHealth -= pointsPerImage;
         }
+    }
+
+    private void HandleMatchStart()
+    {
+        if (MatchManager.Instance.localPlayerController.TryGetComponent<PlayerHealth>(out localPlayerHealth))
+        {
+            //Set variables
+            maxHealth = localPlayerHealth.GetMaxHealth();
+            currentHealth = localPlayerHealth.GetCurrentHealth();
+
+            //Set events
+            localPlayerHealth.onHealthChange += HandleHealthChange;
+        }
+        SetUpHealthDisplay();
+    }
+
+    private void HandleHealthChange(int _value)
+    {
+        currentHealth = _value;
+        UpdateHealthDisplay();
     }
 }

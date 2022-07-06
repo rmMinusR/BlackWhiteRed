@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: 4032180774641767200}
   - component: {fileID: 7200055430325573431}
   - component: {fileID: 6380371986884895239}
+  - component: {fileID: -3508574050796355037}
   m_Layer: 0
   m_Name: Hello World Player
   m_TagString: Untagged
@@ -164,7 +165,6 @@ MonoBehaviour:
   currentTeam: 2
   shadeValue: 0
   kit: {fileID: 11400000, guid: 489ad468404e6e146b658ff8e5bab986, type: 2}
-  health: 0
   shadeLayerMask:
     serializedVersion: 2
     m_Bits: 8
@@ -187,3 +187,17 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &-3508574050796355037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 491176079305168064}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3b2834a56fe7264595309764340e090, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health:
+    m_InternalValue: 0

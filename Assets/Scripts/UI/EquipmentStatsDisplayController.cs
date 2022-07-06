@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 public class EquipmentStatsDisplayController : MonoBehaviour
 {
@@ -37,16 +38,38 @@ public class EquipmentStatsDisplayController : MonoBehaviour
     [SerializeField]
     bool isHoldingBow;
 
-    // Start is called before the first frame update
-    void Start()
+    private PlayerController localPlayerController;
+
+    private void OnEnable()
     {
+        MatchManager.onMatchStart += HandleMatchStart;
+        if (localPlayerController != null)
+        {
+            localPlayerController.onShadeChange += HandleShadeChange;
+        }
+    }
+
+    private void HandleMatchStart()
+    {
+        if (MatchManager.Instance.localPlayerController != null)
+        {
+            //Set variables
+            localPlayerController = MatchManager.Instance.localPlayerController;
+            currentStats = localPlayerController.CurrentStats;
+
+            //Set events
+            localPlayerController.onShadeChange += HandleShadeChange;
+        }
         ShadeChange();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnDisable()
     {
-        
+        MatchManager.onMatchStart -= HandleMatchStart;
+        if (localPlayerController != null)
+        {
+            localPlayerController.onShadeChange -= HandleShadeChange;
+        }
     }
 
     private void HandleShadeChange(PlayerStats stats)

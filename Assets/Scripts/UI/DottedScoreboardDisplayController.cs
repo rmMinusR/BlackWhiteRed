@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -30,8 +31,40 @@ public class DottedScoreboardDisplayController : MonoBehaviour
     [Min(0)]
     int whiteScore;
 
-    void Start()
+    private void OnEnable()
     {
+        MatchManager.onMatchStart += HandleMatchStart;
+        MatchManager.onTeamScore += HandleTeamScore;
+        MatchManager.onTeamWin += HandleTeamScore;
+    }
+
+    private void OnDisable()
+    {
+        MatchManager.onMatchStart -= HandleMatchStart;
+        MatchManager.onTeamScore -= HandleTeamScore;
+        MatchManager.onTeamWin -= HandleTeamScore;
+    }
+
+    private void HandleTeamScore(Team team)
+    {
+        if(team == Team.BLACK)
+        {
+            ScoreBlack();
+        }
+        else
+        {
+            ScoreWhite();
+        }
+    }
+
+    private void HandleMatchStart()
+    {
+        //Set the correct values
+        scoreToWin = MatchManager.Instance.scoreToWin;
+        blackScore = 0;
+        whiteScore = 0;
+
+        //Initialize the display
         Init();
     }
 
