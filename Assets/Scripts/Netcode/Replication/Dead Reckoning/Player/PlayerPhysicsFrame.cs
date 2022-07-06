@@ -78,7 +78,7 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
             velocity = kinematicsLayer.velocity,
             time = (float) NetworkManager.Singleton.ServerTime.FixedTime,
 
-            input = move.rawInput,
+            input = move.IsSpawned ? move.rawInput.Value : Vector2.zero,
             moveSpeed = move.Speed,
             slipperiness = move.CurrentSlipperiness,
 

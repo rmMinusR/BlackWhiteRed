@@ -22,27 +22,32 @@ public class PlayerMoveController : NetworkBehaviour
     private InputAction controlJump;
     [SerializeField] private string controlJumpName = "Jump";
 
-    private void OnEnable()
+    public override void OnNetworkSpawn()
     {
-        controlMove = playerInput.currentActionMap.FindAction(controlMoveName);
-        controlJump = playerInput.currentActionMap.FindAction(controlJumpName);
+        base.OnNetworkSpawn();
+
+        if (IsLocalPlayer)
+        {
+            controlMove = playerInput.currentActionMap.FindAction(controlMoveName);
+            controlJump = playerInput.currentActionMap.FindAction(controlJumpName);
+        }
     }
 
-    public Vector2 rawInput { get; private set; }
-    public bool jumpPressed { get; private set; }
+    public NetworkVariable<Vector2> rawInput = new NetworkVariable<Vector2>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
+    public bool jumpPressed { get; private set; } // = new NetworkVariable<bool>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
 
     private void Update()
     {
-        if (IsClient)
+        if (IsLocalPlayer && IsSpawned)
         {
-            rawInput = controlMove.ReadValue<Vector2>();
+            rawInput.Value = controlMove.ReadValue<Vector2>();
             jumpPressed = controlJump.IsPressed();
         }
     }
 
     private void FixedUpdate()
     {
-        if (IsClient)
+        if (IsSpawned)
         {
             Vector3 localRight = frameOfReference.right;
             localRight.y = 0;
@@ -50,22 +55,19 @@ public class PlayerMoveController : NetworkBehaviour
             Vector3 localForward = new Vector3(-localRight.z, 0, localRight.x);
 
             //Handle horizontal movement
-            Vector3 targetVelocity = Speed * (
-                    localRight * rawInput.x
-                  + localForward * rawInput.y
-                );
+            Vector3 targetVelocity = Speed*( localRight*rawInput.Value.x + localForward*rawInput.Value.y );
 
             float slippageThisFrame = Mathf.Pow(CurrentSlipperiness, Time.fixedDeltaTime);
             Vector3 newVel = Vector3.Lerp(targetVelocity, kinematicsLayer.velocity, slippageThisFrame);
             kinematicsLayer.velocity = new Vector3(newVel.x, kinematicsLayer.velocity.y, newVel.z);
 
             //Handle jumping
-            if (jumpPressed) Jump();
-        }
+            if (IsLocalPlayer && jumpPressed) Jump();
+        } 
     }
 
     private float lastJumpTime;
-    private const float jumpCooldown = 0.5f;
+    [SerializeField] [Min(0)] private float jumpCooldown = 0.5f;
 
     private void Jump()
     {

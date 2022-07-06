@@ -16,6 +16,8 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
 
         proj = ProjectionShape.Build(gameObject);
         kinematics = GetComponent<CharacterKinematics>();
+        Debug.Assert(proj != null);
+        Debug.Assert(kinematics != null);
 
         if (IsServer)
         {
@@ -103,7 +105,11 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
             Debug.Log("Player #"+OwnerClientId+" sent a packet with wrong time! "+timeDiff+" sec ahead", this);
         }
 
-        if(reject != 0) FrameRejected_ClientRpc(authorityFrame.Value, reject, src.ReturnToSender());
+        if (reject != 0)
+        {
+            //No need to set authorityFrame here, as it is identical to newFrame
+            FrameRejected_ClientRpc(newFrame, reject, src.ReturnToSender());
+        }
     }
     
     [Flags]
@@ -142,12 +148,10 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     {
         if (IsLocalPlayer) throw new InvalidOperationException("Owner should use "+nameof(FrameRejected_ClientRpc)+" instead");
 
-        /*
         @new = PlayerDeadReckoningUtility.DeadReckon(@new, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
 
         transform .position = @new.position;
         kinematics.velocity = @new.velocity;
-        // */
     }
 
     private void NonOwner_FixedUpdate()
@@ -156,6 +160,7 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
         PlayerPhysicsFrame targetPos = PlayerDeadReckoningUtility.DeadReckon(authorityFrame.Value, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
 
         //Exponential decay lerp towards correct position
+        //FIXME smoothing causes slight lag behind
         transform .position = Vector3.Lerp(transform .position, targetPos.position, smoothSharpness);
         kinematics.velocity = Vector3.Lerp(kinematics.velocity, targetPos.velocity, smoothSharpness);
     }
@@ -164,7 +169,10 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     
     private void FixedUpdate()
     {
-        if (IsLocalPlayer) Owner_FixedUpdate();
-        else if (IsClient) NonOwner_FixedUpdate();
+        if (IsSpawned)
+        {
+            if (IsLocalPlayer) Owner_FixedUpdate();
+            else if (IsClient) NonOwner_FixedUpdate();
+        }
     }
 }

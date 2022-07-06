@@ -1,8 +1,9 @@
 ﻿using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public sealed class PlayerLookController : MonoBehaviour
+public sealed class PlayerLookController : NetworkBehaviour
 {
     [SerializeField] private PlayerInput dataSource;
     private InputAction controlLook;
@@ -17,25 +18,37 @@ public sealed class PlayerLookController : MonoBehaviour
     [SerializeField] [Range(  0, 90)] private float maxVerticalAngle = 90;
 
     [Space]
-    [SerializeField] private Vector2 angles;
-    public Vector2 Angles => angles;
+    [SerializeField] private NetworkVariable<Vector2> angles = new NetworkVariable<Vector2>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
+    public Vector2 Angles => angles.Value;
 
     private void Update()
     {
-        //Add given movement
-        angles += controlLook.ReadValue<Vector2>() * sensitivity * Time.deltaTime;
+        if (IsLocalPlayer && IsSpawned)
+        {
+            Vector2 newAngles = angles.Value;
 
-        //Limit
-        angles.y = Mathf.Clamp(angles.y, minVerticalAngle, maxVerticalAngle);
+            //Add given movement
+            newAngles += controlLook.ReadValue<Vector2>() * sensitivity * Time.deltaTime;
 
-        //Apply
-        target.rotation = Quaternion.Euler(angles.y, angles.x, 0);
+            //Limit
+            newAngles.y = Mathf.Clamp(newAngles.y, minVerticalAngle, maxVerticalAngle);
+
+            //Apply
+            angles.Value = newAngles;
+        }
+
+        target.rotation = Quaternion.Euler(Angles.y, Angles.x, 0);
     }
 
-    private void OnEnable()
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+
+        if (!IsLocalPlayer) return;
+
         //Auto capture
         controlLook = dataSource.currentActionMap.FindAction(controlLookName);
+        Debug.Assert(controlLook != null);
 
         //Lock cursor
         if (takeCursorControl)
@@ -47,6 +60,8 @@ public sealed class PlayerLookController : MonoBehaviour
 
     private void OnDisable()
     {
+        if (!IsLocalPlayer) return;
+
         //Unlock cursor
         if (takeCursorControl)
         {
