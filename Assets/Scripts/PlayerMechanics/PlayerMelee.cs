@@ -87,27 +87,22 @@ public class PlayerMelee : NetworkBehaviour
             if (playerHit != null)
             {
                 Debug.Log("Melee hits locally!");
-                MeleeCheckServerRpc(directionFacing, playerHit.NetworkObjectId);
+                MeleeCheckServerRpc(directionFacing, dist, playerHit.NetworkObjectId);
             }
         }
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void MeleeCheckServerRpc(Vector3 directionFacing, ulong playerHitId)
+    private void MeleeCheckServerRpc(Vector3 directionFacing, float castDistance, ulong playerHitId)
     {
         PlayerController playerHit = NetworkManager.Singleton.SpawnManager.SpawnedObjects[playerHitId].GetComponent<PlayerController>();
 
-        //Verify the hit was possible in range
-        Vector3 diff = playerHit.transform.position - transform.position;
-        if (diff.sqrMagnitude <= distance * distance)
+        //Verrify the hit was not blocked by something server-side
+        if (!Physics.Raycast(new Ray(transform.position, directionFacing), castDistance, groundLayer))
         {
-            //Verrify the hit was not blocked by something server-side
-            if (!Physics.Raycast(new Ray(transform.position, diff), diff.magnitude, groundLayer))
-            {
-                Debug.Log("Melee hits server-side!");
-                //TODO: Create something that deals with protection in PlayerHealth, then call it here instead
-                playerHit.GetComponent<PlayerHealth>().TakeDamage((int)playerController.CurrentStats.damageDealt);
-            }
+            Debug.Log("Melee hits server-side!");
+            //TODO: Create something that deals with protection in PlayerHealth, then call it here instead
+            playerHit.GetComponent<PlayerHealth>().TakeDamage((int)playerController.CurrentStats.damageDealt);
         }
     }
 
