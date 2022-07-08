@@ -65,7 +65,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
         else
         {
             //Everything but the Player and Ignore Raycast layers
-            if (Physics.Raycast(transform.position, Vector3.down, coll.height/2+groundProbeDistance+coll.skinWidth, ~(1<<6 | 1<<2))) timeSinceLastGround = 0;
+            if (Physics.Raycast(transform.position, Vector3.down, coll.height/2+groundProbeDistance+coll.skinWidth, ~(1<<6 | 1<<2 | 1<<3))) timeSinceLastGround = 0;
         }
 
         //Gravity

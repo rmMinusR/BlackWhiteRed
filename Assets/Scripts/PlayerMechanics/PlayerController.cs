@@ -30,7 +30,9 @@ public class PlayerController : NetworkBehaviour
     [SerializeField]
     Material whiteDebug;
 
+    [SerializeField]
     Vector3 spawnPos;
+    [SerializeField]
     Vector3 spawnFow;
 
     public delegate void PlayerStatsEvent(PlayerStats _value);
@@ -50,7 +52,7 @@ public class PlayerController : NetworkBehaviour
 
         //For Debugging Purposes
 
-        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+        MeshRenderer meshRenderer = GetComponentInChildren<MeshRenderer>();
 
         if(currentTeam == Team.BLACK)
         {
@@ -122,8 +124,10 @@ public class PlayerController : NetworkBehaviour
 
     }
 
-    private void ResetToSpawnPoint()
+    public void ResetToSpawnPoint()
     {
+        Debug.Log(name +": Resetting Spawn Point " + (NetworkManager.Singleton.IsServer ? " (Client)" : " (Server)"));
+
         transform.position = spawnPos;
         transform.forward = spawnFow;
     }

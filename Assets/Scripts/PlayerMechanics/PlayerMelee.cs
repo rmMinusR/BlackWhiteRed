@@ -55,7 +55,7 @@ public class PlayerMelee : NetworkBehaviour
         //TODO: event invokes for animations, sounds. 
         //TODO: verify the player is holding the melee weapon, and that there's no cooldown
         //TODO: better means for getting the direction the spherecast should go.
-        Vector3 directionFacing = transform.forward;
+        Vector3 directionFacing = Camera.main.transform.forward;
 
         //Hit Registration
         RaycastHit[] hits;
@@ -64,7 +64,7 @@ public class PlayerMelee : NetworkBehaviour
         if(hits.Length > 0)
         {
             PlayerController playerHit = null;
-            PlayerController tempPlayer;
+            PlayerController tempPlayer = null;
             float dist = Mathf.Infinity;
             float tempDist;
             bool tempCheck;
@@ -108,6 +108,6 @@ public class PlayerMelee : NetworkBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(transform.position, transform.position + transform.forward * distance);
+        Gizmos.DrawLine(transform.position, transform.position + Camera.main.transform.forward * distance);
     }
 }

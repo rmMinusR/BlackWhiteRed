@@ -94,12 +94,16 @@ public class MatchManager : NetworkBehaviour
         for (int i = 0; i < playerCount; i++)
         {
             NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoints[(int)teams[i]].position, spawnPoints[(int)teams[i]].forward);
+            NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().ResetToSpawnPoint();
         }
 
         loadingCanvas.SetActive(false);
 
         //Set Scores
         teamScores = new int[] { 0, 0 };
+
+        //Attempting to make sure the server has these new transforms, but they're still getting reset.
+        ForcePlayerControllers();
 
         //Send players to starting locations
         OnMatchStartClientRpc();
@@ -132,6 +136,10 @@ public class MatchManager : NetworkBehaviour
             OnTeamScoreClientRpc(pc.Team);
             Debug.Log(pc.Team + " SCORED");
         }
+
+
+        //Attempting to make sure the server has these new transforms, but they're still getting reset.
+        ForcePlayerControllers();
     }
 
     [ClientRpc]
@@ -151,5 +159,13 @@ public class MatchManager : NetworkBehaviour
     private void OnTeamWinClientRpc(Team team)
     {
         onTeamWin?.Invoke(team);
+    }
+
+    private void ForcePlayerControllers()
+    {
+        for (int i = 0; i < readyClientIds.Count; i++)
+        {
+            NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().ResetToSpawnPoint();
+        }
     }
 }

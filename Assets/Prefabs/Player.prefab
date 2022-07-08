@@ -98,6 +98,9 @@ GameObject:
   - component: {fileID: 2709372960629483514}
   - component: {fileID: 1205034768838314728}
   - component: {fileID: -3852071104688765420}
+  - component: {fileID: 4052683045127445090}
+  - component: {fileID: -8610394602819512607}
+  - component: {fileID: 5978525050431701936}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -242,6 +245,62 @@ MonoBehaviour:
   selfBehaviours: []
   otherGameobjects: []
   otherBehaviours: []
+--- !u!114 &4052683045127445090
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80dcb7a51ffdbf44bb20ea97c9984a28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentTeam: 2
+  shadeValue: 0
+  kit: {fileID: 11400000, guid: 489ad468404e6e146b658ff8e5bab986, type: 2}
+  shadeLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
+  radiusCheck: 0.1
+  blackDebug: {fileID: 2100000, guid: 499244d4bd129f748b4d9b3c7a4ab207, type: 2}
+  whiteDebug: {fileID: 2100000, guid: a1eade2aed1c01d449b101b3b1ec276b, type: 2}
+  spawnPos: {x: 0, y: 0, z: 0}
+  spawnFow: {x: 0, y: 0, z: 0}
+--- !u!114 &-8610394602819512607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3b2834a56fe7264595309764340e090, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  health:
+    m_InternalValue: 0
+--- !u!114 &5978525050431701936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d480259ad10c6264aa0aec9c0df8ef8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  distance: 3
+  playerAndGroundLayer:
+    serializedVersion: 2
+    m_Bits: 65
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1
 --- !u!1 &2931471490281750658
 GameObject:
   m_ObjectHideFlags: 0
