@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2931471489593240300}
   - component: {fileID: 2931471489593240291}
   - component: {fileID: 2931471489593240290}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Renderer
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -98,7 +98,7 @@ GameObject:
   - component: {fileID: 2709372960629483514}
   - component: {fileID: 1205034768838314728}
   - component: {fileID: -3852071104688765420}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -161,6 +161,7 @@ MonoBehaviour:
   suspendGravityOnGround: 1
   groundProbeDistance: 0.1
   coyoteTime: 0.12
+  _isGrounded: 0
 --- !u!114 &455297323731713935
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -251,7 +252,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2931471490281750659}
   - component: {fileID: 1045315817415406549}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Camera rotation anchor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -305,7 +306,7 @@ GameObject:
   m_Component:
   - component: {fileID: 428088673559635742}
   - component: {fileID: 1334152775563438803}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Input
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -367,7 +368,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8079375404617490401}
   - component: {fileID: 6870464201350731365}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: cm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -411,7 +412,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4858396239479509642}
   - component: {fileID: 676049309775103089}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Player vcam
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -482,7 +483,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4087566662274080578}
   - component: {fileID: 3372269408483838460}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Movement
   m_TagString: Untagged
   m_Icon: {fileID: 0}
