@@ -29,10 +29,8 @@ public sealed class RelayConnectionClient : BaseRelayConnection
         ConnectTransport();
     }
 
-    public override void OnDestroy()
+    private void OnDestroy()
     {
-        base.OnDestroy();
-
         Close();
     }
 
@@ -80,8 +78,8 @@ public sealed class RelayConnectionClient : BaseRelayConnection
     {
         if (allocationConnection != null && endpoint != null)
         {
-            NetworkManager.Singleton.ConnectionApprovalCallback -= Callback_ConfirmConnection;
-            NetworkManager.Singleton.ConnectionApprovalCallback += Callback_ConfirmConnection;
+            NetworkManager.Singleton.ConnectionApprovalCallback -= OnConnectionApproved;
+            NetworkManager.Singleton.ConnectionApprovalCallback += OnConnectionApproved;
 
             ((UnityTransport)NetworkManager.Singleton.NetworkConfig.NetworkTransport).SetClientRelayData(endpoint.Host, (ushort)endpoint.Port, allocationConnection.AllocationIdBytes, allocationConnection.Key, allocationConnection.ConnectionData, allocationConnection.HostConnectionData);
             NetworkManager.Singleton.StartClient();
@@ -90,17 +88,25 @@ public sealed class RelayConnectionClient : BaseRelayConnection
         else throw new InvalidOperationException("Cannot connect transport before resolving allocation/endpoint!");
     }
 
-    private void Callback_ConfirmConnection(byte[] arg1, ulong arg2, NetworkManager.ConnectionApprovedDelegate arg3)
+    private void OnConnectionApproved(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
     {
-        _status = Status.NGOGood; //TODO check if rejected by server
+        if (response.Approved)
+        {
+            _status = Status.NGOGood;
+            //respond(true, null, true, Vector3.zero, null);
+        }
+        else
+        {
+            _status = Status.Rejected;
+        } 
     }
-    
+
     private void Close()
     {
         if (NetworkManager.Singleton)
         {
             _status = Status.NotConnected;
-            NetworkManager.Singleton.ConnectionApprovalCallback -= Callback_ConfirmConnection;
+            NetworkManager.Singleton.ConnectionApprovalCallback -= OnConnectionApproved;
 
             NetworkManager.Singleton.Shutdown();
 
