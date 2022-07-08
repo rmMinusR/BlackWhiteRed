@@ -9,7 +9,9 @@ public class PlayerMelee : NetworkBehaviour
     [SerializeField]
     float distance;
     [SerializeField]
-    LayerMask playerLayer;
+    LayerMask playerAndGroundLayer;
+    [SerializeField]
+    LayerMask groundLayer;
 
     PlayerController playerController;
 
@@ -57,7 +59,7 @@ public class PlayerMelee : NetworkBehaviour
 
         //Hit Registration
         RaycastHit[] hits;
-        hits = Physics.RaycastAll(new Ray(transform.position, directionFacing), distance, playerLayer);
+        hits = Physics.RaycastAll(new Ray(transform.position, directionFacing), distance, playerAndGroundLayer);
 
 
         if(hits.Length > 0)
@@ -84,7 +86,7 @@ public class PlayerMelee : NetworkBehaviour
 
             if (playerHit != null)
             {
-                Debug.Log("Melee hits!");
+                Debug.Log("Melee hits locally!");
                 MeleeCheckServerRpc(directionFacing, playerHit.NetworkObjectId);
             }
         }
@@ -95,13 +97,18 @@ public class PlayerMelee : NetworkBehaviour
     {
         PlayerController playerHit = NetworkManager.Singleton.SpawnManager.SpawnedObjects[playerHitId].GetComponent<PlayerController>();
 
-        playerHit.GetComponent<PlayerHealth>().TakeDamage((int)playerController.CurrentStats.damageDealt);
-        ////Verify the hit was possible in range
-        //if (Vector3.SqrMagnitude(playerHit.transform.position - transform.position) <= distance * distance)
-        //{ 
-        //    //TODO: Create something that deals with protection in PlayerHealth, then call it here instead
-        //    playerHit.GetComponent<PlayerHealth>().TakeDamage((int)playerController.CurrentStats.damageDealt);
-        //}
+        //Verify the hit was possible in range
+        Vector3 diff = playerHit.transform.position - transform.position;
+        if (diff.sqrMagnitude <= distance * distance)
+        {
+            //Verrify the hit was not blocked by something server-side
+            if (!Physics.Raycast(new Ray(transform.position, diff), diff.magnitude, groundLayer))
+            {
+                Debug.Log("Melee hits server-side!");
+                //TODO: Create something that deals with protection in PlayerHealth, then call it here instead
+                playerHit.GetComponent<PlayerHealth>().TakeDamage((int)playerController.CurrentStats.damageDealt);
+            }
+        }
     }
 
     private void OnDrawGizmos()
