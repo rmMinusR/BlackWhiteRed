@@ -61,7 +61,6 @@ public class PlayerMelee : NetworkBehaviour
         RaycastHit[] hits;
         hits = Physics.RaycastAll(new Ray(transform.position, directionFacing), distance, playerAndGroundLayer);
 
-
         if(hits.Length > 0)
         {
             PlayerController playerHit = null;
@@ -97,7 +96,7 @@ public class PlayerMelee : NetworkBehaviour
     {
         PlayerController playerHit = NetworkManager.Singleton.SpawnManager.SpawnedObjects[playerHitId].GetComponent<PlayerController>();
 
-        //Verrify the hit was not blocked by something server-side
+        //Verify the hit was not blocked by something server-side
         if (!Physics.Raycast(new Ray(transform.position, directionFacing), castDistance, groundLayer))
         {
             Debug.Log("Melee hits server-side!");
