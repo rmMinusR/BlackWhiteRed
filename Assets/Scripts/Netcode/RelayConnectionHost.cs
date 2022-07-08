@@ -48,15 +48,6 @@ public sealed class RelayConnectionHost : BaseRelayConnection
         Close();
     }
 
-    private void OnGUI()
-    {
-        GUILayout.Label("Joincode: "+joinCode);
-        if (GUILayout.Button("Copy"))
-        {
-            GUIUtility.systemCopyBuffer = joinCode;
-        }
-    }
-
     private Allocation allocation = null;
     private string joinCode = null;
     public string JoinCode => joinCode;

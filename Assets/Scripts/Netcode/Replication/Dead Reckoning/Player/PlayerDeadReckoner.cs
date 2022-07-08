@@ -125,13 +125,13 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
     {
         if (!IsLocalPlayer) throw new AccessViolationException("Only owner can recieve reject messages! Use "+nameof(Callback_CopyRemoteFrame)+" instead.");
 
-        string rejectInfo = "REJECTED ("+rejectReason+")      t="+NetworkManager.Singleton.ServerTime.FixedTime.ToString("F3")+"/"+@new.time.ToString("F3")
-                                                           +" d"+((float)NetworkManager.Singleton.ServerTime.FixedTime-@new.time).ToString("F3");
+        string rejectInfo = "REJECTED ("+rejectReason+")      t="+NetworkManager.Singleton.ServerTime.FixedTime.ToString(Constants.TIME_INTERVAL_FORMAT)+"/"+@new.time.ToString(Constants.TIME_INTERVAL_FORMAT)
+                                                           +" d"+((float)NetworkManager.Singleton.ServerTime.FixedTime-@new.time).ToString(Constants.TIME_INTERVAL_FORMAT);
 
         @new = PlayerDeadReckoningUtility.DeadReckon(@new, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
         
-        rejectInfo += " pos="+Vector3.Distance(transform .position, @new.position).ToString("F3")
-                   +  " vel="+Vector3.Distance(kinematics.velocity, @new.velocity).ToString("F3");
+        rejectInfo += " pos="+Vector3.Distance(transform .position, @new.position).ToString(Constants.TIME_INTERVAL_FORMAT)
+                   +  " vel="+Vector3.Distance(kinematics.velocity, @new.velocity).ToString(Constants.TIME_INTERVAL_FORMAT);
         Debug.Log(rejectInfo, this);
 
         //TODO should this be in FixedUpdate?

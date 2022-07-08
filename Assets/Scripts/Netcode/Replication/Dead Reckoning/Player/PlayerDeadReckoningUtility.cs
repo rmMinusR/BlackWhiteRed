@@ -37,8 +37,6 @@ public static class PlayerDeadReckoningUtility
     {
         float dt = targetTime - current.time;
 
-        if (dt < 0) Debug.LogWarning("Rewinding time is strongly discouraged! (dt="+dt+")");
-
         current.position += current.velocity*dt;
         current.time = targetTime;
 
@@ -55,8 +53,6 @@ public static class PlayerDeadReckoningUtility
     {
         float dt = targetTime - current.time;
 
-        if (dt < 0) Debug.LogWarning("Rewinding time is strongly discouraged! (dt="+dt+")");
-        
         current.position += current.velocity*dt + 1/2*Physics.gravity*dt*dt; // s = ut + 1/2 at^2
         current.velocity += Physics.gravity*dt; // v = u + at
         current.time = targetTime;
@@ -74,21 +70,28 @@ public static class PlayerDeadReckoningUtility
     {
         float dt = targetTime - current.time;
 
-        //if (dt < 0) throw new InvalidOperationException("Rewinding time is not allowed due to discontinuity! (dt="+dt+")");
         if (dt < 0)
         {
-            Debug.LogWarning("Negative DT! Deferring to 2nd degree.");
+            //Cannot directly rewind time, the velocity function is invalid when t<0 (and therefore so is position)
+            Debug.LogWarning("Negative DT ("+dt.ToString(Constants.TIME_INTERVAL_FORMAT) +")! Deferring to 2nd degree.");
             return RawDeadReckonDeg2(current, targetTime);
         }
+        else
+        {
+            //DT is OK
 
-        Vector3 targetVelocity = current.LookRight * current.input.x + current.LookForward * current.input.y;
-        targetVelocity.y = current.velocity.y;
-        float px = Mathf.Pow(current.slipperiness, dt);
+            Vector3 targetVelocity = current.LookRight * current.input.x + current.LookForward * current.input.y;
+            targetVelocity.y = current.velocity.y;
+            float px = Mathf.Pow(current.slipperiness, dt);
 
-        current.position += targetVelocity*dt+(current.velocity-targetVelocity)*(px-1)/Mathf.Log(current.slipperiness) + 1/2*Physics.gravity*dt*dt;
-        current.velocity = Vector3.Lerp(current.velocity, targetVelocity, px) + Physics.gravity*dt; //NOTE: This will 100% break if gravity ever goes sideways
-        current.time = targetTime;
+            current.position += targetVelocity*dt+(current.velocity-targetVelocity)*(px-1)/Mathf.Log(current.slipperiness) + 1/2*Physics.gravity*dt*dt;
+            current.velocity = Vector3.Lerp(current.velocity, targetVelocity, px) + Physics.gravity*dt; //NOTE: This will 100% break if gravity ever goes sideways
+            current.time = targetTime;
 
-        return current;
+            //Display warning about sideways gravity
+            if (Mathf.Abs(Physics.gravity.x) > 0.1f || Mathf.Abs(Physics.gravity.z) > 0.1f) Debug.LogWarning("3rd degree dead reckoning requires gravity to be vertical only!");
+
+            return current;
+        }
     }
 }

@@ -32,11 +32,7 @@ public sealed class EnableByPlayer : NetworkBehaviour
         foreach (Behaviour  b in otherBehaviours ) bStates[b] = (bStates.TryGetValue(b, out bool en)?en:false) || !IsLocalPlayer;
 
         //Apply it
-        foreach (KeyValuePair<GameObject, bool> oState in oStates)
-        {
-            Debug.Log((oState.Value?"Enabling ":"Disabling ") + oState.Key);
-            oState.Key.SetActive(oState.Value);
-        }
+        foreach (KeyValuePair<GameObject, bool> oState in oStates) oState.Key.SetActive(oState.Value);
         foreach (KeyValuePair<Behaviour , bool> bState in bStates) bState.Key.enabled = bState.Value;
     }
 

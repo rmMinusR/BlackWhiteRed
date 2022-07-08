@@ -37,8 +37,6 @@ public static class KinematicDeadReckoningUtility
     {
         float dt = targetTime - current.time;
 
-        if (dt < 0) Debug.LogWarning("Rewinding time is strongly discouraged! (dt="+dt+")");
-        
         current.position += current.velocity*dt; // s = ut
         current.time = targetTime;
 
@@ -55,8 +53,6 @@ public static class KinematicDeadReckoningUtility
     {
         float dt = targetTime - current.time;
 
-        if (dt < 0) Debug.LogWarning("Rewinding time is strongly discouraged! (dt="+dt+")");
-        
         current.position += current.velocity*dt + 1/2*Physics.gravity*dt*dt; // s = ut + 1/2 at^2
         current.velocity += Physics.gravity*dt; // v = u + at
         current.time = targetTime;
