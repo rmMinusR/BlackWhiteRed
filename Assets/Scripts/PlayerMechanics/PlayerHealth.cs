@@ -45,7 +45,9 @@ public class PlayerHealth : NetworkBehaviour
         health.Value = Mathf.Max(health.Value - damage,0);
         health.SetDirty(true);
 
-        if(health.Value == 0)
+        onHealthChange?.Invoke(health.Value);
+
+        if (health.Value == 0)
         {
             onPlayerDeath?.Invoke();
         }

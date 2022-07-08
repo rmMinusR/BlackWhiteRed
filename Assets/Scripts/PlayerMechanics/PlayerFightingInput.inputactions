@@ -1,0 +1,34 @@
+{
+    "name": "PlayerFightingInput",
+    "maps": [
+        {
+            "name": "Combat",
+            "id": "e3892684-5ca3-49ed-b229-3c04b2b5a8eb",
+            "actions": [
+                {
+                    "name": "Melee",
+                    "type": "Button",
+                    "id": "24908566-249b-4053-b1d8-f4e887d49637",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "7aad4454-0964-47fa-bc55-e9830d170c24",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Melee",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}
