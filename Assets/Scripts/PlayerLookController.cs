@@ -20,7 +20,7 @@ public sealed class PlayerLookController : NetworkBehaviour
     [Space]
     [SerializeField] private NetworkVariable<Vector2> angles = new NetworkVariable<Vector2>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
     public Vector2 Angles => angles.Value;
-
+    
     private void Update()
     {
         if (IsLocalPlayer && IsSpawned)

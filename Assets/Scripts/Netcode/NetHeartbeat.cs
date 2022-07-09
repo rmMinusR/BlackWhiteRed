@@ -71,16 +71,16 @@ public class NetHeartbeat : NetworkBehaviour
     [SerializeField] protected List<OutgoingPing> travelingPings = new List<OutgoingPing>();
 
     public float SmoothedRTT => _smoothedRtt.Value;
-    [SerializeField] //TODO make inspector read-only
+    [InspectorReadOnly] [SerializeField]
     protected NetworkVariable<float> _smoothedRtt = new NetworkVariable<float>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
 
     private Coroutine heartbeatWorker;
     private IEnumerator HeartbeatWorker()
     {
-        // FIXME heartbeat might not keep connection alive in dedicated server mode
         while (true)
         {
             SendHeartbeat();
+            Debug.Log("Server vs local time: " + (NetworkManager.Singleton.ServerTime.FixedTime - NetworkManager.Singleton.LocalTime.FixedTime));
 
             //Remove timed-out pings
             travelingPings.RemoveAll(p => p.sendTime + pingTimeout < Time.realtimeSinceStartupAsDouble);
