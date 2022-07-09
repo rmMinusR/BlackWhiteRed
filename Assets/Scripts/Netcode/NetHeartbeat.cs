@@ -11,6 +11,7 @@ public class NetHeartbeat : NetworkBehaviour
     #region Pseudo-singleton
 
     public static NetHeartbeat Self => NetHeartbeat.Of(NetworkManager.Singleton.LocalClientId);
+    public static bool IsConnected => __Instances.TryGetValue(NetworkManager.Singleton.LocalClientId, out NetHeartbeat i) ? i.IsSpawned : false;
 
     private static Dictionary<ulong, NetHeartbeat> __Instances = new Dictionary<ulong, NetHeartbeat>();
     public static NetHeartbeat Of(ulong playerID) => __Instances.TryGetValue(playerID, out NetHeartbeat i) ? i : throw new IndexOutOfRangeException();
@@ -71,8 +72,9 @@ public class NetHeartbeat : NetworkBehaviour
     [SerializeField] protected List<OutgoingPing> travelingPings = new List<OutgoingPing>();
 
     public float SmoothedRTT => _smoothedRtt.Value;
-    [InspectorReadOnly] [SerializeField]
-    protected NetworkVariable<float> _smoothedRtt = new NetworkVariable<float>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
+    [InspectorReadOnly] [SerializeField] protected NetworkVariable<float> _smoothedRtt = new NetworkVariable<float>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
+    public float Jitter => _jitter.Value;
+    [InspectorReadOnly] [SerializeField] protected NetworkVariable<float> _jitter      = new NetworkVariable<float>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
 
     private Coroutine heartbeatWorker;
     private IEnumerator HeartbeatWorker()
@@ -80,8 +82,7 @@ public class NetHeartbeat : NetworkBehaviour
         while (true)
         {
             SendHeartbeat();
-            Debug.Log("Server vs local time: " + (NetworkManager.Singleton.ServerTime.FixedTime - NetworkManager.Singleton.LocalTime.FixedTime));
-
+            
             //Remove timed-out pings
             travelingPings.RemoveAll(p => p.sendTime + pingTimeout < Time.realtimeSinceStartupAsDouble);
 
@@ -132,6 +133,11 @@ public class NetHeartbeat : NetworkBehaviour
 
     protected void RecalcAvgRTT()
     {
+        //Calculate average
         _smoothedRtt.Value = pastPings.Average(c => (float)c.rtt);
+
+        //Calculate jitter as standard deviation
+        static float sq(float v) => v*v;
+        _jitter.Value = Mathf.Sqrt(pastPings.Sum(x => sq(x.rtt-_smoothedRtt.Value)) / pastPings.Count);
     }
 }

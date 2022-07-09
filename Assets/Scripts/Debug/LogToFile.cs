@@ -54,7 +54,7 @@ public sealed class LogToFile : MonoBehaviour
     private void _OnLog(string logString, string stackTrace, LogType type)
     {
         logFile.WriteLineAsync(DateTime.Now.ToString("HH:mm:ss")+"\t"+type+"\t"+logString);
-        if(type == LogType.Exception) logFile.WriteLineAsync(stackTrace);
+        if (type == LogType.Exception) foreach (string traceLine in stackTrace.Split("\n")) logFile.WriteLineAsync("\t\t\t"+traceLine);
     }
 
     private IEnumerator FlushWorker()
