@@ -71,7 +71,7 @@ public class PlayerMelee : NetworkBehaviour
 
             for (int i = 0; i < hits.Length; i++)
             {
-                tempCheck = hits[i].rigidbody.TryGetComponent<PlayerController>(out tempPlayer);
+                tempCheck = hits[i].transform.TryGetComponent<PlayerController>(out tempPlayer);
                 if(!tempCheck || tempPlayer.Team != playerController.Team)
                 {
                     tempDist = hits[i].distance;
