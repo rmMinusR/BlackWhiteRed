@@ -1,20 +1,27 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
 public sealed class LogToFile : MonoBehaviour
 {
-    [SerializeField] private bool disableInEditor = true;
-
     [SerializeField] [Tooltip("Flushes per second")] [Min(1)] private float flushFrequency = 5;
     [SerializeField] private string logFilePathFormat = "BWR_$date_$time.log";
+    private StringBuilder buffer;
     private StreamWriter logFile;
+
+#if UNITY_EDITOR
+    [SerializeField] private bool disableInEditor = true;
+#endif
 
     private void Start()
     {
+#if UNITY_EDITOR
         if (disableInEditor && Application.isEditor) return;
+#endif
 
         //Apply path format
         string logFilePath = logFilePathFormat
@@ -39,7 +46,10 @@ public sealed class LogToFile : MonoBehaviour
             : "Could not verify contents");
         logFile.Flush();
 
-        StartCoroutine(FlushWorker());
+        buffer = new StringBuilder(256);
+        flusherThread = new Thread(ThreadedFlushWorker);
+        flusherThread.Name = "Log I/O Thread";
+        flusherThread.Start();
 
         //Hook into log events
         Debug.unityLogger.logEnabled = true;
@@ -53,18 +63,35 @@ public sealed class LogToFile : MonoBehaviour
 
     private void _OnLog(string logString, string stackTrace, LogType type)
     {
-        logFile.WriteLineAsync(DateTime.Now.ToString("HH:mm:ss")+"\t"+type+"\t"+logString);
-        if (type == LogType.Exception) foreach (string traceLine in stackTrace.Split("\n")) logFile.WriteLineAsync("\t\t\t"+traceLine);
+        lock (buffer)
+        {
+            buffer.AppendLine(DateTime.Now.ToString("HH:mm:ss")+"\t"+type+"\t"+logString);
+            if (type == LogType.Exception) foreach (string traceLine in stackTrace.Split("\n")) buffer.AppendLine("\t\t\t"+traceLine);
+        }
     }
 
-    private IEnumerator FlushWorker()
+    private Thread flusherThread;
+    private bool flusherRunning = false;
+    private void ThreadedFlushWorker()
     {
-        while (true)
+        flusherRunning = true;
+        while (this != null && logFile != null && flusherRunning)
         {
-            Task f = logFile.FlushAsync();
-            yield return new WaitForSecondsRealtime(1f/flushFrequency);
-            yield return new WaitForTask(f); //Ensure flush is finished before starting next one
+            //Transfer from buffer to logfile
+            string bufferContents;
+            lock(buffer)
+            {
+                bufferContents = buffer.ToString();
+                buffer.Clear();
+            }
+            logFile.Write(bufferContents);
+
+            //Flush logfile to make sure copy on disk is up to date
+            Task flushOp = logFile.FlushAsync();
+            Thread.Sleep((int) (1000f / flushFrequency));
+            flushOp.Wait(); //Ensure flush is finished before starting next cycle
         }
+        flusherRunning = false;
     }
 
     private void OnDestroy() => Cleanup();
@@ -80,17 +107,24 @@ public sealed class LogToFile : MonoBehaviour
 
     private void Cleanup()
     {
-        StopAllCoroutines();
-
         //Unhook
         Application.logMessageReceived -= _OnLog;
 
         Application.wantsToQuit -= Application_wantsToQuit;
 
+        //Halt thread
+        if (flusherThread != null)
+        {
+            flusherRunning = false; //Send stop signal
+            //if (flusherThread.IsAlive) flusherThread.Abort();
+            flusherThread.Join(500);
+            flusherThread = null;
+        }
+
         //Close file
         if (logFile != null)
         {
-            _OnLog("Shutdown", "", LogType.Log);
+            logFile.WriteLine(DateTime.Now.ToString("HH:mm:ss")+"\tShutdown");
 
             logFile.Flush();
             logFile.Close();
