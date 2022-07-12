@@ -46,6 +46,7 @@ public class EquipmentStatsDisplayController : MonoBehaviour
         if (localPlayerController != null)
         {
             localPlayerController.onShadeChange += HandleShadeChange;
+            localPlayerController.GetComponent<PlayerWeaponHolding>().onWeaponChange += HandleWeaponChange;
         }
     }
 
@@ -59,6 +60,7 @@ public class EquipmentStatsDisplayController : MonoBehaviour
 
             //Set events
             localPlayerController.onShadeChange += HandleShadeChange;
+            localPlayerController.GetComponent<PlayerWeaponHolding>().onWeaponChange += HandleWeaponChange;
         }
         ShadeChange();
     }
@@ -69,6 +71,7 @@ public class EquipmentStatsDisplayController : MonoBehaviour
         if (localPlayerController != null)
         {
             localPlayerController.onShadeChange -= HandleShadeChange;
+            localPlayerController.GetComponent<PlayerWeaponHolding>().onWeaponChange -= HandleWeaponChange;
         }
     }
 
@@ -77,6 +80,16 @@ public class EquipmentStatsDisplayController : MonoBehaviour
         currentStats = stats;
         ShadeChange();
     }
+
+
+    private void HandleWeaponChange(WeaponHeld weaponHeld)
+    {
+        Debug.Log("HandleWeaponChangeUI "+weaponHeld);
+
+        isHoldingBow = weaponHeld == WeaponHeld.BOW;
+        ShadeChange();
+    }
+
 
     private void ShadeChange()
     {

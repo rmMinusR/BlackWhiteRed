@@ -101,6 +101,8 @@ GameObject:
   - component: {fileID: 4052683045127445090}
   - component: {fileID: -8610394602819512607}
   - component: {fileID: 5978525050431701936}
+  - component: {fileID: -2340775154603896931}
+  - component: {fileID: 1917337575216211240}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -301,6 +303,41 @@ MonoBehaviour:
   groundLayer:
     serializedVersion: 2
     m_Bits: 1
+--- !u!114 &-2340775154603896931
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9918a8a68260ec54fa0604c8e07680f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timeToLoad: 1
+  timeToFullyCharge: 10
+  timeCharging: 0
+  wantsToCharge: 0
+--- !u!114 &1917337575216211240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9b3d1e087c8ad445a06fa7e96949a5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scrollThreshold: 600
+  scrollResetTime: 0.5
+  scrollAmount: 0
+  scrollTimer: 0
+  isLocalPlayer: 1
+  holding:
+    m_InternalValue: 0
 --- !u!1 &2931471490281750658
 GameObject:
   m_ObjectHideFlags: 0

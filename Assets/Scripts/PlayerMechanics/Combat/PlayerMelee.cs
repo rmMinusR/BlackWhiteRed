@@ -4,6 +4,7 @@ using UnityEngine;
 using Unity.Netcode;
 using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(PlayerWeaponHolding))]
 public class PlayerMelee : NetworkBehaviour
 {
     [SerializeField]
@@ -14,6 +15,7 @@ public class PlayerMelee : NetworkBehaviour
     LayerMask groundLayer;
 
     PlayerController playerController;
+    PlayerWeaponHolding weaponHolding;
 
     PlayerFightingInput input;
 
@@ -25,6 +27,7 @@ public class PlayerMelee : NetworkBehaviour
     private void Start()
     {
         playerController = GetComponent<PlayerController>();
+        weaponHolding = GetComponent<PlayerWeaponHolding>();
     }
 
     private void OnEnable()
@@ -46,7 +49,7 @@ public class PlayerMelee : NetworkBehaviour
     private void AttemptMelee()
     {
         //Verify that this is the player's character
-        if(gameObject != NetworkManager.Singleton.LocalClient.PlayerObject.gameObject)
+        if(!weaponHolding.CanPreform(WeaponHeld.SWORD))
         {
             return;
         }

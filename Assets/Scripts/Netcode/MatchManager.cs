@@ -21,8 +21,6 @@ public class MatchManager : NetworkBehaviour
     public int[] teamScores;
     [Space]
     [SerializeField]
-    GameObject loadingCanvas;
-    [SerializeField]
     List<ulong> readyClientIds;
     [Space]
     [SerializeField]
@@ -96,8 +94,6 @@ public class MatchManager : NetworkBehaviour
             NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoints[(int)teams[i]].position, spawnPoints[(int)teams[i]].forward);
             NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().ResetToSpawnPoint();
         }
-
-        loadingCanvas.SetActive(false);
 
         //Set Scores
         teamScores = new int[] { 0, 0 };
