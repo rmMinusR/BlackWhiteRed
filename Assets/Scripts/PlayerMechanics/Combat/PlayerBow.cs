@@ -66,15 +66,24 @@ public class PlayerBow : MonoBehaviour
 
     private void BowRelease()
     {
-        if (wantsToCharge && weaponHolding.CanPreform(WeaponHeld.BOW))
+        if (wantsToCharge)
         {
-            if(timeCharging > timeToLoad)
+            wantsToCharge = false;
+            if (weaponHolding.CanPreform(WeaponHeld.BOW))
             {
-                //TODO: Spawn Arrow
+                if (timeCharging > timeToLoad)
+                {
+                    Debug.Log("Released with enough time to fire");
+
+                    //TODO: Spawn Arrow
+                    float pullBack = (timeCharging - timeToLoad) / (timeToFullyCharge - timeToLoad);
+                    Vector3 pos = Camera.main.transform.position;
+                    Vector3 dir = Camera.main.transform.forward;
+
+                    ArrowPool.Instance.RequestArrowFireServerRpc(playerController.Team, playerController.ShadeValue, pos, dir, pullBack);
+                }
             }
         }
-
-        wantsToCharge = false;
     }
 
     private void BowCharging()

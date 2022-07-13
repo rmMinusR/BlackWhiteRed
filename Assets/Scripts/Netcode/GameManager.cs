@@ -201,8 +201,7 @@ public class GameManager : MonoBehaviour
                     NetworkManager.Singleton.SceneManager.LoadScene(SceneNameEnvironmentArt, LoadSceneMode.Additive);
                     break;
                 case SceneNameEnvironmentArt:
-                    Debug.Log("MATCH CAN START");
-                    MatchManager.Instance.LogAsReadyServerRpc(NetworkManager.Singleton.LocalClientId);
+                    StartCoroutine(ReadyUp());
                     break;
             }
         }
@@ -228,9 +227,20 @@ public class GameManager : MonoBehaviour
 
     private void HandleUnloadEnded(AsyncOperation oper)
     {
+        StartCoroutine(ReadyUp());
+        oper.completed -= HandleUnloadEnded;
+    }
+
+    IEnumerator ReadyUp()
+    {
+        while(NetworkManager.Singleton.LocalClient.PlayerObject == null)
+        {
+            var delay = new WaitForSecondsRealtime(0.2f);
+            yield return delay;
+        }
+
         Debug.Log("MATCH CAN START");
         MatchManager.Instance.LogAsReadyServerRpc(NetworkManager.Singleton.LocalClientId);
-        oper.completed -= HandleUnloadEnded;
     }
 
     #endregion

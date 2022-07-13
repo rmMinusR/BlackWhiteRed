@@ -38,6 +38,7 @@ public class PlayerController : NetworkBehaviour
     public delegate void PlayerStatsEvent(PlayerStats _value);
     public event PlayerStatsEvent onShadeChange;
 
+    public int ShadeValue => shadeValue;
     private PlayerStats currentStats => kit.playerStats[shadeValue];
     public PlayerStats CurrentStats => currentStats;
     public Team Team => currentTeam;

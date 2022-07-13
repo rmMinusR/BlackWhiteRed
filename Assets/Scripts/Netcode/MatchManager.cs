@@ -138,20 +138,20 @@ public class MatchManager : NetworkBehaviour
         ForcePlayerControllers();
     }
 
-    [ClientRpc]
+    [ClientRpc(Delivery = RpcDelivery.Reliable)]
     private void OnMatchStartClientRpc()
     {
         NetworkManager.Singleton.LocalClient.PlayerObject.TryGetComponent<PlayerController>(out localPlayerController);
         onMatchStart?.Invoke();
     }
 
-    [ClientRpc]
+    [ClientRpc(Delivery = RpcDelivery.Reliable)]
     private void OnTeamScoreClientRpc(Team team)
     {
         onTeamScore?.Invoke(team);
     }
 
-    [ClientRpc]
+    [ClientRpc(Delivery = RpcDelivery.Reliable)]
     private void OnTeamWinClientRpc(Team team)
     {
         onTeamWin?.Invoke(team);

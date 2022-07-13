@@ -25,10 +25,11 @@ public class PlayerWeaponHolding : NetworkBehaviour
     PlayerController playerController;
     PlayerFightingInput input;
 
+    [SerializeField]
     bool isLocalPlayer = false;
 
     [SerializeField]
-    private NetworkVariable<WeaponHeld> holding = new NetworkVariable<WeaponHeld>();
+    private NetworkVariable<WeaponHeld> holding = new NetworkVariable<WeaponHeld>(WeaponHeld.SWORD,NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Owner);
 
     public delegate void WeaponHeldEvent(WeaponHeld weaponHeld);
     public event WeaponHeldEvent onWeaponChange;
