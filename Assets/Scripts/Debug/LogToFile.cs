@@ -39,8 +39,8 @@ public sealed class LogToFile : MonoBehaviour
         logFile = File.AppendText(logFilePath);
         
         //Write build info
-        logFile.WriteLine("Black White Red v"+Application.version+" for "+Application.platform.ToString().Replace("Player", ""));
-        logFile.WriteLine("Build #"+BuildInfo.BUILD_NUMBER+" ("+BuildInfo.BUILD_TIME.ToString("MMM dd HH:mm:ss")+") with framework v"+Application.unityVersion);
+        logFile.WriteLine("Black White Red v"+Application.version+" for "+Application.platform.ToString().Replace("Player", "")+" with framework v"+Application.unityVersion);
+        logFile.WriteLine("Build #"+BuildInfo.BUILD_NUMBER+" "+BuildInfo.BUILD_TIME.ToString("MMM dd HH:mm:ss")+" on "+BuildInfo.COMMIT);
         logFile.WriteLine(Application.genuineCheckAvailable
             ? (Application.genuine ? "Contents not modified" : "Contents modified")
             : "Could not verify contents");
