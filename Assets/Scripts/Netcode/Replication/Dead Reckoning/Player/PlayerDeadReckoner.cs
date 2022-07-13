@@ -37,17 +37,50 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
 
     private void SubmitFrameToServer()
     {
-
+        //Push to history
+        clientFrameHistory.Add(kinematics.frame);
+        DONOTCALL_RecieveClientFrame_ServerRpc(kinematics.frame);
     }
 
-    [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
-    private void RecieveClientFrame_ServerRpc(PlayerPhysicsFrame frame, ServerRpcParams p = default)
-    {
-        int insertIndex = clientFrameHistory.FindLastIndex(x => x.time < frame.time) - 1;
+    [Header("Validation (server-side only)")]
+    [SerializeField] [Min(0.001f)] private float positionForgiveness = 0.05f;
+    [SerializeField] [Min(0.001f)] private float velocityForgiveness = 0.05f;
 
-        //Validate
-        PlayerPhysicsFrame prevFrame = clientFrameHistory[insertIndex-1];
-        kinematics.Step(prevFrame, frame.time-prevFrame.time, false);
+    [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
+    private void DONOTCALL_RecieveClientFrame_ServerRpc(PlayerPhysicsFrame untrustedFrame, ServerRpcParams p = default)
+    {
+        //Verify ownership
+        if (p.Receive.SenderClientId != OwnerClientId) throw new AccessViolationException($"Player {p.Receive.SenderClientId} tried to send physics data as {OwnerClientId}!");
+
+        if (untrustedFrame.time > serverFrameHistory[0].time)
+        {
+            int insertIndex = serverFrameHistory.FindIndex(x => x.time > untrustedFrame.time);
+            if (insertIndex != -1) --insertIndex; //Found something
+            else insertIndex = serverFrameHistory.Count; //Didn't find anything, put at end
+
+            //Simulate
+            PlayerPhysicsFrame prevFrame = clientFrameHistory[insertIndex-1];
+            PlayerPhysicsFrame authorityFrame = kinematics.Step(prevFrame, untrustedFrame.time-prevFrame.time, false);
+
+            //Validate
+            untrustedFrame.position = ValidationUtility.Bound(out bool positionInvalid, untrustedFrame.position, authorityFrame.position, positionForgiveness);
+            untrustedFrame.velocity = ValidationUtility.Bound(out bool velocityInvalid, untrustedFrame.velocity, authorityFrame.velocity, velocityForgiveness);
+
+            //Record
+            serverFrameHistory.Insert(insertIndex, untrustedFrame);
+
+            //If any changes were made, issue correction
+            if(positionInvalid || velocityInvalid)
+            {
+                if (insertIndex < serverFrameHistory.Count-1) RecalcAllSince(serverFrameHistory, untrustedFrame.time);
+                IssueCorrection();
+            }
+        }
+        else
+        {
+            //Abort if a more recent basis frame has been validated
+            Debug.LogWarning($"Player {p.Receive.SenderClientId} sent a frame ({untrustedFrame.time}) but it was already overwritten ({serverFrameHistory[0].time})");
+        }
     }
 
     private List<PlayerPhysicsFrame> serverFrameHistory = new List<PlayerPhysicsFrame>();

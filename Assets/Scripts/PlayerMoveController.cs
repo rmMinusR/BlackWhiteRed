@@ -8,11 +8,8 @@ public class PlayerMoveController : NetworkBehaviour
     [Header("Movement settings")]
     [SerializeField] [Range(0, 1)] private float groundSlipperiness = 0.1f;
     [SerializeField] [Range(0, 1)] private float airSlipperiness = 0.1f;
-    [SerializeField] [Min(0)] private float _speed = 5f;
+    [SerializeField] [Min(0)] private float speed = 5f;
     [SerializeField] [Min(0)] private float jumpPower = 5f;
-    public float Speed => _speed;
-    public float CurrentSlipperiness => kinematicsLayer.frame.isGrounded ? groundSlipperiness : airSlipperiness;
-
     [SerializeField] [Min(0)] private float jumpCooldown = 0.5f;
 
     [Header("Bindings")]
@@ -53,10 +50,10 @@ public class PlayerMoveController : NetworkBehaviour
     public void ApplyMovement(ref PlayerPhysicsFrame frame, bool live)
     {
         //Handle horizontal movement
-        Vector3 targetVelocity = Speed*( frame.Right   * frame.input.x
+        Vector3 targetVelocity = speed*( frame.Right   * frame.input.x
                                        + frame.Forward * frame.input.y );
 
-        float slippageThisFrame = Mathf.Pow(CurrentSlipperiness, Time.fixedDeltaTime);
+        float slippageThisFrame = Mathf.Pow(frame.isGrounded ? groundSlipperiness : airSlipperiness, Time.fixedDeltaTime);
         Vector3 newVel = Vector3.Lerp(targetVelocity, frame.velocity, slippageThisFrame);
         frame.velocity = new Vector3(newVel.x, frame.velocity.y, newVel.z);
 

@@ -29,8 +29,6 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
 
     //Additional player-specific settings
     public Vector2 look;
-    public float slipperiness;
-    public float moveSpeed;
 
     //Input data
     public Vector2 input; //Players have variable acceleration

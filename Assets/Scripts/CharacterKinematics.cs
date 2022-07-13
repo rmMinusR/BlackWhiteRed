@@ -20,6 +20,14 @@ public sealed class CharacterKinematics : NetworkBehaviour
         proj = ProjectionShape.Build(gameObject);
     }
 
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        frame.position = transform.position;
+        frame.time = (float)NetworkManager.ServerTime.FixedTime;
+    }
+
     private void FixedUpdate()
     {
         bool didTeleport = ApplyPendingTeleportation();

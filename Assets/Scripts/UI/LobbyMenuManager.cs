@@ -123,10 +123,17 @@ public class LobbyMenuManager : MonoBehaviour
 
     public void StartMatchButton()
     {
-        if(playerIdToLobbyBar.Count > 1)
+        //RSC MOD: Allow starting game without all players, for debug purposes only.
+#if !UNITY_EDITOR
+        if (playerIdToLobbyBar.Count > 1)
         {
+#endif
+            
             GameManager.Instance.AttemptStartMatch();
+            
+#if !UNITY_EDITOR
         }
+#endif
     }
 
     public void SubmitRoomCodeButton()
