@@ -52,7 +52,7 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
         get
         {
             __RefreshLookTrig();
-            return new Vector3(__cosLookX, 0, __sinLookX);
+            return new Vector3(__cosLookX, 0, -__sinLookX);
         }
     }
 
@@ -61,7 +61,7 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
         get
         {
             __RefreshLookTrig();
-            return new Vector3(-__sinLookX, 0, __cosLookX);
+            return new Vector3(__sinLookX, 0, __cosLookX);
         }
     }
 

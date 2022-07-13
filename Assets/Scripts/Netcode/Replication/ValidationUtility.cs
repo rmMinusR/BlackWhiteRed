@@ -10,19 +10,29 @@ public static class ValidationUtility
         return newVal;
     }
 
-    public static Vector3 Bound(out bool anyChange, Vector3 val, Vector3 expected, float allowedError) => Bound(out anyChange, val, expected, allowedError, Vector3.Distance);
+    public static Vector3 Bound(out bool anyChange, Vector3 val, Vector3 expected, float allowedError)
+    {
+        Vector3 newVal = Vector3.MoveTowards(expected, val, allowedError);
+        anyChange = (newVal != val);
+        return newVal;
+    }
+
     public static Vector3 Bound(out bool anyChange, Vector3 val, Vector3 expected, float allowedError, Func<Vector3, Vector3, float> measureDist)
     {
+        //FIXME Not sure if this is working correctly
+
         float curLength = measureDist(val, expected);
 
-        if(anyChange = curLength > allowedError)
+        if(curLength > allowedError)
         {
+            anyChange = true;
+
             Vector3 d = val-expected;
             float amtAccepted = 1 / Mathf.Max(curLength, allowedError);
             d *= amtAccepted; //Readjust length
 
             val = expected + d;
-        }
+        } else anyChange = false;
 
         return val;
     }
