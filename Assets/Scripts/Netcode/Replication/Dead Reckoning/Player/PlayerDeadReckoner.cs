@@ -97,7 +97,7 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
             if (positionOutOfBounds) Debug.LogWarning("Player #" +OwnerClientId+ " moved too quickly!");
 
             //Value is within acceptable bounds, apply
-            authorityFrame.Value = newFrame;
+            SetAuthorityFrame(newFrame.position, newFrame.velocity);
         }
         else
         {
@@ -156,6 +156,9 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
 
     private void NonOwner_FixedUpdate()
     {
+        //Active lerping disabled
+        /*
+
         //FIXME expensive, run only on value change?
         PlayerPhysicsFrame targetPos = PlayerDeadReckoningUtility.DeadReckon(authorityFrame.Value, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
 
@@ -163,16 +166,31 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
         //FIXME smoothing causes slight lag behind
         transform .position = Vector3.Lerp(transform .position, targetPos.position, smoothSharpness);
         kinematics.velocity = Vector3.Lerp(kinematics.velocity, targetPos.velocity, smoothSharpness);
+
+        // */
     }
 
     #endregion
     
     private void FixedUpdate()
     {
-        if (IsSpawned)
+        if (IsSpawned && Time.frameCount%2 == 0)
         {
             if (IsLocalPlayer) Owner_FixedUpdate();
             else if (IsClient) NonOwner_FixedUpdate();
         }
+    }
+
+    public void SetAuthorityFrame(Vector3 position, Vector3 velocity)
+    {
+        if (!IsServer) throw new AccessViolationException("Only server has the authority to set kinematics frame!");
+
+        kinematics.transform.position = position;
+        kinematics.velocity = velocity;
+        
+        PlayerPhysicsFrame frame = PlayerPhysicsFrame.For(kinematics, move, look);
+        frame.position = position;
+        frame.velocity = velocity;
+        authorityFrame.Value = frame;
     }
 }
