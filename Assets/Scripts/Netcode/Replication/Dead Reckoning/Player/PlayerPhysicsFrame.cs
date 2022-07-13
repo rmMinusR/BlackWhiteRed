@@ -27,13 +27,22 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
         [MethodImpl(MethodImplOptions.AggressiveInlining)] set => _time = value;
     }
 
-    //Additional player-specific stuff
+    //Additional player-specific settings
     public Vector2 look;
-    public Vector2 input; //Players have variable acceleration
     public float slipperiness;
     public float moveSpeed;
 
-    //Cache expensive math
+    //Input data
+    public Vector2 input; //Players have variable acceleration
+    public bool jump;
+
+    //Derivative state data
+    public bool isGrounded;
+    public float timeSinceLastGround;
+    public float timeCanNextJump;
+
+    #region Cached expensive math
+
     private float __lastLookX;
     private float __sinLookX;
     private float __cosLookX;
@@ -47,7 +56,7 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
         }
     }
 
-    internal Vector3 LookRight
+    internal Vector3 Right
     {
         get
         {
@@ -56,7 +65,7 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
         }
     }
 
-    internal Vector3 LookForward
+    internal Vector3 Forward
     {
         get
         {
@@ -65,24 +74,5 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
         }
     }
 
-    /// <summary>
-    /// Convenience method to quickly make a player physics frame without repeated boilerplate code
-    /// </summary>
-    /// <param name="rb">Object to snapshot</param>
-    /// <returns>Snapshot, in *local* time</returns>
-    public static PlayerPhysicsFrame For(CharacterKinematics kinematicsLayer, PlayerMoveController move, PlayerLookController look)
-    {
-        return new PlayerPhysicsFrame
-        {
-            position = kinematicsLayer.transform.position,
-            velocity = kinematicsLayer.velocity,
-            time = (float) NetworkManager.Singleton.ServerTime.FixedTime,
-
-            input = move.IsSpawned ? move.rawInput.Value : Vector2.zero,
-            moveSpeed = move.Speed,
-            slipperiness = move.CurrentSlipperiness,
-
-            look = look.Angles
-        };
-    }
+    #endregion
 }

@@ -154,14 +154,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ccee9f0b91249ba438aeb9529a64d7fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  velocity: {x: 0, y: 0, z: 0}
-  _contactAreas: 0
+  move: {fileID: 3372269408483838460}
+  look: {fileID: 1045315817415406549}
+  frame:
+    _position: {x: 0, y: 0, z: 0}
+    _velocity: {x: 0, y: 0, z: 0}
+    _time: 0
+    look: {x: 0, y: 0}
+    slipperiness: 0
+    moveSpeed: 0
+    input: {x: 0, y: 0}
+    jump: 0
+    isGrounded: 0
+    timeSinceLastGround: 0
+    timeCanNextJump: 0
   enableGravity: 1
   gravityScale: 1
   suspendGravityOnGround: 1
   groundProbeDistance: 0.1
   coyoteTime: 0.12
-  _isGrounded: 0
+  teleportPending: 0
+  teleportPos: {x: 0, y: 0, z: 0}
+  teleportVel: {x: 0, y: 0, z: 0}
 --- !u!114 &455297323731713935
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -174,21 +188,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfa48d1b74340b54ab95216212e1d728, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  move: {fileID: 3372269408483838460}
-  look: {fileID: 1045315817415406549}
-  authorityFrame:
-    m_InternalValue:
-      _position: {x: 0, y: 0, z: 0}
-      _velocity: {x: 0, y: 0, z: 0}
-      _time: 0
-      look: {x: 0, y: 0}
-      input: {x: 0, y: 0}
-      slipperiness: 0
-      moveSpeed: 0
-  smoothSharpness: 0.2
-  velocityForgiveness: 10
-  positionForgiveness: 1
-  timeForgiveness: 2
 --- !u!114 &2709372960629483514
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -223,6 +222,8 @@ MonoBehaviour:
   pastPings: []
   travelingPings: []
   _smoothedRtt:
+    m_InternalValue: 0
+  _jitter:
     m_InternalValue: 0
 --- !u!114 &-3852071104688765420
 MonoBehaviour:
@@ -521,11 +522,9 @@ MonoBehaviour:
   airSlipperiness: 0.15
   _speed: 5
   jumpPower: 5
+  jumpCooldown: 0.5
   kinematicsLayer: {fileID: 3587278699711730041}
   frameOfReference: {fileID: 2931471490281750659}
   playerInput: {fileID: 1334152775563438803}
   controlMoveName: Move
   controlJumpName: Jump
-  rawInput:
-    m_InternalValue: {x: 0, y: 0}
-  jumpCooldown: 0.5

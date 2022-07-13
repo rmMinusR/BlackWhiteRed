@@ -80,7 +80,7 @@ public static class PlayerDeadReckoningUtility
         {
             //DT is OK
 
-            Vector3 targetVelocity = current.LookRight * current.input.x + current.LookForward * current.input.y;
+            Vector3 targetVelocity = current.Right * current.input.x + current.Forward * current.input.y;
             targetVelocity.y = current.velocity.y;
             float px = Mathf.Pow(current.slipperiness, dt);
 

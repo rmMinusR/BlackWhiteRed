@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -7,18 +8,33 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(CharacterController))]
 public sealed class CharacterKinematics : NetworkBehaviour
 {
-    private CharacterController coll { get; set; }
+    private CharacterController coll;
+    private ProjectionShape proj;
+    [SerializeField] private PlayerMoveController move;
+    [SerializeField] private PlayerLookController look;
+
 
     private void Awake()
     {
         coll = GetComponent<CharacterController>();
+        proj = ProjectionShape.Build(gameObject);
     }
 
     private void FixedUpdate()
     {
-        ApplyPendingTeleportation();
-        if (!transform.hasChanged) Step(Time.fixedTime, Time.fixedDeltaTime);
+        bool didTeleport = ApplyPendingTeleportation();
+
+        //Derive and apply next kinematics frame
+        frame = Step(frame, Time.fixedDeltaTime, IsLocalPlayer); //Only local player has live input. Anything serverside is speculation until proven otherwise.
+        coll.Move(frame.position - transform.position);
+
+        if (FinalizeMove != null) FinalizeMove();
     }
+
+    public delegate void MoveDelegate(ref PlayerPhysicsFrame frame, bool live);
+    public event MoveDelegate  PreMove = default; //Must be pure. Applied in Step().
+    public event MoveDelegate PostMove = default; //Must be pure. Applied in Step().
+    public event Action FinalizeMove = default; //Only applied in FixedUpdate()
 
     //Transient I/O
 #if UNITY_EDITOR
@@ -26,18 +42,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
 #else
     [NonSerialized]
 #endif
-    public Vector3 velocity;
-
-#if UNITY_EDITOR
-    [InspectorReadOnly]
-#else
-    [NonSerialized]
-#endif
-    public CollisionFlags _contactAreas;
-    public CollisionFlags contactAreas {
-        get => _contactAreas;
-        private set => _contactAreas = value;
-    }
+    public PlayerPhysicsFrame frame;
 
     [Header("Gravity")]
     public bool enableGravity = true;
@@ -47,45 +52,40 @@ public sealed class CharacterKinematics : NetworkBehaviour
 
     [Header("Ground detection")]
     [SerializeField] [Min(0)] private float groundProbeDistance = 0.1f;
-    private float timeSinceLastGround;
     [SerializeField] [Min(0)] private float coyoteTime = 0.12f;
-    public bool IsGrounded => timeSinceLastGround < coyoteTime;
-    [SerializeField] private bool _isGrounded;
-    private float Groundedness => suspendGravityOnGround ? 0 : Mathf.Clamp01(timeSinceLastGround/coyoteTime);
-    public void MarkUngrounded() => timeSinceLastGround = coyoteTime;
 
-    private void Step(float t, float dt)
+    [Pure] //Only if live=false
+    public PlayerPhysicsFrame Step(PlayerPhysicsFrame frame, float dt, bool live)
     {
-        //Detect ground state
-        timeSinceLastGround += dt;
-        if (false && IsLocalPlayer)
-        {
-            //Collider method is reliable only on owning client
-            if (coll.isGrounded) timeSinceLastGround = 0;
-        }
-        else
-        {
-            //Everything but the Player and Ignore Raycast layers
-            if (Physics.Raycast(transform.position, Vector3.down, coll.height/2+groundProbeDistance+coll.skinWidth, ~(1<<6 | 1<<2))) timeSinceLastGround = 0;
-        }
+        if (PreMove != null) PreMove(ref frame, live);
+
+        //Update ground state
+        frame.timeSinceLastGround += dt;
+        
+        //Ground check = everything but the Player and Ignore Raycast layers
+        if (Physics.CheckSphere(frame.position + Vector3.down*(coll.height-coll.radius)/2, coll.radius+2*coll.skinWidth, ~(1<<6 | 1<<2))) frame.timeSinceLastGround = 0;
+
+        frame.isGrounded = frame.timeSinceLastGround < coyoteTime;
 
         //Gravity
-        velocity += RawGravityExperienced * (1-Groundedness) * dt;
-
+        frame.velocity += RawGravityExperienced * (1-Mathf.Clamp01(frame.timeSinceLastGround/coyoteTime)) * dt;
+        
         //Move step
-        contactAreas = coll.Move(velocity * dt);
+        Vector3 move = frame.velocity*dt;
+        if (proj.Shapecast(out RaycastHit hit, frame.position, move, Quaternion.identity, move.magnitude))
+        {
+            //Collision response
+            move = move.normalized * hit.distance;
+            frame.velocity = Vector3.ProjectOnPlane(frame.velocity, hit.normal);
+        }
+        frame.position += move;
 
-        //DEBUG ONLY
-        _isGrounded = IsGrounded;
+        if (PostMove != null) PostMove(ref frame, live);
+
+        return frame;
     }
 
-    private void OnControllerColliderHit(ControllerColliderHit hit)
-    {
-        //Prevent building speed running into walls
-        velocity = Vector3.ProjectOnPlane(velocity, hit.normal);
-    }
-
-    //External force and teleportation interface
+    //Teleportation
     public void Teleport(Vector3 pos, Vector3? vel = null)
     {
         if (!IsServer) throw new AccessViolationException("Server frame is authority! Can only teleport on serverside.");
@@ -101,35 +101,19 @@ public sealed class CharacterKinematics : NetworkBehaviour
     [InspectorReadOnly(playing = AccessMode.ReadWrite)] [SerializeField] private Vector3 teleportPos;
     [InspectorReadOnly(playing = AccessMode.ReadWrite)] [SerializeField] private Vector3 teleportVel;
 #else
-    private bool teleportSetPos = false;
+    private bool teleportPending = false;
     private Vector3 teleportPos;
-    private bool teleportSetVel = false;
     private Vector3 teleportVel;
 #endif
-    private void ApplyPendingTeleportation()
+    private bool ApplyPendingTeleportation()
     {
+        if (!IsServer) return false;
+
         if (teleportPending) {
-            DONOTCALL_TeleportPlayerSide_ClientRPC(teleportPos, teleportVel, ClientIDCache.Narrowcast(OwnerClientId));
-            DONOTCALL_SetKinematics(teleportPos, teleportVel);
             teleportPending = false;
+            //TODO FIXME reimplement
+            return true;
         }
-    }
-
-    [ClientRpc(Delivery = RpcDelivery.Reliable)]
-    private void DONOTCALL_TeleportPlayerSide_ClientRPC(Vector3 pos, Vector3 vel, ClientRpcParams p)
-    {
-        DONOTCALL_SetKinematics(pos, vel);
-    }
-
-    private void DONOTCALL_SetKinematics(Vector3 pos, Vector3 vel)
-    {
-        if (IsServer) {
-            if (TryGetComponent(out PlayerDeadReckoner d)) d.SetAuthorityFrame(pos, vel);
-            else
-            {
-                transform.position = pos;
-                velocity = vel;
-            }
-        }
+        return false;
     }
 }

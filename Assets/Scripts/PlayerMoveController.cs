@@ -11,7 +11,9 @@ public class PlayerMoveController : NetworkBehaviour
     [SerializeField] [Min(0)] private float _speed = 5f;
     [SerializeField] [Min(0)] private float jumpPower = 5f;
     public float Speed => _speed;
-    public float CurrentSlipperiness => kinematicsLayer.IsGrounded ? groundSlipperiness : airSlipperiness;
+    public float CurrentSlipperiness => kinematicsLayer.frame.isGrounded ? groundSlipperiness : airSlipperiness;
+
+    [SerializeField] [Min(0)] private float jumpCooldown = 0.5f;
 
     [Header("Bindings")]
     [SerializeField] private CharacterKinematics kinematicsLayer;
@@ -30,61 +32,40 @@ public class PlayerMoveController : NetworkBehaviour
         {
             controlMove = playerInput.currentActionMap.FindAction(controlMoveName);
             controlJump = playerInput.currentActionMap.FindAction(controlJumpName);
+
+            kinematicsLayer.PreMove -= UpdateInput;
+            kinematicsLayer.PreMove += UpdateInput;
         }
+
+        kinematicsLayer.PreMove -= ApplyMovement;
+        kinematicsLayer.PreMove += ApplyMovement;
     }
 
-    public NetworkVariable<Vector2> rawInput = new NetworkVariable<Vector2>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
-    public bool jumpPressed { get; private set; } // = new NetworkVariable<bool>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
-
-    private void Update()
+    private void UpdateInput(ref PlayerPhysicsFrame frame, bool live)
     {
-        if (IsLocalPlayer && IsSpawned)
+        //Don't read input if simulating
+        if (!live) return;
+
+        frame.input = controlMove.ReadValue<Vector2>();
+        frame.jump = controlJump.IsPressed();
+    }
+
+    public void ApplyMovement(ref PlayerPhysicsFrame frame, bool live)
+    {
+        //Handle horizontal movement
+        Vector3 targetVelocity = Speed*( frame.Right   * frame.input.x
+                                       + frame.Forward * frame.input.y );
+
+        float slippageThisFrame = Mathf.Pow(CurrentSlipperiness, Time.fixedDeltaTime);
+        Vector3 newVel = Vector3.Lerp(targetVelocity, frame.velocity, slippageThisFrame);
+        frame.velocity = new Vector3(newVel.x, frame.velocity.y, newVel.z);
+
+        //Handle jumping
+        if (frame.jump)
         {
-            rawInput.Value = controlMove.ReadValue<Vector2>();
-            jumpPressed = controlJump.IsPressed();
-        }
-    }
-
-    private void FixedUpdate()
-    {
-        if (IsSpawned)
-        {
-            Vector3 localRight = frameOfReference.right;
-            localRight.y = 0;
-            localRight.Normalize();
-            Vector3 localForward = new Vector3(-localRight.z, 0, localRight.x);
-
-            //Handle horizontal movement
-            Vector3 targetVelocity = Speed*( localRight*rawInput.Value.x + localForward*rawInput.Value.y );
-
-            float slippageThisFrame = Mathf.Pow(CurrentSlipperiness, Time.fixedDeltaTime);
-            Vector3 newVel = Vector3.Lerp(targetVelocity, kinematicsLayer.velocity, slippageThisFrame);
-            kinematicsLayer.velocity = new Vector3(newVel.x, kinematicsLayer.velocity.y, newVel.z);
-
-            //Handle jumping
-            if (IsLocalPlayer && jumpPressed) Jump();
-        } 
-    }
-
-    private float lastJumpTime;
-    [SerializeField] [Min(0)] private float jumpCooldown = 0.5f;
-
-    private void Jump()
-    {
-        if(!IsHost) DONOTCALL__ServerSideJump_ServerRpc();
-        DONOTCALL__LocalJump();
-    }
-
-    [ServerRpc(Delivery = RpcDelivery.Reliable, RequireOwnership = true)]
-    private void DONOTCALL__ServerSideJump_ServerRpc() => DONOTCALL__LocalJump();
-
-    private void DONOTCALL__LocalJump()
-    {
-        if (kinematicsLayer.IsGrounded && lastJumpTime+jumpCooldown < Time.fixedTime)
-        {
-            lastJumpTime = Time.fixedTime;
-            kinematicsLayer.velocity += jumpPower * transform.up;
-            kinematicsLayer.MarkUngrounded();
+            frame.timeCanNextJump = (float)NetworkManager.ServerTime.FixedTime + jumpCooldown;
+            frame.velocity += jumpPower * transform.up;
+            frame.isGrounded = false;
         }
     }
 }

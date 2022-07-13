@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -7,8 +9,6 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
 {
     private ProjectionShape proj;
     private CharacterKinematics kinematics;
-    [SerializeField] private PlayerMoveController move;
-    [SerializeField] private PlayerLookController look;
 
     public override void OnNetworkSpawn()
     {
@@ -19,178 +19,46 @@ public sealed class PlayerDeadReckoner : NetworkBehaviour
         Debug.Assert(proj != null);
         Debug.Assert(kinematics != null);
 
+        clientFrameHistory.Clear();
+        clientFrameHistory.Add(kinematics.frame);
+
         if (IsServer)
         {
             //Set initial value
-            authorityFrame.Value = PlayerPhysicsFrame.For(kinematics, move, look);
+            serverFrameHistory.Clear();
+            serverFrameHistory.Add(kinematics.frame);
         }
 
-        if (!IsLocalPlayer)
+        if (IsLocalPlayer)
         {
-            authorityFrame.OnValueChanged -= Callback_CopyRemoteFrame;
-            authorityFrame.OnValueChanged += Callback_CopyRemoteFrame;
+            kinematics.FinalizeMove += SubmitFrameToServer;
         }
     }
 
-    public override void OnNetworkDespawn()
+    private void SubmitFrameToServer()
     {
-        base.OnNetworkDespawn();
 
-        authorityFrame.OnValueChanged -= Callback_CopyRemoteFrame; //FIXME is this even necessary?
     }
 
-    #region Owner response and value negotiation
-
-    //TODO is delivery guaranteed or not?
-    //Uses SERVER time
-    [SerializeField] private NetworkVariable<PlayerPhysicsFrame> authorityFrame = new NetworkVariable<PlayerPhysicsFrame>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Server);
-    private float mostRecentFrame = -1;
-
-    [SerializeField] [Range(0, 1)] private float smoothSharpness = 0.95f;
-
-    private void Owner_FixedUpdate()
-    {
-        SendFrame(PlayerPhysicsFrame.For(kinematics, move, look));
-    }
-
-    private void SendFrame(PlayerPhysicsFrame localFrame) //Under most circumstances, localFrame = PhysicsFrame.For(rb)
-    {
-        if (!IsLocalPlayer) throw new AccessViolationException();
-
-        PlayerPhysicsFrame serverFrame = localFrame;
-        serverFrame.time = (float) NetworkManager.Singleton.ServerTime.FixedTime;
-        DONOTCALL_SendFrame_ServerRpc(serverFrame);
-    }
-
-    [Header("Validation (server only)")]
-    [SerializeField] [Min(0)] private float velocityForgiveness = 0.1f; //Should this be a ratio instead?
-    [SerializeField] [Min(0)] private float positionForgiveness = 0.1f;
-    [SerializeField] [Min(0)] private float timeForgiveness = 2f;
-
-    /// <summary>
-    /// DO NOT CALL DIRECTLY, use SendFrame instead, it will handle time conversion.
-    /// </summary>
-    /// <param name="newFrame">Physics frame in server's time</param>
     [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
-    private void DONOTCALL_SendFrame_ServerRpc(PlayerPhysicsFrame newFrame, ServerRpcParams src = default)
+    private void RecieveClientFrame_ServerRpc(PlayerPhysicsFrame frame, ServerRpcParams p = default)
     {
-        RejectReason reject = 0;
+        int insertIndex = clientFrameHistory.FindLastIndex(x => x.time < frame.time) - 1;
 
-        //Don't do anything if a more recent frame was already received
-        if (newFrame.time < mostRecentFrame) return;
+        //Validate
+        PlayerPhysicsFrame prevFrame = clientFrameHistory[insertIndex-1];
+        kinematics.Step(prevFrame, frame.time-prevFrame.time, false);
+    }
 
-        //Validate time (no major skips and not too far in the future!)
-        float timeDiff = newFrame.time - (float)NetworkManager.Singleton.ServerTime.FixedTime;
-        if (timeDiff < timeForgiveness*NetHeartbeat.Of(src.Receive.SenderClientId).SmoothedRTT)
+    private List<PlayerPhysicsFrame> serverFrameHistory = new List<PlayerPhysicsFrame>();
+    private List<PlayerPhysicsFrame> clientFrameHistory = new List<PlayerPhysicsFrame>();
+
+    [Pure]
+    private void RecalcAllSince(List<PlayerPhysicsFrame> frameHistory, float time)
+    {
+        for (int i = frameHistory.FindIndex(x => x.time < time); i < frameHistory.Count - 2; ++i)
         {
-            mostRecentFrame = newFrame.time;
-            newFrame = PlayerDeadReckoningUtility.DeadReckon(newFrame, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
-
-            //Validate velocity and position
-            newFrame.velocity = ValidationUtility.Bound(out bool velocityOutOfBounds, newFrame.velocity, kinematics.velocity, velocityForgiveness);
-            if (velocityOutOfBounds) reject |= RejectReason.Velocity;
-            newFrame.position = ValidationUtility.Bound(out bool positionOutOfBounds, newFrame.position, transform .position, positionForgiveness);
-            if (positionOutOfBounds) reject |= RejectReason.Position;
-
-            //Log to console
-            if (velocityOutOfBounds) Debug.LogWarning("Player #" +OwnerClientId+ " accelerated too quickly!");
-            if (positionOutOfBounds) Debug.LogWarning("Player #" +OwnerClientId+ " moved too quickly!");
-
-            //Value is within acceptable bounds, apply
-            SetAuthorityFrame(newFrame.position, newFrame.velocity);
+            frameHistory[i+1] = kinematics.Step(frameHistory[i], Time.fixedDeltaTime, false);
         }
-        else
-        {
-            reject |= RejectReason.Time;
-            Debug.Log("Player #"+OwnerClientId+" sent a packet with wrong time! "+timeDiff+" sec ahead", this);
-        }
-
-        if (reject != 0)
-        {
-            //No need to set authorityFrame here, as it is identical to newFrame
-            FrameRejected_ClientRpc(newFrame, reject, src.ReturnToSender());
-        }
-    }
-    
-    [Flags]
-    private enum RejectReason
-    {
-        Position = 1 << 0,
-        Velocity = 1 << 1,
-        Time = 1 << 2
-    }
-
-    [ClientRpc(Delivery = RpcDelivery.Reliable)]
-    private void FrameRejected_ClientRpc(PlayerPhysicsFrame @new, RejectReason rejectReason, ClientRpcParams p = default)
-    {
-        if (!IsLocalPlayer) throw new AccessViolationException("Only owner can recieve reject messages! Use "+nameof(Callback_CopyRemoteFrame)+" instead.");
-
-        string rejectInfo = "REJECTED ("+rejectReason+")      t="+NetworkManager.Singleton.ServerTime.FixedTime.ToString(Constants.TIME_INTERVAL_FORMAT)+"/"+@new.time.ToString(Constants.TIME_INTERVAL_FORMAT)
-                                                           +" d"+((float)NetworkManager.Singleton.ServerTime.FixedTime-@new.time).ToString(Constants.TIME_INTERVAL_FORMAT);
-
-        @new = PlayerDeadReckoningUtility.DeadReckon(@new, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
-        
-        rejectInfo += " pos="+Vector3.Distance(transform .position, @new.position).ToString(Constants.TIME_INTERVAL_FORMAT)
-                   +  " vel="+Vector3.Distance(kinematics.velocity, @new.velocity).ToString(Constants.TIME_INTERVAL_FORMAT);
-        Debug.Log(rejectInfo, this);
-
-        //TODO should this be in FixedUpdate?
-        if (rejectReason.HasFlag(RejectReason.Position)) transform .position = @new.position;
-        if (rejectReason.HasFlag(RejectReason.Velocity)) kinematics.velocity = @new.velocity;
-    }
-
-    #endregion
-
-    #region Non-owner response
-
-    private (Vector3 pos, Vector3 vel)? lastKnownRemoteFrame;
-    private void Callback_CopyRemoteFrame(PlayerPhysicsFrame _, PlayerPhysicsFrame @new)
-    {
-        if (IsLocalPlayer) throw new InvalidOperationException("Owner should use "+nameof(FrameRejected_ClientRpc)+" instead");
-
-        @new = PlayerDeadReckoningUtility.DeadReckon(@new, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
-
-        transform .position = @new.position;
-        kinematics.velocity = @new.velocity;
-    }
-
-    private void NonOwner_FixedUpdate()
-    {
-        //Active lerping disabled
-        /*
-
-        //FIXME expensive, run only on value change?
-        PlayerPhysicsFrame targetPos = PlayerDeadReckoningUtility.DeadReckon(authorityFrame.Value, (float) NetworkManager.Singleton.ServerTime.FixedTime, proj, transform.rotation);
-
-        //Exponential decay lerp towards correct position
-        //FIXME smoothing causes slight lag behind
-        transform .position = Vector3.Lerp(transform .position, targetPos.position, smoothSharpness);
-        kinematics.velocity = Vector3.Lerp(kinematics.velocity, targetPos.velocity, smoothSharpness);
-
-        // */
-    }
-
-    #endregion
-    
-    private void FixedUpdate()
-    {
-        if (IsSpawned && Time.frameCount%2 == 0)
-        {
-            if (IsLocalPlayer) Owner_FixedUpdate();
-            else if (IsClient) NonOwner_FixedUpdate();
-        }
-    }
-
-    public void SetAuthorityFrame(Vector3 position, Vector3 velocity)
-    {
-        if (!IsServer) throw new AccessViolationException("Only server has the authority to set kinematics frame!");
-
-        kinematics.transform.position = position;
-        kinematics.velocity = velocity;
-        
-        PlayerPhysicsFrame frame = PlayerPhysicsFrame.For(kinematics, move, look);
-        frame.position = position;
-        frame.velocity = velocity;
-        authorityFrame.Value = frame;
     }
 }
