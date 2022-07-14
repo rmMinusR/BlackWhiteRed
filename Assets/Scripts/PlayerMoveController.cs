@@ -21,30 +21,62 @@ public class PlayerMoveController : NetworkBehaviour
     private InputAction controlJump;
     [SerializeField] private string controlJumpName = "Jump";
 
+    private void Start()
+    {
+        kinematicsLayer.PreMove -= ApplyMovement;
+        kinematicsLayer.PreMove += ApplyMovement;
+
+        kinematicsLayer.PreMove -= UpdateInput;
+        kinematicsLayer.PreMove += UpdateInput;
+
+        controlMove = playerInput.actions.FindActionMap(playerInput.defaultActionMap).FindAction(controlMoveName);
+        controlJump = playerInput.actions.FindActionMap(playerInput.defaultActionMap).FindAction(controlJumpName);
+    }
+
+    private Vector2 moveState;
+    private void UpdateMoveState(InputAction.CallbackContext c) => moveState = c.ReadValue<Vector2>();
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+
+        kinematicsLayer.PreMove -= UpdateInput;
+
+        controlMove.performed -= UpdateMoveState;
+        controlMove.canceled  -= UpdateMoveState;
+        controlMove.started   -= UpdateMoveState;
+    }
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
         if (IsLocalPlayer)
         {
-            controlMove = playerInput.currentActionMap.FindAction(controlMoveName);
-            controlJump = playerInput.currentActionMap.FindAction(controlJumpName);
+            playerInput.gameObject.SetActive(true);
+            playerInput.enabled = true;
+            playerInput.ActivateInput();
 
-            kinematicsLayer.PreMove -= UpdateInput;
-            kinematicsLayer.PreMove += UpdateInput;
+            controlMove = playerInput.actions.FindActionMap(playerInput.defaultActionMap).FindAction(controlMoveName);
+            controlJump = playerInput.actions.FindActionMap(playerInput.defaultActionMap).FindAction(controlJumpName);
+
+            controlMove.performed -= UpdateMoveState;
+            controlMove.canceled  -= UpdateMoveState;
+            controlMove.started   -= UpdateMoveState;
+            controlMove.performed += UpdateMoveState;
+            controlMove.canceled  += UpdateMoveState;
+            controlMove.started   += UpdateMoveState;
         }
-
-        kinematicsLayer.PreMove -= ApplyMovement;
-        kinematicsLayer.PreMove += ApplyMovement;
     }
 
     private void UpdateInput(ref PlayerPhysicsFrame frame, bool live)
     {
-        //Don't read input if simulating
-        if (!live) return;
-
-        frame.input = controlMove.ReadValue<Vector2>();
-        frame.jump = controlJump.IsPressed();
+        //Don't read input if simulating, or if we're a remote player
+        if (live && (IsLocalPlayer || NetworkManager.Singleton == null))
+        {
+            frame.input = moveState; //controlMove.ReadValue<Vector2>();
+            frame.jump = controlJump.IsPressed();
+        }
     }
 
     public void ApplyMovement(ref PlayerPhysicsFrame frame, bool live)
@@ -58,11 +90,10 @@ public class PlayerMoveController : NetworkBehaviour
         frame.velocity = new Vector3(newVel.x, frame.velocity.y, newVel.z);
 
         //Handle jumping
-        if (frame.jump)
+        if (frame.jump && frame.isGrounded)
         {
             frame.timeCanNextJump = (float)NetworkManager.ServerTime.FixedTime + jumpCooldown;
             frame.velocity += jumpPower * transform.up;
-            frame.isGrounded = false;
         }
     }
 }

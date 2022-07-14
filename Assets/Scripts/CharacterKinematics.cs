@@ -8,7 +8,8 @@ using UnityEngine.InputSystem;
 [RequireComponent(typeof(CharacterController))]
 public sealed class CharacterKinematics : NetworkBehaviour
 {
-    private CharacterController coll;
+    private CharacterController __coll;
+    private CharacterController coll => __coll != null ? __coll : (__coll = GetComponent<CharacterController>());
     private ProjectionShape proj;
     [SerializeField] private PlayerMoveController move;
     [SerializeField] private PlayerLookController look;
@@ -16,7 +17,6 @@ public sealed class CharacterKinematics : NetworkBehaviour
 
     private void Awake()
     {
-        coll = GetComponent<CharacterController>();
         proj = ProjectionShape.Build(gameObject);
     }
 
@@ -30,7 +30,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        bool didTeleport = ApplyPendingTeleportation();
+        if (IsServer) ApplyPendingTeleportation();
 
         //Derive and apply next kinematics frame
         frame = Step(frame, Time.fixedDeltaTime, IsLocalPlayer); //Only local player has live input. Anything serverside is speculation until proven otherwise.
@@ -59,7 +59,8 @@ public sealed class CharacterKinematics : NetworkBehaviour
     [SerializeField] private bool suspendGravityOnGround = true;
 
     [Header("Ground detection")]
-    [SerializeField] [Min(0)] private float groundProbeDistance = 0.1f;
+    [SerializeField] [Min(0)] private float groundProbeRadius = 0.05f;
+    [SerializeField] [Min(0)] private float groundProbeOffset = 0.05f;
     [SerializeField] [Min(0)] private float coyoteTime = 0.12f;
 
     [Pure] //Only if live=false
@@ -71,16 +72,16 @@ public sealed class CharacterKinematics : NetworkBehaviour
         frame.timeSinceLastGround += dt;
         
         //Ground check = everything but the Player and Ignore Raycast layers
-        if (Physics.CheckSphere(frame.position + Vector3.down*(coll.height-coll.radius)/2, coll.radius+2*coll.skinWidth, ~(1<<6 | 1<<2))) frame.timeSinceLastGround = 0;
-
+        if (Physics.CheckSphere(frame.position + Vector3.down*(coll.height/2-coll.radius+groundProbeOffset), coll.radius+groundProbeRadius, ~(1<<6 | 1<<2))) frame.timeSinceLastGround = 0;
+        
         frame.isGrounded = frame.timeSinceLastGround < coyoteTime;
 
         //Gravity
-        frame.velocity += RawGravityExperienced * (1-Mathf.Clamp01(frame.timeSinceLastGround/coyoteTime)) * dt;
+        if(!frame.isGrounded || !suspendGravityOnGround) frame.velocity += RawGravityExperienced * (1-Mathf.Clamp01(frame.timeSinceLastGround/coyoteTime)) * dt;
         
         //Move step
         Vector3 move = frame.velocity*dt;
-        if (proj.Shapecast(out RaycastHit hit, frame.position, move, Quaternion.identity, move.magnitude))
+        if (proj.Shapecast(out RaycastHit hit, frame.position, move.normalized, Quaternion.identity, move.magnitude))
         {
             //Collision response
             move = move.normalized * hit.distance;
@@ -91,6 +92,12 @@ public sealed class CharacterKinematics : NetworkBehaviour
         if (PostMove != null) PostMove(ref frame, live);
 
         return frame;
+    }
+
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position + Vector3.down*(coll.height/2-coll.radius+groundProbeOffset), coll.radius+groundProbeRadius);
     }
 
     //Teleportation
@@ -113,15 +120,15 @@ public sealed class CharacterKinematics : NetworkBehaviour
     private Vector3 teleportPos;
     private Vector3 teleportVel;
 #endif
-    private bool ApplyPendingTeleportation()
+    private void ApplyPendingTeleportation()
     {
-        if (!IsServer) return false;
+        if (!IsServer) throw new InvalidOperationException();
 
-        if (teleportPending) {
+        if (teleportPending)
+        {
             teleportPending = false;
-            //TODO FIXME reimplement
-            return true;
+            frame.position = teleportPos;
+            frame.velocity = teleportVel;
         }
-        return false;
     }
 }

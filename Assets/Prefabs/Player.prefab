@@ -161,8 +161,6 @@ MonoBehaviour:
     _velocity: {x: 0, y: 0, z: 0}
     _time: 0
     look: {x: 0, y: 0}
-    slipperiness: 0
-    moveSpeed: 0
     input: {x: 0, y: 0}
     jump: 0
     isGrounded: 0
@@ -171,7 +169,8 @@ MonoBehaviour:
   enableGravity: 1
   gravityScale: 1
   suspendGravityOnGround: 1
-  groundProbeDistance: 0.1
+  groundProbeRadius: 0
+  groundProbeOffset: 0.05
   coyoteTime: 0.12
   teleportPending: 0
   teleportPos: {x: 0, y: 0, z: 0}
@@ -188,6 +187,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfa48d1b74340b54ab95216212e1d728, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  positionForgiveness: 0.05
+  velocityForgiveness: 0.05
+  serverFrameHistory: []
+  clientFrameHistory: []
 --- !u!114 &2709372960629483514
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -238,7 +241,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   selfGameobjects:
-  - {fileID: 4977216193079503987}
   - {fileID: 6838974089294005912}
   selfBehaviours: []
   otherGameobjects: []
@@ -288,15 +290,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0d02354e366b5043ba131473d2fd387, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dataSource: {fileID: 1334152775563438803}
-  controlLookName: Look
-  takeCursorControl: 1
   target: {fileID: 2931471490281750659}
   sensitivity: {x: 8, y: -8}
   minVerticalAngle: -90
   maxVerticalAngle: 90
-  angles:
-    m_InternalValue: {x: 0, y: 0}
+  angles: {x: 0, y: 0}
+  kinematicsLayer: {fileID: 3587278699711730041}
+  dataSource: {fileID: 1334152775563438803}
+  controlLookName: Look
 --- !u!1 &4977216193079503987
 GameObject:
   m_ObjectHideFlags: 0
@@ -313,7 +314,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &428088673559635742
 Transform:
   m_ObjectHideFlags: 0
@@ -520,7 +521,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   groundSlipperiness: 0.0002
   airSlipperiness: 0.15
-  _speed: 5
+  speed: 5
   jumpPower: 5
   jumpCooldown: 0.5
   kinematicsLayer: {fileID: 3587278699711730041}
@@ -528,3 +529,6 @@ MonoBehaviour:
   playerInput: {fileID: 1334152775563438803}
   controlMoveName: Move
   controlJumpName: Jump
+  test1: {x: 0, y: 0}
+  test2: {x: 0, y: 0}
+  test3: 0
