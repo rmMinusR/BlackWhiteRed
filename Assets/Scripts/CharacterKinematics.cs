@@ -103,7 +103,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
     }
 
     //Teleportation
-    public void Teleport(Vector3 pos, Vector3? vel = null, Vector2? look = null)
+    public void Teleport(Vector3 pos, Vector3? vel = null, Vector2? look = null) //TODO refactor to use PreMove instead!
     {
         if (!IsServer) throw new AccessViolationException("Server frame is authority! Can only teleport on serverside.");
 
