@@ -113,7 +113,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4224471420955489683, guid: f7a094056cc03ac4c92c31bb323ef12f, type: 3}
       propertyPath: m_Name
-      value: Black Gate
+      value: Black Gate Variant
       objectReference: {fileID: 0}
     - target: {fileID: 4224471420955489683, guid: f7a094056cc03ac4c92c31bb323ef12f, type: 3}
       propertyPath: m_StaticEditorFlags
