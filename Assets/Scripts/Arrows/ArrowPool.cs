@@ -52,7 +52,10 @@ public class ArrowPool : NetworkBehaviour
 
         for (int i = 0; i < count; i++)
         {
-            GameObject obj = Instantiate(prefab,transform);
+            GameObject obj = Instantiate(prefab);
+            obj.GetComponent<NetworkObject>().Spawn(true);
+            obj.GetComponent<NetworkObject>().TrySetParent(gameObject);
+            obj.GetComponent<NetworkObject>().Despawn(false);
             obj.SetActive(false);
             inactive.Add(obj);
         }
@@ -74,7 +77,8 @@ public class ArrowPool : NetworkBehaviour
         {
             obj.GetComponent<NetworkObject>().Spawn(true);
         }
-        obj.GetComponent<ArrowController>().Init(team, shadeValue, startingPosition, startDirection, amountCharged);
+        obj.SetActive(true);
+        obj.GetComponent<ArrowController>().InitClientRpc(team, shadeValue, startingPosition, startDirection, amountCharged);
 
         inactive.RemoveAt(0);
         active.Add(obj);

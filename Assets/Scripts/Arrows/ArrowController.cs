@@ -31,7 +31,8 @@ public class ArrowController : NetworkBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    public void Init(Team _team, int _shadeValue, Vector3 startingPosition, Vector3 startDirection, float amountCharged)
+    [ClientRpc]
+    public void InitClientRpc(Team _team, int _shadeValue, Vector3 startingPosition, Vector3 startDirection, float amountCharged)
     {
         Debug.Log("Arrow Inited");
 
@@ -41,8 +42,10 @@ public class ArrowController : NetworkBehaviour
         transform.position = startingPosition;
 
         rb.velocity = startDirection * Mathf.Lerp(minimumStartingVelocity, maximumStartingVelocity, amountCharged);
-
-        timer = timeBeforeDespawn;
+        if (IsServer || IsHost)
+        {
+            timer = timeBeforeDespawn;
+        }
     }
 
     private void Update()

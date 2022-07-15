@@ -12,7 +12,7 @@ public class PlayerHealth : NetworkBehaviour
 
     [SerializeField]
     [InspectorReadOnly]
-    private NetworkVariable<int> health = new NetworkVariable<int>();
+    private NetworkVariable<int> health = new NetworkVariable<int>(default,NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Owner);
 
     public delegate void TriggerEvent();
     public event TriggerEvent onPlayerDeath;
