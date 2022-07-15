@@ -39,6 +39,14 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
     public float timeSinceLastGround;
     public float timeCanNextJump;
 
+    public Mode mode;
+
+    public enum Mode
+    {
+        NormalMove,
+        Teleport
+    }
+
     #region Cached expensive math
 
     private float __lastLookX;

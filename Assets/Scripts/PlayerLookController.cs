@@ -13,7 +13,7 @@ public sealed class PlayerLookController : NetworkBehaviour
     [SerializeField] [Range(  0, 90)] private float maxVerticalAngle = 90;
 
     [Space]
-    [InspectorReadOnly] [SerializeField] private Vector2 angles;
+    [InspectorReadOnly(editing = AccessMode.ReadWrite)] public Vector2 angles;
 
     [Header("Bindings")]
     [SerializeField] private CharacterKinematics kinematicsLayer;

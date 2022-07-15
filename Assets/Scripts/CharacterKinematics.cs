@@ -30,18 +30,19 @@ public sealed class CharacterKinematics : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if (IsServer) ApplyPendingTeleportation();
-
-        //Derive and apply next kinematics frame
-        frame = Step(frame, Time.fixedDeltaTime, IsLocalPlayer); //Only local player has live input. Anything serverside is speculation until proven otherwise.
-        coll.Move(frame.position - transform.position);
+        if (IsServer && teleportPending) ApplyPendingTeleportation();
+        else
+        {
+            //Derive and apply next kinematics frame
+            frame = Step(frame, Time.fixedDeltaTime, IsLocalPlayer); //Only local player has live input. Anything serverside is speculation until proven otherwise.
+            coll.Move(frame.position - transform.position);
+        } 
 
         if (FinalizeMove != null) FinalizeMove();
     }
 
     public delegate void MoveDelegate(ref PlayerPhysicsFrame frame, bool live);
-    public event MoveDelegate  PreMove = default; //Must be pure. Applied in Step().
-    public event MoveDelegate PostMove = default; //Must be pure. Applied in Step().
+    public event MoveDelegate PreMove = default; //Must be pure if live=true. Applied in Step().
     public event Action FinalizeMove = default; //Only applied in FixedUpdate()
 
     //Transient I/O
@@ -66,7 +67,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
     [Pure] //Only if live=false
     public PlayerPhysicsFrame Step(PlayerPhysicsFrame frame, float dt, bool live)
     {
-        if (PreMove != null) PreMove(ref frame, live);
+        frame.mode = PlayerPhysicsFrame.Mode.NormalMove;
 
         //Update ground state
         frame.timeSinceLastGround += dt;
@@ -75,6 +76,9 @@ public sealed class CharacterKinematics : NetworkBehaviour
         if (Physics.CheckSphere(frame.position + Vector3.down*(coll.height/2-coll.radius+groundProbeOffset), coll.radius+groundProbeRadius, ~(1<<6 | 1<<2))) frame.timeSinceLastGround = 0;
         
         frame.isGrounded = frame.timeSinceLastGround < coyoteTime;
+
+        //Custom logic hook
+        if (PreMove != null) PreMove(ref frame, live);
 
         //Gravity
         if(!frame.isGrounded || !suspendGravityOnGround) frame.velocity += RawGravityExperienced * (1-Mathf.Clamp01(frame.timeSinceLastGround/coyoteTime)) * dt;
@@ -89,8 +93,6 @@ public sealed class CharacterKinematics : NetworkBehaviour
         }
         frame.position += move;
 
-        if (PostMove != null) PostMove(ref frame, live);
-
         return frame;
     }
 
@@ -101,7 +103,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
     }
 
     //Teleportation
-    public void Teleport(Vector3 pos, Vector3? vel = null)
+    public void Teleport(Vector3 pos, Vector3? vel = null, Vector2? look = null)
     {
         if (!IsServer) throw new AccessViolationException("Server frame is authority! Can only teleport on serverside.");
 
@@ -109,16 +111,19 @@ public sealed class CharacterKinematics : NetworkBehaviour
         teleportPos = pos;
 
         teleportVel = vel ?? Vector3.zero;
+        teleportLook = look ?? Vector2.zero;
     }
 #if UNITY_EDITOR
     [Header("Teleportation (manual control)")]
     [InspectorReadOnly(playing = AccessMode.ReadWrite)] [SerializeField] private bool teleportPending = false;
     [InspectorReadOnly(playing = AccessMode.ReadWrite)] [SerializeField] private Vector3 teleportPos;
     [InspectorReadOnly(playing = AccessMode.ReadWrite)] [SerializeField] private Vector3 teleportVel;
+    [InspectorReadOnly(playing = AccessMode.ReadWrite)] [SerializeField] private Vector3 teleportLook;
 #else
     private bool teleportPending = false;
     private Vector3 teleportPos;
     private Vector3 teleportVel;
+    private Vector3 teleportLook;
 #endif
     private void ApplyPendingTeleportation()
     {
@@ -127,7 +132,14 @@ public sealed class CharacterKinematics : NetworkBehaviour
         if (teleportPending)
         {
             teleportPending = false;
+            frame.mode = PlayerPhysicsFrame.Mode.Teleport;
+
+            transform.position = teleportPos;
             frame.position = teleportPos;
+
+            frame.look = teleportLook;
+            look.angles = teleportLook;
+
             frame.velocity = teleportVel;
         }
     }
