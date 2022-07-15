@@ -56,7 +56,8 @@ public class BuildInfoGenerator : IImmediateEditorHook
             //Do replacement
             //set(nameof(BuildInfo.BUILD_NUMBER  ), BuildInfo.BUILD_NUMBER+1);
             set(nameof(BuildInfo.BUILD_TIME    ), $"new DateTime({DateTime.Now.Year}, {DateTime.Now.Month}, {DateTime.Now.Day}, {DateTime.Now.Hour}, {DateTime.Now.Minute}, {DateTime.Now.Second})");
-            
+            set(nameof(BuildInfo.COMMIT        ), '"'+GitReader.GetInfoString()+'"');
+
             //Save changes
             File.WriteAllText(FILEPATH, content);
         }
