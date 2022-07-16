@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
 
 /// <summary>
 /// Read/write like a queue.
@@ -8,16 +10,23 @@ using System.Collections.Generic;
 /// GC-friendliness of a circular buffer.
 /// </summary>
 /// <typeparam name="T">Type stored</typeparam>
-public class RecyclingLinkedQueue<T> : IEnumerable<T>
+[Serializable]
+public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackReceiver
 {
-    public Node Head { get; private set; }
-    public Node Tail { get; private set; }
-    public int Count { get; private set; }
+    [NonSerialized] private Node head;
+    [NonSerialized] private Node tail;
+    [NonSerialized] private int count;
+    public Node Head { get => head; private set => head = value; }
+    public Node Tail { get => tail; private set => tail = value; }
+    public int Count { get => count; private set => count = value; }
 
+    [Serializable]
     public class Node
     {
         public T value;
-        public Node next { get; internal set; }
+
+        [NonSerialized] private Node __next;
+        public Node next { get => __next; internal set => __next = value; }
 
         private static List<Node> recycled = new List<Node>();
         internal static Node New(T val)
@@ -27,7 +36,7 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>
             if (recycled.Count > 0)
             {
                 n = recycled[recycled.Count - 1];
-                recycled.RemoveAt(recycled.Count-1);
+                recycled.RemoveAt(recycled.Count - 1);
             }
             else
             {
@@ -47,30 +56,34 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>
     public void Enqueue(T val)
     {
         Node newTail = Node.New(val);
-        if(Tail != null) Tail.next = newTail;
-        if(Count==0) { Head = newTail; Tail = newTail; }
-        Tail = newTail;
-        ++Count;
+        if (tail != null)
+            tail.next = newTail;
+        if (count == 0)
+        { head = newTail; tail = newTail; }
+        tail = newTail;
+        ++count;
     }
 
     public void Insert(int index, T val)
     {
-        if (index < 0 || index > Count) throw new IndexOutOfRangeException();
+        if (index < 0 || index > count)
+            throw new IndexOutOfRangeException();
 
         Node @new = Node.New(val);
-        if (Count != 0)
+        if (count != 0)
         {
             Node before = GetNodeAt(index - 1);
             Node after = before.next;
-            if(before != null) before.next = @new;
+            if (before != null)
+                before.next = @new;
             @new.next = after;
-            ++Count;
+            ++count;
         }
         else
         {
-            Head = @new;
-            Tail = @new;
-            ++Count;
+            head = @new;
+            tail = @new;
+            ++count;
         }
     }
 
@@ -78,18 +91,19 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>
     public void Insert(Node before, T val)
     {
         Node @new = Node.New(val);
-        
+
         Node after = before.next;
-        if(before != null) before.next = @new;
+        if (before != null)
+            before.next = @new;
         @new.next = after;
-        ++Count;
+        ++count;
     }
 
-    public T Peek() => Head.value;
+    public T Peek() => head.value;
 
     public T Dequeue()
     {
-        T val = Head.value;
+        T val = head.value;
         DropHead();
         return val;
     }
@@ -97,39 +111,85 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>
     public void DropHead()
     {
         //Advance head forward, recycling
-        Node next = Head.next;
-        Node.Recycle(Head);
-        Head = next;
+        Node next = head.next;
+        Node.Recycle(head);
+        head = next;
 
-        --Count;
+        --count;
     }
 
     public void Clear()
     {
-        for (Node i = Head; i != null; i = i.next) Node.Recycle(i);
-        Head = null;
-        Tail = null;
-        Count = 0;
+        for (Node i = head; i != null; i = i.next)
+            Node.Recycle(i);
+        head = null;
+        tail = null;
+        count = 0;
     }
 
     private Node GetNodeAt(int index)
     {
-        if (index < 0 || index >= Count) return null;
-        Node ptr = Head;
-        for (int i = 0; i < index; ++i) ptr = ptr.next;
+        if (index < 0 || index >= count)
+            return null;
+        Node ptr = head;
+        for (int i = 0; i < index; ++i)
+            ptr = ptr.next;
         return ptr;
     }
-    
+
     public Node FindNode(Func<T, bool> selector)
     {
-        for (Node i = Head; i != null; i = i.next) if(selector(i.value)) return i;
+        for (Node i = head; i != null; i = i.next)
+            if (selector(i.value))
+                return i;
         return null;
     }
 
     public IEnumerator<T> GetEnumerator()
     {
-        for (Node i = Head; i != null; i = i.next) yield return i.value;
+        for (Node i = head; i != null; i = i.next)
+            yield return i.value;
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    #region Serialization
+
+    [SerializeField] private List<T> _serializedRepr = new List<T>();
+
+    public void OnBeforeSerialize()
+    {
+        //Ensure same size
+        while (_serializedRepr.Count > count)
+            _serializedRepr.RemoveAt(_serializedRepr.Count - 1);
+        while (_serializedRepr.Count < count)
+            _serializedRepr.Add(default);
+
+        //Write values
+        Node n = head;
+        for (int i = 0; i < count; ++i)
+        {
+            _serializedRepr[i] = n.value;
+            n = n.next;
+        }
+    }
+
+    public void OnAfterDeserialize()
+    {
+        //Ensure same size
+        while (count > _serializedRepr.Count)
+            DropHead();
+        while (count < _serializedRepr.Count)
+            Enqueue(default);
+
+        //Write values
+        Node n = head;
+        for (int i = 0; i < _serializedRepr.Count; ++i)
+        {
+            n.value = _serializedRepr[i];
+            n = n.next;
+        }
+    }
+
+    #endregion
 }

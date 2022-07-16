@@ -166,6 +166,7 @@ MonoBehaviour:
     isGrounded: 0
     timeSinceLastGround: 0
     timeCanNextJump: 0
+    mode: 0
   enableGravity: 1
   gravityScale: 1
   suspendGravityOnGround: 1
@@ -175,6 +176,7 @@ MonoBehaviour:
   teleportPending: 0
   teleportPos: {x: 0, y: 0, z: 0}
   teleportVel: {x: 0, y: 0, z: 0}
+  teleportLook: {x: 0, y: 0, z: 0}
 --- !u!114 &455297323731713935
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -187,10 +189,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfa48d1b74340b54ab95216212e1d728, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  serverFrameFutures:
+    _serializedRepr: []
+  clientFrameHistory:
+    _serializedRepr: []
   positionForgiveness: 0.05
   velocityForgiveness: 0.05
-  serverFrameHistory: []
-  clientFrameHistory: []
 --- !u!114 &2709372960629483514
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -529,6 +533,3 @@ MonoBehaviour:
   playerInput: {fileID: 1334152775563438803}
   controlMoveName: Move
   controlJumpName: Jump
-  test1: {x: 0, y: 0}
-  test2: {x: 0, y: 0}
-  test3: 0
