@@ -130,6 +130,12 @@ public class PlayerWeaponHolding : NetworkBehaviour
 
     private void ChangeHolding()
     {
+        //Verify the player can actually change their item
+        if(!playerController.CurrentStats.armedWithBow)
+        {
+            return;
+        }
+
         holding.Value = (WeaponHeld)(((int)holding.Value + 1) % 2);
 
         switch (holding.Value)

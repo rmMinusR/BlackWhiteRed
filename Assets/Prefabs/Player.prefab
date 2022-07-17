@@ -315,8 +315,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9918a8a68260ec54fa0604c8e07680f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  timeToLoad: 1
-  timeToFullyCharge: 10
+  timeToLoad: 0.1
+  timeToFullyCharge: 1
   timeCharging: 0
   wantsToCharge: 0
 --- !u!114 &1917337575216211240
@@ -333,8 +333,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scrollThreshold: 600
   scrollResetTime: 0.5
-  scrollAmount: 0
-  scrollTimer: 0
   isLocalPlayer: 1
   holding:
     m_InternalValue: 0

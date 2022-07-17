@@ -1334,17 +1334,9 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 4842441919683497742, guid: f99298f932a33954c94e61769201ba4d, type: 3}
-      propertyPath: GlobalObjectIdHash
-      value: 1704684205
-      objectReference: {fileID: 0}
     - target: {fileID: 4842441919683497744, guid: f99298f932a33954c94e61769201ba4d, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 94254899
-      objectReference: {fileID: 0}
-    - target: {fileID: 4842441920925114120, guid: f99298f932a33954c94e61769201ba4d, type: 3}
-      propertyPath: count
-      value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 4842441920925114126, guid: f99298f932a33954c94e61769201ba4d, type: 3}
       propertyPath: m_Name
