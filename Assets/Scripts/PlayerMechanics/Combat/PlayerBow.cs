@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(PlayerWeaponHolding))]
 public class PlayerBow : MonoBehaviour
 {
     [SerializeField]
@@ -21,6 +22,9 @@ public class PlayerBow : MonoBehaviour
     float timeCharging;
     [SerializeField]
     bool wantsToCharge;
+
+    public delegate void BoolEvent(bool _value);
+    public event BoolEvent onChargingChange;
 
     private void Awake()
     {
@@ -69,6 +73,8 @@ public class PlayerBow : MonoBehaviour
         if (wantsToCharge)
         {
             wantsToCharge = false;
+            onChargingChange.Invoke(wantsToCharge);
+
             if (weaponHolding.CanPreform(WeaponHeld.BOW))
             {
                 if (timeCharging > timeToLoad)
@@ -89,5 +95,6 @@ public class PlayerBow : MonoBehaviour
     private void BowCharging()
     {
         wantsToCharge = true;
+        onChargingChange.Invoke(wantsToCharge);
     }
 }

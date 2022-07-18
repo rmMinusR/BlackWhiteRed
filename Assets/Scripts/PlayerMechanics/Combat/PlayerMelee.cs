@@ -19,6 +19,9 @@ public class PlayerMelee : NetworkBehaviour
 
     PlayerFightingInput input;
 
+    public delegate void TriggerEvent();
+    public event TriggerEvent onSwing;
+
     private void Awake()
     {
         input = new PlayerFightingInput();
@@ -53,7 +56,9 @@ public class PlayerMelee : NetworkBehaviour
         {
             return;
         }
+
         Debug.Log(name + "is doing Melee");
+        onSwing?.Invoke();
 
         //TODO: event invokes for animations, sounds. 
         //TODO: verify the player is holding the melee weapon, and that there's no cooldown
