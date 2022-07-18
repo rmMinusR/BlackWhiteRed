@@ -34,7 +34,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
         else
         {
             //Derive and apply next kinematics frame
-            frame = Step(frame, Time.fixedDeltaTime, IsLocalPlayer); //Only local player has live input. Anything serverside is speculation until proven otherwise.
+            frame = Step(frame, (float)NetworkManager.ServerTime.FixedTime - frame.time, IsLocalPlayer); //Only local player has live input. Anything serverside is speculation until proven otherwise.
             coll.Move(frame.position - transform.position);
         } 
 
@@ -68,6 +68,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
     public PlayerPhysicsFrame Step(PlayerPhysicsFrame frame, float dt, bool live)
     {
         frame.mode = PlayerPhysicsFrame.Mode.NormalMove;
+        frame.time += dt;
 
         //Update ground state
         frame.timeSinceLastGround += dt;

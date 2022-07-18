@@ -13,12 +13,24 @@ using UnityEngine;
 [Serializable]
 public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackReceiver
 {
-    [NonSerialized] private Node head;
-    [NonSerialized] private Node tail;
-    [NonSerialized] private int count;
-    public Node Head { get => head; private set => head = value; }
-    public Node Tail { get => tail; private set => tail = value; }
-    public int Count { get => count; private set => count = value; }
+    [NonSerialized] private Node head = null;
+    [NonSerialized] private Node tail = null;
+    [NonSerialized] private int count = 0;
+    public Node Head
+    {
+        get => head;
+        private set => head = value;
+    }
+    public Node Tail
+    {
+        get => tail;
+        private set => tail = value;
+    }
+    public int Count
+    {
+        get => count;
+        private set => count = value;
+    }
 
     [Serializable]
     public class Node
@@ -56,26 +68,22 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
     public void Enqueue(T val)
     {
         Node newTail = Node.New(val);
-        if (tail != null)
-            tail.next = newTail;
-        if (count == 0)
-        { head = newTail; tail = newTail; }
+        if (tail != null) tail.next = newTail;
+        if (count == 0) { head = newTail; tail = newTail; }
         tail = newTail;
         ++count;
     }
 
     public void Insert(int index, T val)
     {
-        if (index < 0 || index > count)
-            throw new IndexOutOfRangeException();
+        if (index < 0 || index > count) throw new IndexOutOfRangeException();
 
         Node @new = Node.New(val);
         if (count != 0)
         {
             Node before = GetNodeAt(index - 1);
             Node after = before.next;
-            if (before != null)
-                before.next = @new;
+            if (before != null) before.next = @new;
             @new.next = after;
             ++count;
         }
@@ -93,8 +101,7 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
         Node @new = Node.New(val);
 
         Node after = before.next;
-        if (before != null)
-            before.next = @new;
+        if (before != null) before.next = @new;
         @new.next = after;
         ++count;
     }
@@ -120,35 +127,29 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
 
     public void Clear()
     {
-        for (Node i = head; i != null; i = i.next)
-            Node.Recycle(i);
+        for (Node i = head; i != null; i = i.next) Node.Recycle(i);
         head = null;
         tail = null;
         count = 0;
     }
 
-    private Node GetNodeAt(int index)
+    public Node GetNodeAt(int index)
     {
-        if (index < 0 || index >= count)
-            return null;
+        if (index < 0 || index >= count) return null;
         Node ptr = head;
-        for (int i = 0; i < index; ++i)
-            ptr = ptr.next;
+        for (int i = 0; i < index; ++i) ptr = ptr.next;
         return ptr;
     }
 
     public Node FindNode(Func<T, bool> selector)
     {
-        for (Node i = head; i != null; i = i.next)
-            if (selector(i.value))
-                return i;
+        for (Node i = head; i != null; i = i.next) if (selector(i.value)) return i;
         return null;
     }
 
     public IEnumerator<T> GetEnumerator()
     {
-        for (Node i = head; i != null; i = i.next)
-            yield return i.value;
+        for (Node i = head; i != null; i = i.next) yield return i.value;
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -160,10 +161,8 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
     public void OnBeforeSerialize()
     {
         //Ensure same size
-        while (_serializedRepr.Count > count)
-            _serializedRepr.RemoveAt(_serializedRepr.Count - 1);
-        while (_serializedRepr.Count < count)
-            _serializedRepr.Add(default);
+        while (_serializedRepr.Count > count) _serializedRepr.RemoveAt(_serializedRepr.Count - 1);
+        while (_serializedRepr.Count < count) _serializedRepr.Add(default);
 
         //Write values
         Node n = head;
@@ -177,10 +176,8 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
     public void OnAfterDeserialize()
     {
         //Ensure same size
-        while (count > _serializedRepr.Count)
-            DropHead();
-        while (count < _serializedRepr.Count)
-            Enqueue(default);
+        while (count > _serializedRepr.Count) DropHead();
+        while (count < _serializedRepr.Count) Enqueue(default);
 
         //Write values
         Node n = head;
