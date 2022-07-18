@@ -12,7 +12,7 @@ public static class ClientIDCache
     /// </summary>
     /// <param name="clientID"></param>
     /// <returns></returns>
-    public static ulong[] Narrowcast(ulong clientID)
+    public static ulong[] NarrowcastArr(ulong clientID)
     {
         ulong[] v;
 
@@ -30,10 +30,17 @@ public static class ClientIDCache
     /// </summary>
     /// <param name="src"></param>
     /// <returns></returns>
-    public static ClientRpcParams ReturnToSender(this ServerRpcParams src)
+    public static ClientRpcParams ReturnToSender(this ServerRpcParams src) => Narrowcast(src.Receive.SenderClientId);
+
+    /// <summary>
+    /// Convenience method for narrowcasting to a specific client
+    /// </summary>
+    /// <param name="clientID"></param>
+    /// <returns></returns>
+    public static ClientRpcParams Narrowcast(ulong clientID)
     {
-        ClientRpcParams val = new ClientRpcParams();
-        val.Send.TargetClientIds = Narrowcast(src.Receive.SenderClientId);
+        ClientRpcParams val = default;
+        val.Send.TargetClientIds = NarrowcastArr(clientID);
         return val;
     }
 }
