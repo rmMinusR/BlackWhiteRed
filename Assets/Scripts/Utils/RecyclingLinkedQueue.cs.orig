@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+<<<<<<< HEAD
+=======
 using UnityEditor;
 using UnityEngine;
+>>>>>>> net-rollback
 
 /// <summary>
 /// Read/write like a queue.
@@ -10,7 +13,18 @@ using UnityEngine;
 /// GC-friendliness of a circular buffer.
 /// </summary>
 /// <typeparam name="T">Type stored</typeparam>
+<<<<<<< HEAD
+public class RecyclingLinkedQueue<T> : IEnumerable<T>
+{
+    public Node Head { get; private set; }
+    public Node Tail { get; private set; }
+    public int Count { get; private set; }
 
+    public class Node
+    {
+        public T    value { get;          set; }
+        public Node next  { get; internal set; }
+=======
 [Serializable]
 public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackReceiver
 {
@@ -40,6 +54,7 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
 
         [NonSerialized] private Node __next;
         public Node next { get => __next; internal set => __next = value; }
+>>>>>>> net-rollback
 
         private static List<Node> recycled = new List<Node>();
         internal static Node New(T val)
@@ -49,7 +64,11 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
             if (recycled.Count > 0)
             {
                 n = recycled[recycled.Count - 1];
+<<<<<<< HEAD
+                recycled.RemoveAt(recycled.Count-1);
+=======
                 recycled.RemoveAt(recycled.Count - 1);
+>>>>>>> net-rollback
             }
             else
             {
@@ -69,14 +88,39 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
     public void Enqueue(T val)
     {
         Node newTail = Node.New(val);
+<<<<<<< HEAD
+        if(Tail != null) Tail.next = newTail;
+        if(Count==0) { Head = newTail; Tail = newTail; }
+        Tail = newTail;
+        ++Count;
+=======
         if (tail != null) tail.next = newTail;
         if (count == 0) { head = newTail; tail = newTail; }
         tail = newTail;
         ++count;
+>>>>>>> net-rollback
     }
 
     public void Insert(int index, T val)
     {
+<<<<<<< HEAD
+        if (index < 0 || index > Count) throw new IndexOutOfRangeException();
+
+        Node @new = Node.New(val);
+        if (Count != 0)
+        {
+            Node before = GetNodeAt(index - 1);
+            Node after = before.next;
+            if(before != null) before.next = @new;
+            @new.next = after;
+            ++Count;
+        }
+        else
+        {
+            Head = @new;
+            Tail = @new;
+            ++Count;
+=======
         if (index < 0 || index > count) throw new IndexOutOfRangeException();
 
         Node @new = Node.New(val);
@@ -93,6 +137,7 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
             head = @new;
             tail = @new;
             ++count;
+>>>>>>> net-rollback
         }
     }
 
@@ -100,6 +145,30 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
     public void Insert(Node before, T val)
     {
         Node @new = Node.New(val);
+<<<<<<< HEAD
+        
+        Node after = before.next;
+        if(before != null) before.next = @new;
+        @new.next = after;
+        ++Count;
+    }
+
+    public T Peek() => Head.value;
+
+    public T Dequeue()
+    {
+        T val = Head.value;
+        
+        //Advance head forward, recycling
+        Node next = Head.next;
+        Node.Recycle(Head);
+        Head = next;
+
+        --Count;
+
+        return val;
+=======
+
         Node after = before.next;
         if (before != null) before.next = @new;
         @new.next = after;
@@ -123,10 +192,23 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
         head = next;
 
         --count;
+>>>>>>> net-rollback
     }
 
     public void Clear()
     {
+<<<<<<< HEAD
+        for (Node i = Head; i != null; i = i.next) Node.Recycle(i);
+        Head = null;
+        Tail = null;
+        Count = 0;
+    }
+
+    private Node GetNodeAt(int index)
+    {
+        if (index < 0 || index >= Count) return null;
+        Node ptr = Head;
+=======
         for (Node i = head; i != null; i = i.next) Node.Recycle(i);
         head = null;
         tail = null;
@@ -137,10 +219,19 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
     {
         if (index < 0 || index >= count) return null;
         Node ptr = head;
+>>>>>>> net-rollback
         for (int i = 0; i < index; ++i) ptr = ptr.next;
         return ptr;
     }
 
+<<<<<<< HEAD
+    public IEnumerator<T> GetEnumerator()
+    {
+        for (Node i = Head; i != null; i = i.next) yield return i.value;
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+=======
     public Node FindNode(Func<T, bool> selector)
     {
         for (Node i = head; i != null; i = i.next) if (selector(i.value)) return i;
@@ -189,4 +280,5 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
     }
 
     #endregion
+>>>>>>> net-rollback
 }

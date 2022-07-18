@@ -31,7 +31,11 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             serverFrameFutures.Enqueue(kinematics.frame);
         }
 
+<<<<<<< HEAD
+        if (IsLocalPlayer)
+=======
         if (IsLocalPlayer || IsServer)
+>>>>>>> net-rollback
         {
             //Set initial value
             clientFrameHistory.Clear();
@@ -44,6 +48,26 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
 
     //'Server frame futures' stores speculative frames, which are erased when the appropriate client frame arrives.
     //'Client frame history' stores past frames, which are erased once confirmed by the server.
+<<<<<<< HEAD
+    [SerializeField] private RecyclingLinkedQueue<PlayerPhysicsFrame> serverFrameFutures = new RecyclingLinkedQueue<PlayerPhysicsFrame>();
+    [SerializeField] private RecyclingLinkedQueue<PlayerPhysicsFrame> clientFrameHistory = new RecyclingLinkedQueue<PlayerPhysicsFrame>();
+
+    private void SubmitFrameToServer()
+    {
+        //Testing-only, allows use in other scenes without network setup
+        //TODO strip
+        if (!IsSpawned || !isActiveAndEnabled) return;
+
+        //Push to history
+        clientFrameHistory.Enqueue(kinematics.frame);
+        TrimBefore(clientFrameHistory); //Trim - TODO use confirmation instead
+        DONOTCALL_RecieveClientFrame_ServerRpc(kinematics.frame);
+    }
+
+    private static void TrimBefore(RecyclingLinkedQueue<PlayerPhysicsFrame> list, float cutoffTime)
+    {
+        while (list.Peek().time < cutoffTime) list.Dequeue();
+=======
     /*[SerializeField]/* */ private RecyclingLinkedQueue<PlayerPhysicsFrame> serverFrameFutures = new RecyclingLinkedQueue<PlayerPhysicsFrame>();
     /*[SerializeField]/* */ private RecyclingLinkedQueue<PlayerPhysicsFrame> clientFrameHistory = new RecyclingLinkedQueue<PlayerPhysicsFrame>();
 
@@ -86,6 +110,7 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             PlayerPhysicsFrame adjustedFrame = kinematics.frame;
             DONOTCALL_ReceiveClientFrame_ServerRpc(adjustedFrame);
         }
+>>>>>>> net-rollback
     }
 
     [Header("Validation (server-side only)")]
@@ -93,6 +118,22 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
     [SerializeField] [Min(0.001f)] private float velocityForgiveness = 0.05f;
 
     [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = true)]
+<<<<<<< HEAD
+    private void DONOTCALL_RecieveClientFrame_ServerRpc(PlayerPhysicsFrame untrustedFrame, ServerRpcParams p = default)
+    {
+        //Verify ownership
+        if (p.Receive.SenderClientId != OwnerClientId) throw new AccessViolationException($"Player {p.Receive.SenderClientId} tried to send physics data as {OwnerClientId}!");
+
+        if (untrustedFrame.time <= serverFrameFutures.Peek().time)
+        {
+            //int insertIndex = serverFrameHistory.FindLastIndex(i => i.time < untrustedFrame.time);
+            //int insertIndex = 1;
+            //while (insertIndex < serverFrameFutures.Count && serverFrameFutures[insertIndex].time < untrustedFrame.time) ++insertIndex;
+            RecyclingLinkedQueue<PlayerPhysicsFrame>.Node beforeInsert = serverFrameFutures.Head;
+            while (beforeInsert != null && beforeInsert.value.time < untrustedFrame.time) beforeInsert = beforeInsert.next;
+
+            //TODO Protect against duplicates
+=======
     private void DONOTCALL_ReceiveClientFrame_ServerRpc(PlayerPhysicsFrame untrustedFrame, ServerRpcParams src = default)
     {
         //Verify ownership
@@ -109,11 +150,17 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             while (beforeInsert != null && beforeInsert.value.time < untrustedFrame.time) beforeInsert = beforeInsert.next;
 
             Debug.Log("Checkpoint C");
-
+>>>>>>> net-rollback
 
             //Protect against cached-data attack
             if (untrustedFrame.input.sqrMagnitude > 1) untrustedFrame.input.Normalize();
             untrustedFrame.RefreshLookTrig();
+<<<<<<< HEAD
+            
+            //Simulate forward
+            PlayerPhysicsFrame prevFrame = beforeInsert.value;
+            PlayerPhysicsFrame authorityFrame = kinematics.Step(prevFrame, untrustedFrame.time-prevFrame.time, false);
+=======
 
             //Simulate forward
             PlayerPhysicsFrame prevFrame = beforeInsert.value;
@@ -121,12 +168,26 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             if (beforeInsert != serverFrameFutures.Tail) RecalcAfter(serverFrameFutures, untrustedFrame.time);
 
             Debug.Log("Checkpoint D");
-
+>>>>>>> net-rollback
 
             //Validate - copy critical features of authority frame over
             untrustedFrame.position = ValidationUtility.Bound(out bool positionInvalid, untrustedFrame.position, authorityFrame.position, positionForgiveness);
             untrustedFrame.velocity = ValidationUtility.Bound(out bool velocityInvalid, untrustedFrame.velocity, authorityFrame.velocity, velocityForgiveness);
 
+<<<<<<< HEAD
+            //Record
+            serverFrameFutures.Insert(insertIndex, untrustedFrame);
+            TrimBefore(serverFrameFutures, untrustedFrame.time); //Trim - TODO use confirmation instead
+
+            //Debug.Log("Rollback triggered", this);
+            //if (insertIndex < serverFrameHistory.Count-1) RecalcAllSince(serverFrameHistory, untrustedFrame.time);
+
+            //If any changes were made, issue correction
+            if(positionInvalid || velocityInvalid)
+            {
+                //IssueCorrection();
+            }
+=======
             Debug.Log("Checkpoint E");
 
             Debug.Log("F mode "+(beforeInsert.value.time == untrustedFrame.time ? "OVERWRITE" : "INSERT"));
@@ -151,12 +212,23 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             Debug.Log("Checkpoint H");
 
             DONOTCALL_ReceiveAuthorityFrame_ClientRpc(untrustedFrame, reject); //Broadcast to ALL players
-
+>>>>>>> net-rollback
         }
         else
         {
             //Abort if a more recent basis frame has been validated
+<<<<<<< HEAD
+            Debug.LogWarning($"Player {p.Receive.SenderClientId} sent a frame ({untrustedFrame.time}) but it was already overwritten ({serverFrameFutures.Peek().time})");
+        }
+    }
 
+    [Pure]
+    private void RecalcAllSince(List<PlayerPhysicsFrame> frameHistory, float sinceTime)
+    {
+        for (int i = 1; i < frameHistory.Count-1; ++i)
+        {
+            if (sinceTime < frameHistory[i].time) frameHistory[i+1] = kinematics.Step(frameHistory[i], frameHistory[i+1].time-frameHistory[i].time, false);
+=======
             Debug.LogWarning($"Player {src.Receive.SenderClientId} sent a frame ({untrustedFrame.time}) but it was already overwritten ({serverFrameFutures.Peek().time})");
         }
 
@@ -208,7 +280,7 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             //TODO be more specific?
             //TODO penetrate surfaces?
             kinematics.frame = frame;
-
+>>>>>>> net-rollback
         }
     }
 }
