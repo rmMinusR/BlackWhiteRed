@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: S_Column01
+  m_Name: S_Column02
   m_Shader: {fileID: -6465566751694194690, guid: 0ef71f9934686de4e9a8149d31b93242, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
@@ -64,9 +64,9 @@ Material:
     - _AO: 0
     - _BUILTIN_QueueControl: 0
     - _BUILTIN_QueueOffset: 0
-    - _Baked_GI_Opacity: 1
+    - _Baked_GI_Opacity: 0.932
     - _Baked_GI_Power: 3
-    - _Baked_GI_Scale: 1
+    - _Baked_GI_Scale: 0
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
@@ -86,8 +86,8 @@ Material:
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
-    - _Color: {r: 0, g: 0, b: 0, a: 1}
-    - _Color2: {r: 0.0796992, g: 0.084905684, b: 0.08285107, a: 0}
+    - _Color: {r: 0.4528302, g: 0.4528302, b: 0.4528302, a: 1}
+    - _Color2: {r: 0.764151, g: 0.764151, b: 0.764151, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
 --- !u!114 &2465835416296357831
