@@ -14,12 +14,13 @@ public class InspectorReadOnlyDrawer : PropertyDrawer
                                SerializedProperty property,
                                GUIContent label)
     {
-        bool isReadOnly = true;
-        if (Application.isPlaying) isReadOnly = (attribute as InspectorReadOnlyAttribute).playing == InspectorReadOnlyAttribute.Mode.ReadOnly;
-        else                       isReadOnly = (attribute as InspectorReadOnlyAttribute).editing == InspectorReadOnlyAttribute.Mode.ReadOnly;
+        bool isReadOnly;
+        if (Application.isPlaying) isReadOnly = (attribute as InspectorReadOnlyAttribute).playing == AccessMode.ReadOnly;
+        else                       isReadOnly = (attribute as InspectorReadOnlyAttribute).editing == AccessMode.ReadOnly;
 
+        bool parentEnabled = GUI.enabled;
         if (isReadOnly) GUI.enabled = false;
         EditorGUI.PropertyField(position, property, label, true);
-        if (isReadOnly) GUI.enabled = true;
+        GUI.enabled = parentEnabled;
     }
 }

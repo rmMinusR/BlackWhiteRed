@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Scripting.APIUpdating;
 
 /*
  * 
@@ -9,18 +10,19 @@
 
 public class InspectorReadOnlyAttribute : PropertyAttribute
 {
-    public Mode editing;
-    public Mode playing;
+    public AccessMode editing;
+    public AccessMode playing;
 
-    public InspectorReadOnlyAttribute(Mode editing = Mode.ReadOnly, Mode playing = Mode.ReadOnly)
+    public InspectorReadOnlyAttribute(AccessMode editing = AccessMode.ReadOnly, AccessMode playing = AccessMode.ReadOnly)
     {
         this.editing = editing;
         this.playing = playing;
     }
+}
 
-    public enum Mode
-    {
-        ReadOnly,
-        ReadWrite
-    }
+[MovedFrom("InspectorReadOnlyAttribute.Mode")]
+public enum AccessMode
+{
+    ReadOnly,
+    ReadWrite
 }

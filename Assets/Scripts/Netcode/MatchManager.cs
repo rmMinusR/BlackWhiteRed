@@ -88,6 +88,9 @@ public class MatchManager : NetworkBehaviour
             teams.Add((Team)Random.Range(0, 2));
         }
 
+        //RSC MOD: Temporarily moved first since PlayerController isn't set up on my branch, causing loop below to throw and loading screen to stay active
+        //loadingCanvas.SetActive(false);
+
         //Assign Player Objects to Teams
         for (int i = 0; i < playerCount; i++)
         {

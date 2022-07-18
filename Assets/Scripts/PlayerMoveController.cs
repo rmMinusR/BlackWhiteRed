@@ -8,10 +8,9 @@ public class PlayerMoveController : NetworkBehaviour
     [Header("Movement settings")]
     [SerializeField] [Range(0, 1)] private float groundSlipperiness = 0.1f;
     [SerializeField] [Range(0, 1)] private float airSlipperiness = 0.1f;
-    [SerializeField] [Min(0)] private float _speed = 5f;
+    [SerializeField] [Min(0)] private float speed = 5f;
     [SerializeField] [Min(0)] private float jumpPower = 5f;
-    public float Speed => _speed;
-    public float CurrentSlipperiness => kinematicsLayer.IsGrounded ? groundSlipperiness : airSlipperiness;
+    [SerializeField] [Min(0)] private float jumpCooldown = 0.5f;
 
     [Header("Bindings")]
     [SerializeField] private CharacterKinematics kinematicsLayer;
@@ -22,69 +21,79 @@ public class PlayerMoveController : NetworkBehaviour
     private InputAction controlJump;
     [SerializeField] private string controlJumpName = "Jump";
 
+    private void Start()
+    {
+        kinematicsLayer.PreMove -= ApplyMovement;
+        kinematicsLayer.PreMove += ApplyMovement;
+
+        kinematicsLayer.PreMove -= UpdateInput;
+        kinematicsLayer.PreMove += UpdateInput;
+
+        controlMove = playerInput.actions.FindActionMap(playerInput.defaultActionMap).FindAction(controlMoveName);
+        controlJump = playerInput.actions.FindActionMap(playerInput.defaultActionMap).FindAction(controlJumpName);
+    }
+
+    private Vector2 moveState;
+    private void UpdateMoveState(InputAction.CallbackContext c) => moveState = c.ReadValue<Vector2>();
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+
+        kinematicsLayer.PreMove -= UpdateInput;
+
+        controlMove.performed -= UpdateMoveState;
+        controlMove.canceled  -= UpdateMoveState;
+        controlMove.started   -= UpdateMoveState;
+    }
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
         if (IsLocalPlayer)
         {
-            controlMove = playerInput.currentActionMap.FindAction(controlMoveName);
-            controlJump = playerInput.currentActionMap.FindAction(controlJumpName);
+            playerInput.gameObject.SetActive(true);
+            playerInput.enabled = true;
+            playerInput.ActivateInput();
+
+            controlMove = playerInput.actions.FindActionMap(playerInput.defaultActionMap).FindAction(controlMoveName);
+            controlJump = playerInput.actions.FindActionMap(playerInput.defaultActionMap).FindAction(controlJumpName);
+
+            controlMove.performed -= UpdateMoveState;
+            controlMove.canceled  -= UpdateMoveState;
+            controlMove.started   -= UpdateMoveState;
+            controlMove.performed += UpdateMoveState;
+            controlMove.canceled  += UpdateMoveState;
+            controlMove.started   += UpdateMoveState;
         }
     }
 
-    public NetworkVariable<Vector2> rawInput = new NetworkVariable<Vector2>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
-    public bool jumpPressed { get; private set; } // = new NetworkVariable<bool>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
-
-    private void Update()
+    private void UpdateInput(ref PlayerPhysicsFrame frame, bool live)
     {
-        if (IsLocalPlayer && IsSpawned)
+        //Don't read input if simulating, or if we're a remote player
+        if (live && (IsLocalPlayer || NetworkManager.Singleton == null))
         {
-            rawInput.Value = controlMove.ReadValue<Vector2>();
-            jumpPressed = controlJump.IsPressed();
+            frame.input = moveState; //controlMove.ReadValue<Vector2>();
+            frame.jump = controlJump.IsPressed();
         }
     }
 
-    private void FixedUpdate()
+    public void ApplyMovement(ref PlayerPhysicsFrame frame, bool live)
     {
-        if (IsSpawned)
+        //Handle horizontal movement
+        Vector3 targetVelocity = speed*( frame.Right   * frame.input.x
+                                       + frame.Forward * frame.input.y );
+
+        float slippageThisFrame = Mathf.Pow(frame.isGrounded ? groundSlipperiness : airSlipperiness, Time.fixedDeltaTime);
+        Vector3 newVel = Vector3.Lerp(targetVelocity, frame.velocity, slippageThisFrame);
+        frame.velocity = new Vector3(newVel.x, frame.velocity.y, newVel.z);
+
+        //Handle jumping
+        if (frame.jump && frame.isGrounded)
         {
-            Vector3 localRight = frameOfReference.right;
-            localRight.y = 0;
-            localRight.Normalize();
-            Vector3 localForward = new Vector3(-localRight.z, 0, localRight.x);
-
-            //Handle horizontal movement
-            Vector3 targetVelocity = Speed*( localRight*rawInput.Value.x + localForward*rawInput.Value.y );
-
-            float slippageThisFrame = Mathf.Pow(CurrentSlipperiness, Time.fixedDeltaTime);
-            Vector3 newVel = Vector3.Lerp(targetVelocity, kinematicsLayer.velocity, slippageThisFrame);
-            kinematicsLayer.velocity = new Vector3(newVel.x, kinematicsLayer.velocity.y, newVel.z);
-
-            //Handle jumping
-            if (IsLocalPlayer && jumpPressed) Jump();
-        } 
-    }
-
-    private float lastJumpTime;
-    [SerializeField] [Min(0)] private float jumpCooldown = 0.5f;
-
-    private void Jump()
-    {
-        if(!IsHost) DONOTCALL__ServerSideJump_ServerRpc();
-        DONOTCALL__LocalJump();
-    }
-
-    [ServerRpc(Delivery = RpcDelivery.Reliable, RequireOwnership = true)]
-    private void DONOTCALL__ServerSideJump_ServerRpc() => DONOTCALL__LocalJump();
-
-    private void DONOTCALL__LocalJump()
-    {
-        if (kinematicsLayer.IsGrounded && lastJumpTime+jumpCooldown < Time.fixedTime)
-        {
-            lastJumpTime = Time.fixedTime;
-            kinematicsLayer.velocity += jumpPower * transform.up;
-            kinematicsLayer.MarkUngrounded();
+            frame.timeCanNextJump = (float)NetworkManager.ServerTime.FixedTime + jumpCooldown;
+            frame.velocity += jumpPower * transform.up;
         }
     }
 }
