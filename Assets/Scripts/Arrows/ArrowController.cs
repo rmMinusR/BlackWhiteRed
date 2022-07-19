@@ -104,8 +104,7 @@ public class ArrowController : NetworkBehaviour
         {
             //Ground
             case 0:
-                rb.constraints = RigidbodyConstraints.FreezeAll;
-                transform.position = hit.ClosestPoint(transform.position);
+                StickIntoPlaceClientRpc(hit.ClosestPoint(transform.position));
                 timer = timeBeforeDespawn;
                 break;
             //Players
@@ -127,5 +126,12 @@ public class ArrowController : NetworkBehaviour
             default:
                 break;
         }
+    }
+
+    [ClientRpc(Delivery = RpcDelivery.Reliable)]
+    private void StickIntoPlaceClientRpc(Vector3 pos)
+    {
+        rb.constraints = RigidbodyConstraints.FreezeAll;
+        transform.position = pos;
     }
 }
