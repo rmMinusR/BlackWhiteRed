@@ -196,10 +196,8 @@ public class RecyclingNode<T>
         isAlive = false;
         next = null;
         value = default;
-        Debug.Log("New Node<"+typeof(T).Name+"> #"+id);
     }
 
-    private bool isAlive;
     private static HashSet<RecyclingNode<T>> recycled = new HashSet<RecyclingNode<T>>();
     internal static RecyclingNode<T> New(T val)
     {
@@ -209,14 +207,13 @@ public class RecyclingNode<T>
         {
             n = recycled.First();
             recycled.Remove(n);
-            Debug.Log("Retrieved recycled Node<"+typeof(T).Name+"> #"+n.id);
         }
         else
         {
             n = new RecyclingNode<T>();
         }
 
-        Debug.Assert(!n.isAlive, "Tried to retrieve a recycled Node<"+typeof(T).Name+">, but it was already alive! #"+n.id);
+        Debug.Assert(!n.isAlive, "Tried to retrieve recycled Node<"+typeof(T).Name+">#"+n.id+", but it was already alive! #"+n.id);
         n.isAlive = true;
 
         n.value = val;
@@ -226,15 +223,16 @@ public class RecyclingNode<T>
 
     internal static void Recycle(RecyclingNode<T> n)
     {
-        Debug.Assert(n.isAlive, "Tried to recycle a Node<"+typeof(T).Name+">, but it was already dead! #"+n.id);
+        Debug.Assert(n.isAlive, "Tried to recycle Node<"+typeof(T).Name+">#"+n.id+", but it was already dead! #"+n.id);
         n.isAlive = false;
 
         recycled.Add(n);
-        Debug.Log("Recycling Node<"+nameof(T)+"> #"+n.id);
     }
 
     private static int instanceCount = 0;
     private int id;
+    private bool isAlive;
+
     public override int GetHashCode() => id;
 
     public override string ToString() => base.ToString() + "#"+id + (next != null ? "->"+next.id : ".");
