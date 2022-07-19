@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 [RequireComponent(typeof(PlayerWeaponHolding))]
@@ -86,7 +87,9 @@ public class PlayerBow : MonoBehaviour
                     Vector3 pos = Camera.main.transform.position;
                     Vector3 dir = Camera.main.transform.forward;
 
-                    ArrowPool.Instance.RequestArrowFireServerRpc(playerController.Team, playerController.ShadeValue, pos, dir, pullBack);
+                    float timeShot = NetworkManager.Singleton.LocalTime.TimeAsFloat;
+
+                    ArrowPool.Instance.RequestArrowFireServerRpc(playerController.Team, playerController.NetworkObjectId, playerController.ShadeValue, pos, dir, pullBack, timeShot);
                 }
             }
         }

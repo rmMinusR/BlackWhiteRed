@@ -62,7 +62,7 @@ public class ArrowPool : NetworkBehaviour
     }
 
     [ServerRpc(RequireOwnership = false)]
-    public void RequestArrowFireServerRpc(Team team, int shadeValue, Vector3 startingPosition, Vector3 startDirection, float amountCharged)
+    public void RequestArrowFireServerRpc(Team team, ulong shooterId, int shadeValue, Vector3 startingPosition, Vector3 startDirection, float amountCharged, float timeShot)
     {
         Debug.Log("Requested Arrow Fire");
 
@@ -78,7 +78,7 @@ public class ArrowPool : NetworkBehaviour
             obj.GetComponent<NetworkObject>().Spawn(true);
         }
         obj.SetActive(true);
-        obj.GetComponent<ArrowController>().InitClientRpc(team, shadeValue, startingPosition, startDirection, amountCharged);
+        obj.GetComponent<ArrowController>().InitClientRpc(team, shooterId, shadeValue, startingPosition, startDirection, amountCharged, timeShot);
 
         inactive.RemoveAt(0);
         active.Add(obj);

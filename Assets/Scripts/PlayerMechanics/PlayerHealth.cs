@@ -3,10 +3,20 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 
+public enum DamageSource
+{
+    INVALID = -1,
+    SWORD,
+    ARROW,
+    EXPLOSION,
+    ABYSS
+}
+
 public class PlayerHealth : NetworkBehaviour
 {
 
     const int MAX_HEALTH = 20;
+    const float PERCENTAGE_PROTECTION = .15f;
 
     PlayerController playerController;
 
@@ -40,7 +50,15 @@ public class PlayerHealth : NetworkBehaviour
         MatchManager.onTeamWin -= HandleTeamScore;
     }
 
-    public void TakeDamage(int damage)
+    public void TakeDamage(int attackDamage, DamageSource damageSource, PlayerController attacker = null)
+    {
+        //Account for armor lessening damage
+        int damage = Mathf.FloorToInt(attackDamage * (1 - PERCENTAGE_PROTECTION * playerController.CurrentStats.armorStrength));
+
+        TakeDamageFlat(damage);
+    }
+
+    private void TakeDamageFlat(int damage)
     {
         health.Value = Mathf.Max(health.Value - damage,0);
         health.SetDirty(true);
