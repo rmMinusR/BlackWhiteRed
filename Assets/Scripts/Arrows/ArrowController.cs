@@ -9,6 +9,8 @@ public class ArrowController : NetworkBehaviour
     Transform appearance;
     [SerializeField]
     PlayerKit kit;
+    [SerializeField]
+    LayerMask collisionDetectionMask;
 
     [SerializeField]
     float minimumStartingVelocity;
@@ -43,6 +45,8 @@ public class ArrowController : NetworkBehaviour
         float timeSinceShot = NetworkManager.Singleton.LocalTime.TimeAsFloat - timeShot;
 
         gameObject.SetActive(true);
+        rb.constraints = RigidbodyConstraints.None;
+
         team = _team;
         shadeValue = _shadeValue;
         shooterId = _shooterId;
@@ -51,8 +55,15 @@ public class ArrowController : NetworkBehaviour
 
         if (IsServer || IsHost)
         {
-            timer = timeBeforeDespawn;
+            //Check with a sphere cast for if it has already hit a wall or entity
+            RaycastHit raycastHit;
+            Ray ray = new Ray(startingPosition, transform.position);
+            if(Physics.SphereCast(ray, .25f, out raycastHit, Vector3.Distance(startingPosition, transform.position), collisionDetectionMask))
+            {
+                ProcessCollision(raycastHit.collider);
+            }
         }
+
     }
 
     private void Update()
@@ -69,6 +80,52 @@ public class ArrowController : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        appearance.forward = rb.velocity;
+        if (rb.constraints == RigidbodyConstraints.None)
+        {
+            appearance.forward = rb.velocity;
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!IsServer && !IsHost)
+        {
+            return;
+        }
+
+        ProcessCollision(other);
+    }
+
+    private void ProcessCollision(Collider hit)
+    {
+
+        //Handle ground, bomb, or enemy teammate
+        switch (hit.gameObject.layer)
+        {
+            //Ground
+            case 0:
+                rb.constraints = RigidbodyConstraints.FreezeAll;
+                transform.position = hit.ClosestPoint(transform.position);
+                timer = timeBeforeDespawn;
+                break;
+            //Players
+            case 6:
+                PlayerController playerController = hit.GetComponent<PlayerController>();
+                if (playerController.Team != team)
+                {
+                    playerController.GetComponent<PlayerHealth>().TakeDamage(
+                        rb.velocity.magnitude * kit.playerStats[shadeValue].bowDamageMultiplier, 
+                        DamageSource.ARROW, 
+                        NetworkManager.Singleton.SpawnManager.SpawnedObjects[shooterId].GetComponent<PlayerController>());
+                    ArrowPool.Instance.UnloadArrow(gameObject);
+                }
+                break;
+            //Bomb
+            case 9:
+                ArrowPool.Instance.UnloadArrow(gameObject);
+                break;
+            default:
+                break;
+        }
     }
 }

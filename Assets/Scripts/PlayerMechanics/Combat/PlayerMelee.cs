@@ -60,9 +60,9 @@ public class PlayerMelee : NetworkBehaviour
         Debug.Log(name + "is doing Melee");
         onSwing?.Invoke();
 
-        //TODO: event invokes for animations, sounds. 
-        //TODO: verify the player is holding the melee weapon, and that there's no cooldown
-        //TODO: better means for getting the direction the spherecast should go.
+        //TODO: verify that there's no cooldown
+
+        //TODO: better means for getting the direction the cast should go.
         Vector3 directionFacing = Camera.main.transform.forward;
 
         //Hit Registration

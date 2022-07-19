@@ -50,7 +50,7 @@ public class PlayerHealth : NetworkBehaviour
         MatchManager.onTeamWin -= HandleTeamScore;
     }
 
-    public void TakeDamage(int attackDamage, DamageSource damageSource, PlayerController attacker = null)
+    public void TakeDamage(float attackDamage, DamageSource damageSource, PlayerController attacker = null)
     {
         //Account for armor lessening damage
         int damage = Mathf.FloorToInt(attackDamage * (1 - PERCENTAGE_PROTECTION * playerController.CurrentStats.armorStrength));
