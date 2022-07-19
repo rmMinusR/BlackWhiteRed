@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: S_Column01
+  m_Name: Char
   m_Shader: {fileID: -6465566751694194690, guid: 0ef71f9934686de4e9a8149d31b93242, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
@@ -77,7 +77,7 @@ Material:
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
-    - _Overlay_Scale: 100
+    - _Overlay_Scale: 352.15
     - _Parallax: 0.02
     - _Smoothness: 0.43
     - _SmoothnessTextureChannel: 0
