@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 2627163635325708533}
   - component: {fileID: 3055371873543667270}
   - component: {fileID: 4804174325223550344}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Arrow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -50,9 +50,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   appearance: {fileID: 3317781354909028286}
   kit: {fileID: 11400000, guid: 489ad468404e6e146b658ff8e5bab986, type: 2}
+  collisionDetectionMask:
+    serializedVersion: 2
+    m_Bits: 577
   minimumStartingVelocity: 6
   maximumStartingVelocity: 60.5
-  timeBeforeDespawn: 10
+  timeBeforeDespawn: 2
   rb: {fileID: 3055371873543667270}
 --- !u!114 &2627163635325708533
 MonoBehaviour:
@@ -108,7 +111,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3317781354909028286}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Appearance
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -142,7 +145,7 @@ GameObject:
   - component: {fileID: 4952462515837306889}
   - component: {fileID: 4291844591616938023}
   - component: {fileID: 2081795375222565126}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
