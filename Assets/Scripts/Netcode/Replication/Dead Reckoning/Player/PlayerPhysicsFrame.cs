@@ -7,25 +7,15 @@ using UnityEngine;
 /// Represents a snapshot of a player Rigidbody
 /// </summary>
 [Serializable]
-public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
+public struct PlayerPhysicsFrame : INetworkSerializable
 {
     //Default kinematics
-    [SerializeField] private Vector3 _position;
-    [SerializeField] private Vector3 _velocity;
-    [SerializeField] private float   _time;
+    public Vector3 position;
+    public Vector3 velocity;
+    public float   time;
 
-    public Vector3 position {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] get => _position;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] set => _position = value;
-    }
-    public Vector3 velocity {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] get => _velocity;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] set => _velocity = value;
-    }
-    public float time {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] get => _time;
-        [MethodImpl(MethodImplOptions.AggressiveInlining)] set => _time = value;
-    }
+    public uint id; //Ensure time-adjustment parity
+    public Mode mode;
 
     //Additional player-specific settings
     public Vector2 look;
@@ -39,12 +29,13 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
     public float timeSinceLastGround;
     public float timeCanNextJump;
 
-    public Mode mode;
-
+    [Flags]
     public enum Mode
     {
-        NormalMove,
-        Teleport
+        Default = NormalMove,
+
+        NormalMove = (1 << 0),
+        Teleport   = (1 << 1)
     }
 
     #region Cached expensive math
@@ -81,4 +72,18 @@ public struct PlayerPhysicsFrame : INetworkSerializeByMemcpy, IPhysicsFrame
     }
 
     #endregion
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref position);
+        serializer.SerializeValue(ref velocity);
+        serializer.SerializeValue(ref time);
+
+        serializer.SerializeValue(ref id);
+        serializer.SerializeValue(ref mode);
+
+        serializer.SerializeValue(ref look);
+        serializer.SerializeValue(ref input);
+        serializer.SerializeValue(ref jump);
+    }
 }

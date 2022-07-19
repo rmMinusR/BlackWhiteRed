@@ -67,8 +67,9 @@ public sealed class CharacterKinematics : NetworkBehaviour
     [Pure] //Only if live=false
     public PlayerPhysicsFrame Step(PlayerPhysicsFrame frame, float dt, bool live)
     {
-        frame.mode = PlayerPhysicsFrame.Mode.NormalMove;
+        frame.mode = PlayerPhysicsFrame.Mode.Default;
         frame.time += dt;
+        ++frame.id;
 
         //Update ground state
         frame.timeSinceLastGround += dt;

@@ -31,7 +31,7 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             serverFrameFutures.Enqueue(kinematics.frame);
         }
 
-        if (IsLocalPlayer || IsServer)
+        if (IsClient)
         {
             //Set initial value
             clientFrameHistory.Clear();
@@ -59,15 +59,20 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         Velocity = (1 << 1)
     }
 
-    private void RecalcAfter(RecyclingLinkedQueue<PlayerPhysicsFrame> frames, float sinceTime)
+    private void RecalcAfter(RecyclingLinkedQueue<PlayerPhysicsFrame> frames, float sinceTime) => RecalcAfter(frames.FindNode(i => sinceTime <= i.time));
+
+    private void RecalcAfter(RecyclingNode<PlayerPhysicsFrame> startNode)
     {
-        for (RecyclingNode<PlayerPhysicsFrame> i = frames.Head; i != null; i = i.next)
+        RecyclingNode<PlayerPhysicsFrame> i;
+        for (i = startNode; i.next != null; i = i.next)
         {
-            if (sinceTime < i.value.time) i.next.value = kinematics.Step(i.value, i.next.value.time-i.value.time, false);
+            i.next.value = kinematics.Step(i.value, i.next.value.time-i.value.time, false);
         }
 
-        //Force update transform so we can ignore collisions
-        transform.position = frames.Tail.value.position;
+        //i is tail
+
+        kinematics.frame = i.value;
+        transform.position = i.value.position; //Force update transform so we can ignore collisions
     }
 
     private void SubmitFrameToServer()
@@ -114,7 +119,6 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             //Simulate forward
             PlayerPhysicsFrame prevFrame = beforeInsert.value;
             PlayerPhysicsFrame authorityFrame = kinematics.Step(prevFrame, untrustedFrame.time-prevFrame.time, false);
-            if (beforeInsert != serverFrameFutures.Tail) RecalcAfter(serverFrameFutures, untrustedFrame.time);
 
             //Validate - copy critical features of authority frame over
             untrustedFrame.position = ValidationUtility.Bound(out bool positionInvalid, untrustedFrame.position, authorityFrame.position, positionForgiveness);
@@ -124,14 +128,14 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             if (beforeInsert.value.time == untrustedFrame.time) beforeInsert.value = untrustedFrame;
             else serverFrameFutures.Insert(beforeInsert, untrustedFrame); //TODO should this overwrite instead?
 
-            //'Untrusted' frame was made it through validation, anything before is already valid by extension and therefore irrelevant
-            TrimBefore(serverFrameFutures, untrustedFrame.time);
-
-            //Send response verifying or rejecting
+            //Prepare response verifying or rejecting
             RejectionFlags reject = 0;
             if (positionInvalid) reject |= RejectionFlags.Position;
             if (velocityInvalid) reject |= RejectionFlags.Velocity;
-            if (reject != 0) RecalcAfter(serverFrameFutures, untrustedFrame.time);
+            if (reject != 0 && beforeInsert != serverFrameFutures.Tail) RecalcAfter(serverFrameFutures, untrustedFrame.time);
+
+            //'Untrusted' frame made it through validation, anything before is already valid by extension and therefore irrelevant
+            TrimBefore(serverFrameFutures, untrustedFrame.time);
 
             DONOTCALL_ReceiveAuthorityFrame_ClientRpc(untrustedFrame, reject); //Broadcast to ALL players
         }
@@ -145,36 +149,32 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
     [ClientRpc(Delivery = RpcDelivery.Reliable)]
     private void DONOTCALL_ReceiveAuthorityFrame_ClientRpc(PlayerPhysicsFrame frame, RejectionFlags reject, ClientRpcParams p = default)
     {
-        if (IsHost) return; //No need to adjust authority copy?
+        //if (IsHost) return; //No need to adjust authority copy?
 
-        if (IsLocalPlayer)
+        //Locate relevant frame
+        RecyclingNode<PlayerPhysicsFrame> n;
+        try
         {
-            //Apply changes, if any
-            if (reject != 0)
-            {
-                //Locate relevant frame
-                RecyclingNode<PlayerPhysicsFrame> n = clientFrameHistory.FindNode(i => frame.time == i.time);
-                if (n == null) //Ignore if duplicate (already handled)
-                {
-                    Debug.LogWarning("Duplicate server response for frame at "+frame.time, this);
-                    return;
-                }
+            n = clientFrameHistory.FindNode(IsOwner ? i => frame.id == i.id
+                                                    : i => frame.time >= i.time);
+        }
+        catch (IndexOutOfRangeException e)
+        {
+            Debug.LogWarning("Duplicate server response for frame at " + frame.time, this);
+            return;
+        }
 
-                if (reject.HasFlag(RejectionFlags.Position)) n.value.position = frame.position;
-                if (reject.HasFlag(RejectionFlags.Velocity)) n.value.velocity = frame.velocity;
+        //Apply changes, if any
+        if (reject != 0)
+        {
+            if (reject.HasFlag(RejectionFlags.Position)) n.value.position = frame.position;
+            if (reject.HasFlag(RejectionFlags.Velocity)) n.value.velocity = frame.velocity;
 
-                //Recalculate
-                RecalcAfter(clientFrameHistory, frame.time);
-            }
+            //Recalculate
+            RecalcAfter(n.next);
+        }
             
-            //This frame should now be validated with the server's copy, anything before is irrelevant
-            TrimBefore(clientFrameHistory, frame.time);
-        }
-        else
-        {
-            //TODO be more specific?
-            //TODO penetrate surfaces?
-            kinematics.frame = frame;
-        }
+        //This frame should now be validated from the server's standpoint, anything before is irrelevant
+        TrimBefore(clientFrameHistory, frame.time);
     }
 }

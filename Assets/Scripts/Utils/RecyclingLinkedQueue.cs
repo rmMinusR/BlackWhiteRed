@@ -109,7 +109,12 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
         //Advance head forward, recycling
         RecyclingNode<T> next = Head.next;
         RecyclingNode<T>.Recycle(Head);
-        _head = next;
+        if (_count > 1) _head = next;
+        else
+        {
+            _head = null;
+            _tail = null;
+        }
 
         --_count;
     }
