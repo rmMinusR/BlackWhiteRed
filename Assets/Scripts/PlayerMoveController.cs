@@ -69,17 +69,17 @@ public class PlayerMoveController : NetworkBehaviour
         }
     }
 
-    private void UpdateInput(ref PlayerPhysicsFrame frame, bool live)
+    private void UpdateInput(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
     {
         //Don't read input if simulating, or if we're a remote player
-        if (live && (IsLocalPlayer || NetworkManager.Singleton == null))
+        if (mode == CharacterKinematics.StepMode.LiveForward)
         {
             frame.input = moveState; //controlMove.ReadValue<Vector2>();
             frame.jump = controlJump.IsPressed();
         }
     }
 
-    public void ApplyMovement(ref PlayerPhysicsFrame frame, bool live)
+    public void ApplyMovement(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
     {
         //Handle horizontal movement
         Vector3 targetVelocity = speed*( frame.Right   * frame.input.x

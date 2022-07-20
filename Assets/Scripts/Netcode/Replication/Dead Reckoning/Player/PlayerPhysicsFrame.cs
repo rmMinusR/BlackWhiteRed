@@ -32,10 +32,15 @@ public struct PlayerPhysicsFrame : INetworkSerializable
     [Flags]
     public enum Mode
     {
-        Default = NormalMove,
+        NormalMove,
+        Teleport,
 
-        NormalMove = (1 << 0),
-        Teleport   = (1 << 1)
+        Default = NormalMove
+    }
+
+    public static bool DoCollisionTest(Mode m)
+    {
+        return m != Mode.Teleport;
     }
 
     #region Cached expensive math
@@ -43,21 +48,19 @@ public struct PlayerPhysicsFrame : INetworkSerializable
     private float __lastLookX;
     private float __sinLookX;
     private float __cosLookX;
+    private bool __ShouldRefreshLookTrig => __lastLookX != look.x || (__lastLookX == 0 && __sinLookX == 0 && __cosLookX == 0);
     public void RefreshLookTrig()
     {
-        if(__lastLookX != look.x || (__lastLookX == 0 && __sinLookX == 0 && __cosLookX == 0))
-        {
-            __lastLookX = look.x;
-            __sinLookX = Mathf.Sin(look.x * Mathf.Deg2Rad);
-            __cosLookX = Mathf.Cos(look.x * Mathf.Deg2Rad);
-        }
+        __lastLookX = look.x;
+        __sinLookX = Mathf.Sin(look.x * Mathf.Deg2Rad);
+        __cosLookX = Mathf.Cos(look.x * Mathf.Deg2Rad);
     }
 
     internal Vector3 Right
     {
         get
         {
-            RefreshLookTrig();
+            if (__ShouldRefreshLookTrig) RefreshLookTrig();
             return new Vector3(__cosLookX, 0, -__sinLookX);
         }
     }
@@ -66,7 +69,7 @@ public struct PlayerPhysicsFrame : INetworkSerializable
     {
         get
         {
-            RefreshLookTrig();
+            if (__ShouldRefreshLookTrig) RefreshLookTrig();
             return new Vector3(__sinLookX, 0, __cosLookX);
         }
     }

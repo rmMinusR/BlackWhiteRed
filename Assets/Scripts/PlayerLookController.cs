@@ -12,32 +12,17 @@ public sealed class PlayerLookController : NetworkBehaviour
     [SerializeField] [Range(-90,  0)] private float minVerticalAngle = -90;
     [SerializeField] [Range(  0, 90)] private float maxVerticalAngle = 90;
 
-    [Space]
-    [InspectorReadOnly(editing = AccessMode.ReadWrite)] public Vector2 angles;
-
     [Header("Bindings")]
     [SerializeField] private CharacterKinematics kinematicsLayer;
     [SerializeField] private PlayerInput dataSource;
     private InputAction controlLook;
     [SerializeField] private string controlLookName = "Look";
 
-    private void WriteLook(ref PlayerPhysicsFrame frame, bool live)
+    private void OnEnable()
     {
-        if (live) frame.look = angles;
-    }
-
-    private void Update()
-    {
-        if (IsLocalPlayer && IsSpawned)
-        {
-            //Add given movement
-            angles += controlLook.ReadValue<Vector2>() * sensitivity * Time.deltaTime;
-
-            //Limit
-            angles.y = Mathf.Clamp(angles.y, minVerticalAngle, maxVerticalAngle);
-        }
-
-        target.rotation = Quaternion.Euler(angles.y, angles.x, 0);
+        //Hook
+        kinematicsLayer.PreMove -= UpdateLook;
+        kinematicsLayer.PreMove += UpdateLook;
     }
 
     public override void OnNetworkSpawn()
@@ -53,11 +38,21 @@ public sealed class PlayerLookController : NetworkBehaviour
         //Lock cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-
-        //Hook
-        kinematicsLayer.PreMove -= WriteLook;
-        kinematicsLayer.PreMove += WriteLook;
     }
+
+    private void UpdateLook(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
+    {
+        //Add given movement
+        if (mode == CharacterKinematics.StepMode.LiveForward) frame.look += controlLook.ReadValue<Vector2>() * sensitivity * Time.deltaTime;
+
+        //Limit
+        frame.look.y = Mathf.Clamp(frame.look.y, minVerticalAngle, maxVerticalAngle);
+
+        //Apply to transform
+        if (mode == CharacterKinematics.StepMode.LiveForward
+         || mode == CharacterKinematics.StepMode.LiveSpeculation) target.rotation = Quaternion.Euler(frame.look.y, frame.look.x, 0);
+    }
+
 
     private void OnDisable()
     {
@@ -68,6 +63,6 @@ public sealed class PlayerLookController : NetworkBehaviour
         Cursor.visible = true;
 
         //Unhook
-        kinematicsLayer.PreMove -= WriteLook;
+        kinematicsLayer.PreMove -= UpdateLook;
     }
 }

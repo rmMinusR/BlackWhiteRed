@@ -59,20 +59,23 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         Velocity = (1 << 1)
     }
 
-    private void RecalcAfter(RecyclingLinkedQueue<PlayerPhysicsFrame> frames, float sinceTime) => RecalcAfter(frames.FindNode(i => sinceTime <= i.time));
-
-    private void RecalcAfter(RecyclingNode<PlayerPhysicsFrame> startNode)
+    private void RecalcAfter(RecyclingLinkedQueue<PlayerPhysicsFrame> frames, float sinceTime)
     {
-        RecyclingNode<PlayerPhysicsFrame> i;
-        for (i = startNode; i.next != null; i = i.next)
+        try
         {
-            i.next.value = kinematics.Step(i.value, i.next.value.time-i.value.time, false);
+            Recalc(frames, frames.FindNode(i => sinceTime < i.time));
         }
+        catch (IndexOutOfRangeException e) { }
+    }
 
-        //i is tail
+    private void Recalc(RecyclingLinkedQueue<PlayerPhysicsFrame> frames, RecyclingNode<PlayerPhysicsFrame> startNode)
+    {
+        if (startNode == null) return;
 
-        kinematics.frame = i.value;
-        transform.position = i.value.position; //Force update transform so we can ignore collisions
+        for (RecyclingNode<PlayerPhysicsFrame> i = startNode; i.next != null; i = i.next)
+        {
+            i.next.value = kinematics.Step(i.value, i.next.value.time-i.value.time, CharacterKinematics.StepMode.SimulateRecalc);
+        }
     }
 
     private void SubmitFrameToServer()
@@ -112,32 +115,50 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             while (beforeInsert != null && beforeInsert.value.time < untrustedFrame.time) beforeInsert = beforeInsert.next;
             if (beforeInsert == null) beforeInsert = serverFrameFutures.Tail; //If we didn't find anything, all < untrustedFrame.time, therefore it goes at the end
 
+            RejectionFlags reject = 0;
+
+            //Players don't have the authority to teleport, forbid
+            if (untrustedFrame.mode == PlayerPhysicsFrame.Mode.Teleport)
+            {
+                Debug.LogWarning("Player tried to send Teleport frame!");
+                untrustedFrame.mode = PlayerPhysicsFrame.Mode.Default;
+                reject |= RejectionFlags.Position | RejectionFlags.Velocity;
+            }
+
             //Protect against cached-data attack
-            if (untrustedFrame.input.sqrMagnitude > 1) untrustedFrame.input.Normalize();
+            if (ValidationUtility.Bound(ref untrustedFrame.input.x, 0, 1)
+             || ValidationUtility.Bound(ref untrustedFrame.input.y, 0, 1)) reject |= RejectionFlags.Position | RejectionFlags.Velocity;
             untrustedFrame.RefreshLookTrig();
 
-            //Simulate forward
+            //Validate - simulate forward
             PlayerPhysicsFrame prevFrame = beforeInsert.value;
-            PlayerPhysicsFrame authorityFrame = kinematics.Step(prevFrame, untrustedFrame.time-prevFrame.time, false);
+            PlayerPhysicsFrame authorityFrame = kinematics.Step(prevFrame, untrustedFrame.time-prevFrame.time, CharacterKinematics.StepMode.SimulateVerify);
+
+            //Special case: If teleporting, it's always correct
+            //Must happen after verify
+            if (authorityFrame.mode == PlayerPhysicsFrame.Mode.Teleport)
+            {
+                reject |= RejectionFlags.Position | RejectionFlags.Velocity;
+                untrustedFrame.position = authorityFrame.position;
+                untrustedFrame.velocity = authorityFrame.velocity;
+            }
 
             //Validate - copy critical features of authority frame over
-            untrustedFrame.position = ValidationUtility.Bound(out bool positionInvalid, untrustedFrame.position, authorityFrame.position, positionForgiveness);
-            untrustedFrame.velocity = ValidationUtility.Bound(out bool velocityInvalid, untrustedFrame.velocity, authorityFrame.velocity, velocityForgiveness);
+            if (ValidationUtility.Bound(ref untrustedFrame.position, authorityFrame.position, positionForgiveness)) reject |= RejectionFlags.Position;
+            if (ValidationUtility.Bound(ref untrustedFrame.velocity, authorityFrame.velocity, velocityForgiveness)) reject |= RejectionFlags.Velocity;
 
             //Record
-            if (beforeInsert.value.time == untrustedFrame.time) beforeInsert.value = untrustedFrame;
+            if (beforeInsert.value.time == untrustedFrame.time) beforeInsert.value = untrustedFrame; //TODO should this use stable ID instead?
             else serverFrameFutures.Insert(beforeInsert, untrustedFrame); //TODO should this overwrite instead?
 
-            //Prepare response verifying or rejecting
-            RejectionFlags reject = 0;
-            if (positionInvalid) reject |= RejectionFlags.Position;
-            if (velocityInvalid) reject |= RejectionFlags.Velocity;
-            if (reject != 0 && beforeInsert != serverFrameFutures.Tail) RecalcAfter(serverFrameFutures, untrustedFrame.time);
-
             //'Untrusted' frame made it through validation, anything before is already valid by extension and therefore irrelevant
+            if (reject != 0) RecalcAfter(serverFrameFutures, untrustedFrame.time);
             TrimBefore(serverFrameFutures, untrustedFrame.time);
+            kinematics.frame = serverFrameFutures.Tail.value;
+            kinematics.transform.position = serverFrameFutures.Tail.value.position; //Force update transform so we can ignore collisions
 
-            DONOTCALL_ReceiveAuthorityFrame_ClientRpc(untrustedFrame, reject); //Broadcast to ALL players
+            //Send frame to ALL players
+            DONOTCALL_ReceiveAuthorityFrame_ClientRpc(untrustedFrame, reject);
         }
         else
         {
@@ -171,10 +192,13 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             if (reject.HasFlag(RejectionFlags.Velocity)) n.value.velocity = frame.velocity;
 
             //Recalculate
-            RecalcAfter(n.next);
+            Recalc(clientFrameHistory, n.next);
         }
-            
+        
         //This frame should now be validated from the server's standpoint, anything before is irrelevant
         TrimBefore(clientFrameHistory, frame.time);
+
+        kinematics.frame = clientFrameHistory.Tail.value;
+        kinematics.transform.position = clientFrameHistory.Tail.value.position; //Force update transform so we can ignore collisions
     }
 }
