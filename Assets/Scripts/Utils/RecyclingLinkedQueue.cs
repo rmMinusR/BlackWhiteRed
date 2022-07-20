@@ -142,6 +142,13 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
         for (RecyclingNode<T> i = _head; i != null; i = i.next) if (selector(i.value)) return i;
         throw new IndexOutOfRangeException("Selector didn't match any nodes");
     }
+    
+    public RecyclingNode<T> FindNode(Func<RecyclingNode<T>, bool> selector)
+    {
+        if (Count == 0) throw new IndexOutOfRangeException("Collection is empty");
+        for (RecyclingNode<T> i = _head; i != null; i = i.next) if (selector(i)) return i;
+        throw new IndexOutOfRangeException("Selector didn't match any nodes");
+    }
 
     public IEnumerator<T> GetEnumerator()
     {

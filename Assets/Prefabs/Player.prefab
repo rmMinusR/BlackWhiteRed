@@ -162,8 +162,8 @@ MonoBehaviour:
     id: 0
     mode: 0
     look: {x: 0, y: 0}
-    input: {x: 0, y: 0}
-    jump: 0
+    inputMove: {x: 0, y: 0}
+    inputJump: 0
     isGrounded: 0
     timeSinceLastGround: 0
     timeCanNextJump: 0
@@ -202,9 +202,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfa48d1b74340b54ab95216212e1d728, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  serverFrameFutures:
+  speculativeFutures:
     _serializedRepr: []
-  clientFrameHistory:
+  unvalidatedHistory:
     _serializedRepr: []
   positionForgiveness: 0.4
   velocityForgiveness: 0.4
@@ -308,7 +308,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 2931471490281750659}
-  sensitivity: {x: 8, y: -8}
+  sensitivity: {x: 32, y: -32}
   minVerticalAngle: -90
   maxVerticalAngle: 90
   kinematicsLayer: {fileID: 3587278699711730041}

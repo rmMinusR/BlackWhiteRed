@@ -88,7 +88,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
     [Pure] //Only if mode != StepMode.Live
     public PlayerPhysicsFrame Step(PlayerPhysicsFrame frame, float dt, StepMode mode)
     {
-        if (mode == StepMode.LiveForward || mode == StepMode.LiveSpeculation) frame.mode = PlayerPhysicsFrame.Mode.Default;
+        if (mode != StepMode.SimulateRecalc) frame.mode = PlayerPhysicsFrame.Mode.Default;
         frame.time += dt;
         ++frame.id;
         

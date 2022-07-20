@@ -18,51 +18,70 @@ public sealed class PlayerLookController : NetworkBehaviour
     private InputAction controlLook;
     [SerializeField] private string controlLookName = "Look";
 
+    private static PlayerLookController cursorController = null;
+    public static bool cursorLocked = true;
+
     private void OnEnable()
     {
         //Hook
         kinematicsLayer.PreMove -= UpdateLook;
         kinematicsLayer.PreMove += UpdateLook;
+
+        //Auto capture
+        controlLook = dataSource.actions.FindActionMap(dataSource.defaultActionMap).FindAction(controlLookName);
+        controlLook.performed += BufferInput;
+    }
+
+    private Vector2 bufferedInput;
+    private void BufferInput(InputAction.CallbackContext obj)
+    {
+        if (isActiveAndEnabled && cursorLocked && IsSpawned && IsLocalPlayer) bufferedInput += obj.ReadValue<Vector2>() / Camera.main.pixelRect.size.magnitude; //FIXME slow, cache Camera
     }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
-        if (!IsLocalPlayer) return;
-
-        //Auto capture
-        controlLook = dataSource.currentActionMap.FindAction(controlLookName);
-        Debug.Assert(controlLook != null);
-
-        //Lock cursor
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        if (IsLocalPlayer) cursorController = this;
     }
 
     private void UpdateLook(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
     {
-        //Add given movement
-        if (mode == CharacterKinematics.StepMode.LiveForward) frame.look += controlLook.ReadValue<Vector2>() * sensitivity * Time.deltaTime;
+        if (mode == CharacterKinematics.StepMode.LiveForward)
+        {
+            //Add given movement
+            frame.look += bufferedInput * sensitivity;
+            bufferedInput = Vector2.zero;
+
+            if (cursorController == this)
+            {
+                //Lock cursor
+                Cursor.lockState = cursorLocked ? CursorLockMode.Locked : CursorLockMode.None;
+                Cursor.visible = !cursorLocked;
+            }
+        }
 
         //Limit
         frame.look.y = Mathf.Clamp(frame.look.y, minVerticalAngle, maxVerticalAngle);
-
-        //Apply to transform
-        if (mode == CharacterKinematics.StepMode.LiveForward
-         || mode == CharacterKinematics.StepMode.LiveSpeculation) target.rotation = Quaternion.Euler(frame.look.y, frame.look.x, 0);
     }
 
+    private void Update()
+    {
+        target.rotation = Quaternion.Euler(kinematicsLayer.frame.look.y, kinematicsLayer.frame.look.x, 0);
+    }
 
     private void OnDisable()
     {
-        if (!IsLocalPlayer) return;
-
-        //Unlock cursor
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        if (cursorController == this && cursorLocked)
+        {
+            //Unlock cursor
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
 
         //Unhook
         kinematicsLayer.PreMove -= UpdateLook;
+
+        controlLook.performed -= BufferInput;
     }
 }

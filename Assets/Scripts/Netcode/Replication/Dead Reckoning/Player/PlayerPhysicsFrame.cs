@@ -17,14 +17,12 @@ public struct PlayerPhysicsFrame : INetworkSerializable
     public uint id; //Ensure time-adjustment parity
     public Mode mode;
 
-    //Additional player-specific settings
-    public Vector2 look;
+    //Additional player-specific vars
+    public Vector2 look; //Almost always trusted
+    public Vector2 inputMove; //Raw input, always trusted
+    public bool inputJump; //Raw input, always trusted
 
-    //Input data
-    public Vector2 input; //Players have variable acceleration
-    public bool jump;
-
-    //Derivative state data
+    //Derivative state data. Never trust player copy.
     public bool isGrounded;
     public float timeSinceLastGround;
     public float timeCanNextJump;
@@ -86,7 +84,7 @@ public struct PlayerPhysicsFrame : INetworkSerializable
         serializer.SerializeValue(ref mode);
 
         serializer.SerializeValue(ref look);
-        serializer.SerializeValue(ref input);
-        serializer.SerializeValue(ref jump);
+        serializer.SerializeValue(ref inputMove);
+        serializer.SerializeValue(ref inputJump);
     }
 }
