@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -27,47 +28,63 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         if (IsServer)
         {
             //Set initial value
-            serverFrameFutures.Clear();
-            serverFrameFutures.Enqueue(kinematics.frame);
+            speculativeFutures.Clear();
+            speculativeFutures.Enqueue(kinematics.frame);
         }
 
-        if (IsLocalPlayer || IsServer)
+        if (IsClient)
         {
             //Set initial value
-            clientFrameHistory.Clear();
-            clientFrameHistory.Enqueue(kinematics.frame);
+            unvalidatedHistory.Clear();
+            unvalidatedHistory.Enqueue(kinematics.frame);
 
             //Hook
             kinematics.FinalizeMove += SubmitFrameToServer;
         }
     }
 
-    //'Server frame futures' stores speculative frames, which are erased when the appropriate client frame arrives.
-    //'Client frame history' stores past frames, which are erased once confirmed by the server.
-    /*[SerializeField]/* */ private RecyclingLinkedQueue<PlayerPhysicsFrame> serverFrameFutures = new RecyclingLinkedQueue<PlayerPhysicsFrame>();
-    /*[SerializeField]/* */ private RecyclingLinkedQueue<PlayerPhysicsFrame> clientFrameHistory = new RecyclingLinkedQueue<PlayerPhysicsFrame>();
+    //Speculative frames are erased when the appropriate client frame arrives.
+    //Unvalidated history frames are erased once confirmed by the server, or are adjusted if rejected.
+    [SerializeField] private RecyclingLinkedQueue<PlayerPhysicsFrame> speculativeFutures = new RecyclingLinkedQueue<PlayerPhysicsFrame>();
+    [SerializeField] private RecyclingLinkedQueue<PlayerPhysicsFrame> unvalidatedHistory = new RecyclingLinkedQueue<PlayerPhysicsFrame>();
 
     private static void TrimBefore(RecyclingLinkedQueue<PlayerPhysicsFrame> list, float cutoffTime)
     {
-        while (list.Head != null && list.Head.value.time < cutoffTime) list.DropHead();
+        while (list.Count>1 && list.Peek().time < cutoffTime) list.DropHead();
     }
 
     [Flags]
     private enum RejectionFlags
     {
         Position = (1 << 0),
-        Velocity = (1 << 1)
+        Velocity = (1 << 1),
+        Look     = (1 << 2),
+
+        All = Position | Velocity | Look
     }
 
     private void RecalcAfter(RecyclingLinkedQueue<PlayerPhysicsFrame> frames, float sinceTime)
     {
-        for (RecyclingLinkedQueue<PlayerPhysicsFrame>.Node i = frames.Head; i != null; i = i.next)
+        try
         {
-            if (sinceTime < i.value.time) i.next.value = kinematics.Step(i.value, i.next.value.time-i.value.time, false);
+            Recalc(frames, frames.FindNode(i => sinceTime < i.time));
         }
+        catch (IndexOutOfRangeException) { } //If none match, fail silently
+    }
 
-        //Force update transform so we can ignore collisions
-        transform.position = frames.Tail.value.position;
+    private void Recalc(RecyclingLinkedQueue<PlayerPhysicsFrame> frames, RecyclingNode<PlayerPhysicsFrame> lastValid)
+    {
+        if (lastValid == null) return;
+
+        for (RecyclingNode<PlayerPhysicsFrame> i = lastValid; i.next != null; i = i.next)
+        {
+            PlayerPhysicsFrame next = i.value;
+            next.inputMove = i.next.value.inputMove;
+            next.inputJump = i.next.value.inputJump;
+            next.look = i.next.value.look;
+            next = kinematics.Step(i.value, i.next.value.time-i.value.time, CharacterKinematics.StepMode.SimulateRecalc);
+            i.next.value = next;
+        }
     }
 
     private void SubmitFrameToServer()
@@ -77,15 +94,15 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         if (!IsSpawned || !isActiveAndEnabled) return;
 #endif
 
-        //Push to history
-        clientFrameHistory.Enqueue(kinematics.frame);
+        PlayerPhysicsFrame adjustedFrame = kinematics.frame;
+        adjustedFrame.time -= NetHeartbeat.Self.SmoothedRTT/2; //Adjust for travel delay in builtin time sync
 
-        if (IsLocalPlayer)
-        {
-            //Send to server
-            PlayerPhysicsFrame adjustedFrame = kinematics.frame;
-            DONOTCALL_ReceiveClientFrame_ServerRpc(adjustedFrame);
-        }
+        //Push to history
+        unvalidatedHistory.Enqueue(adjustedFrame);
+
+        //Send to server
+        //Send (50/4) = ~12 frames per second
+        if (IsLocalPlayer && kinematics.frame.id%4==0) DONOTCALL_ReceiveClientFrame_ServerRpc(adjustedFrame);
     }
 
     [Header("Validation (server-side only)")]
@@ -98,117 +115,164 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         //Verify ownership
         if (src.Receive.SenderClientId != OwnerClientId) throw new AccessViolationException($"Player {src.Receive.SenderClientId} tried to send physics data as {OwnerClientId}!");
 
-        Debug.Log("Checkpoint A, frame #"+Time.frameCount);
+        Debug.Assert(speculativeFutures.Count > 0);
 
-        if (serverFrameFutures.Peek().time <= untrustedFrame.time)
+        if (speculativeFutures.Peek().time <= untrustedFrame.time)
         {
-            Debug.Log("Checkpoint B");
+            RejectionFlags reject = 0;
 
-            //Find insert position
-            RecyclingLinkedQueue<PlayerPhysicsFrame>.Node beforeInsert = serverFrameFutures.Head;
-            while (beforeInsert != null && beforeInsert.value.time < untrustedFrame.time) beforeInsert = beforeInsert.next;
+            //Sanitize - players don't have the authority to teleport, forbid
+            if (untrustedFrame.mode == PlayerPhysicsFrame.Mode.Teleport)
+            {
+                Debug.LogWarning("Player tried to send Teleport frame!");
+                untrustedFrame.mode = PlayerPhysicsFrame.Mode.Default;
+                reject |= RejectionFlags.Position | RejectionFlags.Velocity | RejectionFlags.Look;
+            }
 
-            Debug.Log("Checkpoint C");
+            //Sanitize - protect against input outside allowed bounds
+            if (ValidationUtility.Bound(in untrustedFrame.inputMove, out untrustedFrame.inputMove, Vector2.zero, 1.02f)) reject |= RejectionFlags.Position | RejectionFlags.Velocity;
 
-
-            //Protect against cached-data attack
-            if (untrustedFrame.input.sqrMagnitude > 1) untrustedFrame.input.Normalize();
+            //Sanitize - protect against cached-data attack
             untrustedFrame.RefreshLookTrig();
 
-            //Simulate forward
+            //Find insert position
+            RecyclingNode<PlayerPhysicsFrame> beforeInsert = speculativeFutures.FindNode(n => n.next == null || (n.value.time <= untrustedFrame.time && untrustedFrame.time <= n.next.value.time));
+
+            //Validate - build simulation basis, transfer critical non-validated data
             PlayerPhysicsFrame prevFrame = beforeInsert.value;
-            PlayerPhysicsFrame authorityFrame = kinematics.Step(prevFrame, untrustedFrame.time-prevFrame.time, false);
-            if (beforeInsert != serverFrameFutures.Tail) RecalcAfter(serverFrameFutures, untrustedFrame.time);
+            prevFrame.inputMove = untrustedFrame.inputMove;
+            prevFrame.inputJump = untrustedFrame.inputJump;
+            prevFrame.look      = untrustedFrame.look;
+            prevFrame.id        = untrustedFrame.id-1;
 
-            Debug.Log("Checkpoint D");
+            //Validate - simulate forward to create an authority frame
+            PlayerPhysicsFrame authorityFrame = kinematics.Step(prevFrame, untrustedFrame.time-prevFrame.time, CharacterKinematics.StepMode.SimulateVerify);
+            authorityFrame.look = untrustedFrame.look;
+            Debug.Assert(authorityFrame.id == untrustedFrame.id);
 
+            //Special case: If teleporting, always overwrite ALL values
+            if (authorityFrame.mode == PlayerPhysicsFrame.Mode.Teleport) reject |= RejectionFlags.All;
 
-            //Validate - copy critical features of authority frame over
-            untrustedFrame.position = ValidationUtility.Bound(out bool positionInvalid, untrustedFrame.position, authorityFrame.position, positionForgiveness);
-            untrustedFrame.velocity = ValidationUtility.Bound(out bool velocityInvalid, untrustedFrame.velocity, authorityFrame.velocity, velocityForgiveness);
+            //Validate - compare untrusted value to authority value, and copy over (within bounds)
+            //No point in bounding if already overwritten by a more precise source
+            if (!reject.HasFlag(RejectionFlags.Position) && ValidationUtility.Bound(in untrustedFrame.position, out authorityFrame.position, authorityFrame.position, positionForgiveness)) reject |= RejectionFlags.Position;
+            if (!reject.HasFlag(RejectionFlags.Velocity) && ValidationUtility.Bound(in untrustedFrame.velocity, out authorityFrame.velocity, authorityFrame.velocity, velocityForgiveness)) reject |= RejectionFlags.Velocity;
 
-            Debug.Log("Checkpoint E");
+            //Finalize - record
+            if (beforeInsert.value.time == authorityFrame.time) beforeInsert.value = authorityFrame; //TODO should this use stable ID instead?
+            else speculativeFutures.Insert(beforeInsert, authorityFrame); //TODO should this overwrite instead?
 
-            Debug.Log("F mode "+(beforeInsert.value.time == untrustedFrame.time ? "OVERWRITE" : "INSERT"));
+            //Finalize - anything before is already valid by extension and therefore irrelevant
+            if (reject != 0) RecalcAfter(speculativeFutures, authorityFrame.time);
+            TrimBefore(speculativeFutures, authorityFrame.time);
+            kinematics.frame              = speculativeFutures.Tail.value;
+            kinematics.transform.position = speculativeFutures.Tail.value.position; //Force update transform so we can ignore collisions
 
-            //Record
-            if (beforeInsert.value.time == untrustedFrame.time) beforeInsert.value = untrustedFrame;
-            else serverFrameFutures.Insert(beforeInsert, untrustedFrame); //TODO should this overwrite instead?
+            if (reject != 0) Debug.Log("Rejecting frame for Player #"+OwnerClientId+": "+reject);
 
-            Debug.Log("Checkpoint F");
-
-            //'Untrusted' frame was made it through validation, anything before is already valid by extension and therefore irrelevant
-            TrimBefore(serverFrameFutures, untrustedFrame.time);
-
-            Debug.Log("Checkpoint G");
-
-            //Send response verifying or rejecting
-            RejectionFlags reject = 0;
-            if (positionInvalid) reject |= RejectionFlags.Position;
-            if (velocityInvalid) reject |= RejectionFlags.Velocity;
-            if (reject != 0) RecalcAfter(serverFrameFutures, untrustedFrame.time);
-
-            Debug.Log("Checkpoint H");
-
-            DONOTCALL_ReceiveAuthorityFrame_ClientRpc(untrustedFrame, reject); //Broadcast to ALL players
-
+            //Send frame to ALL players
+            DONOTCALL_ReceiveAuthorityFrame_ClientRpc(authorityFrame, reject);
         }
         else
         {
             //Abort if a more recent basis frame has been validated
-
-            Debug.LogWarning($"Player {src.Receive.SenderClientId} sent a frame ({untrustedFrame.time}) but it was already overwritten ({serverFrameFutures.Peek().time})");
+            Debug.LogWarning($"Player {src.Receive.SenderClientId} sent a frame ({untrustedFrame.time}) but it was already overwritten ({speculativeFutures.Peek().time})");
         }
-
-        Debug.Log("Leaving "+nameof(DONOTCALL_ReceiveClientFrame_ServerRpc));
     }
 
+    private float rejectCooldownEndTime = -1;
+
     [ClientRpc(Delivery = RpcDelivery.Reliable)]
-    private void DONOTCALL_ReceiveAuthorityFrame_ClientRpc(PlayerPhysicsFrame frame, RejectionFlags reject, ClientRpcParams p = default)
+    private void DONOTCALL_ReceiveAuthorityFrame_ClientRpc(PlayerPhysicsFrame authorityFrame, RejectionFlags reject, ClientRpcParams p = default)
     {
-        Debug.Log("Checkpoint I");
+        //if (IsHost) return; //No need to adjust authority copy?
 
-        if (IsHost) return; //No need to adjust authority copy?
+        //Ignore if we're in the process of responding to a rollback
+        //Special case: Teleport always happens anyway
+        if (authorityFrame.mode != PlayerPhysicsFrame.Mode.Teleport && authorityFrame.time < rejectCooldownEndTime) return;
+        
+        if (IsLocalPlayer && reject != 0) Debug.Log("Received frame-reject: "+reject);
 
-        if (IsLocalPlayer)
+        //If we're showing a remote player, ALL values are copied over.
+        if (!IsLocalPlayer) reject = RejectionFlags.All;
+
+        //Locate relevant frame
+        RecyclingNode<PlayerPhysicsFrame> n = null;
+        if (unvalidatedHistory.Tail.value.time < authorityFrame.time) n = unvalidatedHistory.Tail;
+        else try
         {
-            Debug.Log("Checkpoint J");
-
-            //Apply changes, if any
-            if (reject != 0)
-            {
-                Debug.Log("Checkpoint K");
-
-                //Locate relevant frame
-                RecyclingLinkedQueue<PlayerPhysicsFrame>.Node n = clientFrameHistory.FindNode(i => frame.time == i.time);
-                if (n == null) //Ignore if duplicate (already handled)
-                {
-                    Debug.LogWarning("Duplicate server response for frame at "+frame.time, this);
-                    return;
-                }
-
-                Debug.Log("Checkpoint L");
-
-                if (reject.HasFlag(RejectionFlags.Position)) n.value.position = frame.position;
-                if (reject.HasFlag(RejectionFlags.Velocity)) n.value.velocity = frame.velocity;
-
-                //Recalculate
-                RecalcAfter(clientFrameHistory, frame.time);
-
-                Debug.Log("Checkpoint M");
-            }
-
-            //This frame should now be validated with the server's copy, anything before is irrelevant
-            TrimBefore(clientFrameHistory, frame.time);
-
-            Debug.Log("Checkpoint N");
+            n = unvalidatedHistory.FindNode(i => (IsOwner && i.value.id == authorityFrame.id)
+                                              || i.next == null
+                                              || authorityFrame.time <= i.next.value.time);
         }
-        else
+        catch (IndexOutOfRangeException)
         {
-            //TODO be more specific?
-            //TODO penetrate surfaces?
-            kinematics.frame = frame;
+            Debug.LogWarning("Duplicate server response for frame at " + authorityFrame.time, this);
+        }
 
+        //Apply changes
+        if (reject.HasFlag(RejectionFlags.Position)) n.value.position = authorityFrame.position;
+        if (reject.HasFlag(RejectionFlags.Velocity)) n.value.velocity = authorityFrame.velocity;
+        
+        //If showing a remote player, copy over input values so we can continue simulating reliably
+        if (!IsLocalPlayer)
+        {
+            n.value.inputMove = authorityFrame.inputMove;
+            n.value.inputJump = authorityFrame.inputJump;
+        }
+        
+        //Keep look angle
+        Vector2 newLookAngle = reject.HasFlag(RejectionFlags.Look) ? authorityFrame.look : kinematics.frame.look;
+
+        //Recalculate if any changes
+        if (n.next != null) Recalc(unvalidatedHistory, n);
+
+        //Start cooldown if any part was rejected
+        if (IsHost && reject != 0) rejectCooldownEndTime = authorityFrame.time;
+        
+        //This frame should now be validated from the server's standpoint, anything before is irrelevant
+        TrimBefore(unvalidatedHistory, authorityFrame.time);
+        unvalidatedHistory.Tail.value.look = newLookAngle;
+
+        if (true || !IsHost)
+        {
+            kinematics.frame              = unvalidatedHistory.Tail.value;
+            kinematics.transform.position = unvalidatedHistory.Tail.value.position; //Force update transform so we can ignore collisions
+        }
+    }
+
+    [Header("DEBUG")]
+    [SerializeField] private bool showFutures;
+    private void OnDrawGizmos()
+    {
+        if (IsSpawned && IsServer && showFutures && speculativeFutures.Count > 0)
+        {
+            for (RecyclingNode<PlayerPhysicsFrame> i = speculativeFutures.Head; i != null; i = i.next)
+            {
+                //Positions
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawWireCube(i.value.position, Vector3.one*0.05f);
+                //if (i.next != null) Gizmos.DrawLine(i.value.position, i.next.value.position);
+
+                //Velocities
+                Gizmos.color = Color.red;
+                Gizmos.DrawLine(i.value.position, i.value.position+i.value.velocity);
+            }
+        }
+
+        if (IsSpawned && IsClient && !showFutures && unvalidatedHistory.Count > 0)
+        {
+            for (RecyclingNode<PlayerPhysicsFrame> i = unvalidatedHistory.Head; i != null; i = i.next)
+            {
+                //Positions
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawWireCube(i.value.position, Vector3.one*0.05f);
+                //if (i.next != null) Gizmos.DrawLine(i.value.position, i.next.value.position);
+
+                //Velocities
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawLine(i.value.position, i.value.position+i.value.velocity);
+            }
         }
     }
 }

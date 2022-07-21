@@ -12,62 +12,76 @@ public sealed class PlayerLookController : NetworkBehaviour
     [SerializeField] [Range(-90,  0)] private float minVerticalAngle = -90;
     [SerializeField] [Range(  0, 90)] private float maxVerticalAngle = 90;
 
-    [Space]
-    [InspectorReadOnly(editing = AccessMode.ReadWrite)] public Vector2 angles;
-
     [Header("Bindings")]
     [SerializeField] private CharacterKinematics kinematicsLayer;
     [SerializeField] private PlayerInput dataSource;
     private InputAction controlLook;
     [SerializeField] private string controlLookName = "Look";
 
-    private void WriteLook(ref PlayerPhysicsFrame frame, bool live)
+    private static PlayerLookController cursorController = null;
+    public static bool cursorLocked = true;
+
+    private void OnEnable()
     {
-        if (live) frame.look = angles;
+        //Hook
+        kinematicsLayer.PreMove -= UpdateLook;
+        kinematicsLayer.PreMove += UpdateLook;
+
+        //Auto capture
+        controlLook = dataSource.actions.FindActionMap(dataSource.defaultActionMap).FindAction(controlLookName);
+        controlLook.performed += BufferInput;
     }
 
-    private void Update()
+    private Vector2 bufferedInput;
+    private void BufferInput(InputAction.CallbackContext obj)
     {
-        if (IsLocalPlayer && IsSpawned)
-        {
-            //Add given movement
-            angles += controlLook.ReadValue<Vector2>() * sensitivity * Time.deltaTime;
-
-            //Limit
-            angles.y = Mathf.Clamp(angles.y, minVerticalAngle, maxVerticalAngle);
-        }
-
-        target.rotation = Quaternion.Euler(angles.y, angles.x, 0);
+        if (isActiveAndEnabled && cursorLocked && IsSpawned && IsLocalPlayer) bufferedInput += obj.ReadValue<Vector2>() / Camera.main.pixelRect.size.magnitude; //FIXME slow, cache Camera
     }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
-        if (!IsLocalPlayer) return;
+        if (IsLocalPlayer) cursorController = this;
+    }
 
-        //Auto capture
-        controlLook = dataSource.currentActionMap.FindAction(controlLookName);
-        Debug.Assert(controlLook != null);
+    private void UpdateLook(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
+    {
+        if (mode == CharacterKinematics.StepMode.LiveForward)
+        {
+            //Add given movement
+            frame.look += bufferedInput * sensitivity;
+            bufferedInput = Vector2.zero;
 
-        //Lock cursor
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+            if (cursorController == this)
+            {
+                //Lock cursor
+                Cursor.lockState = cursorLocked ? CursorLockMode.Locked : CursorLockMode.None;
+                Cursor.visible = !cursorLocked;
+            }
+        }
 
-        //Hook
-        kinematicsLayer.PreMove -= WriteLook;
-        kinematicsLayer.PreMove += WriteLook;
+        //Limit
+        frame.look.y = Mathf.Clamp(frame.look.y, minVerticalAngle, maxVerticalAngle);
+    }
+
+    private void Update()
+    {
+        target.rotation = Quaternion.Euler(kinematicsLayer.frame.look.y, kinematicsLayer.frame.look.x, 0);
     }
 
     private void OnDisable()
     {
-        if (!IsLocalPlayer) return;
-
-        //Unlock cursor
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        if (cursorController == this && cursorLocked)
+        {
+            //Unlock cursor
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
 
         //Unhook
-        kinematicsLayer.PreMove -= WriteLook;
+        kinematicsLayer.PreMove -= UpdateLook;
+
+        controlLook.performed -= BufferInput;
     }
 }

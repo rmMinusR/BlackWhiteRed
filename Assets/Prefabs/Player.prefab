@@ -94,6 +94,7 @@ GameObject:
   - component: {fileID: 2931471489676092140}
   - component: {fileID: 8538523299642641144}
   - component: {fileID: 3587278699711730041}
+  - component: {fileID: -8085840946421382588}
   - component: {fileID: 455297323731713935}
   - component: {fileID: 2709372960629483514}
   - component: {fileID: 1205034768838314728}
@@ -159,29 +160,41 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ccee9f0b91249ba438aeb9529a64d7fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  move: {fileID: 3372269408483838460}
-  look: {fileID: 1045315817415406549}
   frame:
-    _position: {x: 0, y: 0, z: 0}
-    _velocity: {x: 0, y: 0, z: 0}
-    _time: 0
+    position: {x: 0, y: 0, z: 0}
+    velocity: {x: 0, y: 0, z: 0}
+    time: 0
+    id: 0
+    mode: 0
     look: {x: 0, y: 0}
-    input: {x: 0, y: 0}
-    jump: 0
+    inputMove: {x: 0, y: 0}
+    inputJump: 0
     isGrounded: 0
     timeSinceLastGround: 0
     timeCanNextJump: 0
-    mode: 0
   enableGravity: 1
   gravityScale: 1
   suspendGravityOnGround: 1
   groundProbeRadius: 0
   groundProbeOffset: 0.05
   coyoteTime: 0.12
-  teleportPending: 0
+--- !u!114 &-8085840946421382588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6433a40db24d7fa41af5bb5fd190c2e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  kinematicsLayer: {fileID: 3587278699711730041}
+  rollback: {fileID: 455297323731713935}
   teleportPos: {x: 0, y: 0, z: 0}
   teleportVel: {x: 0, y: 0, z: 0}
-  teleportLook: {x: 0, y: 0, z: 0}
+  teleportLook: {x: 0, y: 0}
 --- !u!114 &455297323731713935
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -194,8 +207,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfa48d1b74340b54ab95216212e1d728, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  positionForgiveness: 0.05
-  velocityForgiveness: 0.05
+  speculativeFutures:
+    _serializedRepr: []
+  unvalidatedHistory:
+    _serializedRepr: []
+  positionForgiveness: 0.4
+  velocityForgiveness: 0.4
 --- !u!114 &2709372960629483514
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -385,10 +402,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 2931471490281750659}
-  sensitivity: {x: 8, y: -8}
+  sensitivity: {x: 32, y: -32}
   minVerticalAngle: -90
   maxVerticalAngle: 90
-  angles: {x: 0, y: 0}
   kinematicsLayer: {fileID: 3587278699711730041}
   dataSource: {fileID: 1334152775563438803}
   controlLookName: Look
