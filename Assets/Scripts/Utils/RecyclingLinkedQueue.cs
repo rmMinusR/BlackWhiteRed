@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,142 +15,145 @@ using UnityEngine;
 [Serializable]
 public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackReceiver
 {
-    [NonSerialized] private Node head = null;
-    [NonSerialized] private Node tail = null;
-    [NonSerialized] private int count = 0;
-    public Node Head
+    [NonSerialized] private RecyclingNode<T> _head = null;
+    [NonSerialized] private RecyclingNode<T> _tail = null;
+    [NonSerialized] private int _count = 0;
+    public RecyclingNode<T> Head
     {
-        get => head;
-        private set => head = value;
+        get => Count > 0 ? _head : throw new IndexOutOfRangeException("Collection is empty");
+        private set => _head = value;
     }
-    public Node Tail
+    public RecyclingNode<T> Tail
     {
-        get => tail;
-        private set => tail = value;
+        get => Count > 0 ? _tail : throw new IndexOutOfRangeException("Collection is empty");
+        private set => _tail = value;
     }
     public int Count
     {
-        get => count;
-        private set => count = value;
+        get => _count;
+        private set => _count = value;
     }
 
-    [Serializable]
-    public class Node
+    public int ManualCount()
     {
-        public T value;
-
-        [NonSerialized] private Node __next;
-        public Node next { get => __next; internal set => __next = value; }
-
-        private static List<Node> recycled = new List<Node>();
-        internal static Node New(T val)
+        HashSet<int> visitedIDs = new HashSet<int>();
+        for (RecyclingNode<T> i = _head; i != null; i = i.next)
         {
-            //Get or instantiate
-            Node n;
-            if (recycled.Count > 0)
-            {
-                n = recycled[recycled.Count - 1];
-                recycled.RemoveAt(recycled.Count - 1);
-            }
-            else
-            {
-                n = new Node();
-            }
-            n.value = val;
-            n.next = null;
-            return n;
+            if (!visitedIDs.Contains(i.GetHashCode())) visitedIDs.Add(i.GetHashCode());
+            else throw new InvalidProgramException("Already visited "+i);
         }
-
-        internal static void Recycle(Node n)
-        {
-            recycled.Add(n);
-        }
+        return visitedIDs.Count;
     }
 
     public void Enqueue(T val)
     {
-        Node newTail = Node.New(val);
-        if (tail != null) tail.next = newTail;
-        if (count == 0) { head = newTail; tail = newTail; }
-        tail = newTail;
-        ++count;
+        RecyclingNode<T> newTail = RecyclingNode<T>.New(val);
+        if (_count == 0) _head = newTail;
+        if (_tail != null) _tail.next = newTail;
+        _tail = newTail;
+        ++_count;
     }
 
     public void Insert(int index, T val)
     {
-        if (index < 0 || index > count) throw new IndexOutOfRangeException();
+        if (index < 0 || index > _count) throw new IndexOutOfRangeException();
 
-        Node @new = Node.New(val);
-        if (count != 0)
-        {
-            Node before = GetNodeAt(index - 1);
-            Node after = before.next;
-            if (before != null) before.next = @new;
-            @new.next = after;
-            ++count;
-        }
-        else
-        {
-            head = @new;
-            tail = @new;
-            ++count;
-        }
-    }
+        RecyclingNode<T> before = GetNodeAt(index - 1);
+        RecyclingNode<T> @new = RecyclingNode<T>.New(val);
+        RecyclingNode<T> after = before.next;
 
-    //WARNING: Not necessarily safe! Doesn't verify that node belongs to this data structure.
-    public void Insert(Node before, T val)
-    {
-        Node @new = Node.New(val);
-        Node after = before.next;
-        if (before != null) before.next = @new;
+        //Link
+        before.next = @new;
         @new.next = after;
-        ++count;
+        
+        //Adjust refs (if applicable)
+        if (index == 0) _head = @new;
+        if (index == _count) _tail = @new;
+        
+        ++_count;
     }
 
-    public T Peek() => head.value;
+    //WARNING: Not necessarily safe! Doesn't verify that Node<T> belongs to this data structure.
+    public void Insert(RecyclingNode<T> before, T val)
+    {
+        if (before == null) throw new NullReferenceException();
+        
+        RecyclingNode<T> @new = RecyclingNode<T>.New(val);
+        RecyclingNode<T> after = before.next;
+
+        if (before == _tail) _tail = @new;
+
+        before.next = @new;
+        @new.next = after;
+        ++_count;
+    }
+
+    public T Peek()
+    {
+        if (Count == 0) throw new IndexOutOfRangeException("Collection is empty");
+        return Head.value;
+    }
 
     public T Dequeue()
     {
-        T val = head.value;
+        if (Count == 0) throw new IndexOutOfRangeException("Collection is empty");
+
+        T val = Head.value;
         DropHead();
         return val;
     }
 
     public void DropHead()
     {
-        //Advance head forward, recycling
-        Node next = head.next;
-        Node.Recycle(head);
-        head = next;
+        if (Count == 0) throw new IndexOutOfRangeException("Collection is empty");
 
-        --count;
+        //Advance head forward, recycling
+        RecyclingNode<T> next = Head.next;
+        RecyclingNode<T>.Recycle(Head);
+        if (_count > 1) _head = next;
+        else
+        {
+            _head = null;
+            _tail = null;
+        }
+
+        --_count;
     }
 
     public void Clear()
     {
-        for (Node i = head; i != null; i = i.next) Node.Recycle(i);
-        head = null;
-        tail = null;
-        count = 0;
+        for (RecyclingNode<T> i = _head; i != null; i = i.next) RecyclingNode<T>.Recycle(i);
+        _head = null;
+        _tail = null;
+        _count = 0;
     }
 
-    public Node GetNodeAt(int index)
+    public RecyclingNode<T> GetNodeAt(int index)
     {
-        if (index < 0 || index >= count) return null;
-        Node ptr = head;
+        if (Count == 0) throw new IndexOutOfRangeException("Collection is empty");
+        if (index < 0 || index >= Count) throw new IndexOutOfRangeException();
+        RecyclingNode<T> ptr = _head;
         for (int i = 0; i < index; ++i) ptr = ptr.next;
         return ptr;
     }
 
-    public Node FindNode(Func<T, bool> selector)
+    public RecyclingNode<T> FindNode(Func<T, bool> selector)
     {
-        for (Node i = head; i != null; i = i.next) if (selector(i.value)) return i;
-        return null;
+        if (Count == 0) throw new IndexOutOfRangeException("Collection is empty");
+        for (RecyclingNode<T> i = _head; i != null; i = i.next) if (selector(i.value)) return i;
+        throw new IndexOutOfRangeException("Selector didn't match any nodes");
+    }
+    
+    public RecyclingNode<T> FindNode(Func<RecyclingNode<T>, bool> selector)
+    {
+        if (Count == 0) throw new IndexOutOfRangeException("Collection is empty");
+        for (RecyclingNode<T> i = _head; i != null; i = i.next) if (selector(i)) return i;
+        throw new IndexOutOfRangeException("Selector didn't match any nodes");
     }
 
     public IEnumerator<T> GetEnumerator()
     {
-        for (Node i = head; i != null; i = i.next) yield return i.value;
+        for (RecyclingNode<T> i = _head; i != null; i = i.next) yield return i.value;
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -161,12 +165,12 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
     public void OnBeforeSerialize()
     {
         //Ensure same size
-        while (_serializedRepr.Count > count) _serializedRepr.RemoveAt(_serializedRepr.Count - 1);
-        while (_serializedRepr.Count < count) _serializedRepr.Add(default);
+        while (_serializedRepr.Count > _count) _serializedRepr.RemoveAt(_serializedRepr.Count - 1);
+        while (_serializedRepr.Count < _count) _serializedRepr.Add(default);
 
         //Write values
-        Node n = head;
-        for (int i = 0; i < count; ++i)
+        RecyclingNode<T> n = _head;
+        for (int i = 0; i < _count; ++i)
         {
             _serializedRepr[i] = n.value;
             n = n.next;
@@ -176,11 +180,11 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
     public void OnAfterDeserialize()
     {
         //Ensure same size
-        while (count > _serializedRepr.Count) DropHead();
-        while (count < _serializedRepr.Count) Enqueue(default);
+        while (_count > _serializedRepr.Count) DropHead();
+        while (_count < _serializedRepr.Count) Enqueue(default);
 
         //Write values
-        Node n = head;
+        RecyclingNode<T> n = _head;
         for (int i = 0; i < _serializedRepr.Count; ++i)
         {
             n.value = _serializedRepr[i];
@@ -189,4 +193,60 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
     }
 
     #endregion
+}
+
+[Serializable]
+public class RecyclingNode<T>
+{
+    public T value;
+
+    [NonSerialized] private RecyclingNode<T> __next;
+    public RecyclingNode<T> next { get => __next; internal set => __next = value; }
+
+    private RecyclingNode()
+    {
+        id = instanceCount++;
+        isAlive = false;
+        next = null;
+        value = default;
+    }
+
+    private static HashSet<RecyclingNode<T>> recycled = new HashSet<RecyclingNode<T>>();
+    internal static RecyclingNode<T> New(T val)
+    {
+        //Get or instantiate
+        RecyclingNode<T> n;
+        if (recycled.Count > 0)
+        {
+            n = recycled.First();
+            recycled.Remove(n);
+        }
+        else
+        {
+            n = new RecyclingNode<T>();
+        }
+
+        Debug.Assert(!n.isAlive, "Tried to retrieve recycled Node<"+typeof(T).Name+">#"+n.id+", but it was already alive! #"+n.id);
+        n.isAlive = true;
+
+        n.value = val;
+        n.next = null;
+        return n;
+    }
+
+    internal static void Recycle(RecyclingNode<T> n)
+    {
+        Debug.Assert(n.isAlive, "Tried to recycle Node<"+typeof(T).Name+">#"+n.id+", but it was already dead! #"+n.id);
+        n.isAlive = false;
+
+        recycled.Add(n);
+    }
+
+    private static int instanceCount = 0;
+    private int id;
+    private bool isAlive;
+
+    public override int GetHashCode() => id;
+
+    public override string ToString() => base.ToString() + "#"+id + (next != null ? "->"+next.id : ".");
 }

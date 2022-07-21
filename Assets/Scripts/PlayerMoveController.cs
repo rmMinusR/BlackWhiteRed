@@ -69,31 +69,31 @@ public class PlayerMoveController : NetworkBehaviour
         }
     }
 
-    private void UpdateInput(ref PlayerPhysicsFrame frame, bool live)
+    private void UpdateInput(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
     {
         //Don't read input if simulating, or if we're a remote player
-        if (live && (IsLocalPlayer || NetworkManager.Singleton == null))
+        if (mode == CharacterKinematics.StepMode.LiveForward)
         {
-            frame.input = moveState; //controlMove.ReadValue<Vector2>();
-            frame.jump = controlJump.IsPressed();
+            frame.inputMove = moveState; //controlMove.ReadValue<Vector2>();
+            frame.inputJump = controlJump.IsPressed();
         }
     }
 
-    public void ApplyMovement(ref PlayerPhysicsFrame frame, bool live)
+    public void ApplyMovement(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
     {
         //Handle horizontal movement
-        Vector3 targetVelocity = speed*( frame.Right   * frame.input.x
-                                       + frame.Forward * frame.input.y );
+        Vector3 targetVelocity = speed*( frame.Right   * frame.inputMove.x
+                                       + frame.Forward * frame.inputMove.y );
 
         float slippageThisFrame = Mathf.Pow(frame.isGrounded ? groundSlipperiness : airSlipperiness, Time.fixedDeltaTime);
         Vector3 newVel = Vector3.Lerp(targetVelocity, frame.velocity, slippageThisFrame);
         frame.velocity = new Vector3(newVel.x, frame.velocity.y, newVel.z);
 
         //Handle jumping
-        if (frame.jump && frame.isGrounded)
+        if (frame.inputJump && frame.isGrounded && frame.timeCanNextJump < frame.time)
         {
             frame.timeCanNextJump = (float)NetworkManager.ServerTime.FixedTime + jumpCooldown;
-            frame.velocity += jumpPower * transform.up;
+            frame.velocity.y += jumpPower;
         }
     }
 }

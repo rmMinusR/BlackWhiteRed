@@ -10,18 +10,18 @@ public abstract class ProjectionShape
 
     public static ProjectionShape Build(GameObject source)
     {
-        List<ProjectionShape> projections = source.GetComponents<Collider>().Select(Resolve).ToList();
+        List<ProjectionShape> projections = source.GetComponents<Collider>().Select(i => Resolve(i, i.transform.position-source.transform.position)).ToList();
         if (projections.Count == 1) return projections[0];
         else if (projections.Count == 0) throw new InvalidOperationException("Can't build projections for "+source+" because it has no colliders");
         else return new CompoundProjection(projections);
     }
 
-    private static ProjectionShape Resolve(Collider coll)
+    private static ProjectionShape Resolve(Collider coll, Vector3 offset)
     {
-        if(coll is SphereCollider s) return new SphereProjection(s);
-        if(coll is CapsuleCollider c) return new CapsuleProjection(c);
+        if(coll is    SphereCollider   s ) return new  SphereProjection(s );
+        if(coll is   CapsuleCollider   c ) return new CapsuleProjection(c );
         if(coll is CharacterController ch) return new CapsuleProjection(ch);
-        if(coll is BoxCollider b) return new BoxProjection(b);
+        if(coll is       BoxCollider   b ) return new     BoxProjection(b );
         
         throw new NotImplementedException("Unhandled type: " + coll.GetType());
     }
