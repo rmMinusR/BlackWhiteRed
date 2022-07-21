@@ -11,6 +11,14 @@ public static class ValidationUtility
         return anyChange;
     }
 
+    public static bool Bound(in Vector2 @in, out Vector2 @out, Vector2 expected, float allowedError)
+    {
+        Vector2 newVal = Vector2.MoveTowards(expected, @in, allowedError);
+        bool anyChange = (@in != newVal);
+        @out = newVal;
+        return anyChange;
+    }
+
     public static bool Bound(in Vector3 @in, out Vector3 @out, Vector3 expected, float allowedError)
     {
         Vector3 newVal = Vector3.MoveTowards(expected, @in, allowedError);
