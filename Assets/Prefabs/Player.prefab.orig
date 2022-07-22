@@ -207,13 +207,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfa48d1b74340b54ab95216212e1d728, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+<<<<<<< HEAD
+  positionForgiveness: 0.05
+  velocityForgiveness: 0.05
+=======
   speculativeFutures:
     _serializedRepr: []
   unvalidatedHistory:
     _serializedRepr: []
   positionForgiveness: 0.4
   velocityForgiveness: 0.4
-  showFutures: 0
+>>>>>>> design
 --- !u!114 &2709372960629483514
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -287,11 +291,10 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   radiusCheck: 0.1
-  blackDebug: {fileID: 2100000, guid: 499244d4bd129f748b4d9b3c7a4ab207, type: 2}
-  whiteDebug: {fileID: 2100000, guid: a1eade2aed1c01d449b101b3b1ec276b, type: 2}
+  blackDebug: {fileID: 2100000, guid: 1d96dafc168dc6449b3ec4c80cb98138, type: 2}
+  whiteDebug: {fileID: 2100000, guid: 21f1b46d0217f1a4198e5006df7531a4, type: 2}
   spawnPos: {x: 0, y: 0, z: 0}
-  spawnLook: {x: 0, y: 0}
-  teleportController: {fileID: -8085840946421382588}
+  spawnFow: {x: 0, y: 0, z: 0}
 --- !u!114 &-8610394602819512607
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -304,6 +307,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3b2834a56fe7264595309764340e090, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  health:
+    m_InternalValue: 0
 --- !u!114 &5978525050431701936
 MonoBehaviour:
   m_ObjectHideFlags: 0

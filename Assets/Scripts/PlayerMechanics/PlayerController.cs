@@ -33,7 +33,9 @@ public class PlayerController : NetworkBehaviour
     [SerializeField]
     Vector3 spawnPos;
     [SerializeField]
-    Vector3 spawnFow;
+    Vector2 spawnLook;
+    [SerializeField]
+    TeleportController teleportController;
 
     public delegate void PlayerStatsEvent(PlayerStats _value);
     public event PlayerStatsEvent onShadeChange;
@@ -45,25 +47,26 @@ public class PlayerController : NetworkBehaviour
     public int TeamValue => (int)currentTeam;
 
     [ClientRpc]
-    public void AssignTeamClientRpc(Team _team, Vector3 _spawnPos, Vector3 _spawnFow)
+    public void AssignTeamClientRpc(Team _team, Vector3 _spawnPos, Vector2 _spawnLook)
     {
         currentTeam = _team;
         spawnPos = _spawnPos;
-        spawnFow = _spawnFow;
+        spawnLook = _spawnLook;
 
         //For Debugging Purposes
 
-        MeshRenderer meshRenderer = GetComponentInChildren<MeshRenderer>();
-
-        if(currentTeam == Team.BLACK)
+        foreach(MeshRenderer meshRenderer in GetComponentsInChildren<MeshRenderer>())
         {
-            meshRenderer.material = blackDebug;
-            shadeValue = 0;
-        }
-        else
-        {
-            meshRenderer.material = whiteDebug;
-            shadeValue = 6;
+            if (currentTeam == Team.BLACK)
+            {
+                meshRenderer.material = blackDebug;
+                shadeValue = 0;
+            }
+            else
+            {
+                meshRenderer.material = whiteDebug;
+                shadeValue = 6;
+            }
         }
         //End of "For Debugging Purposes"
     }
@@ -129,8 +132,7 @@ public class PlayerController : NetworkBehaviour
     {
         Debug.Log(name +": Resetting Spawn Point " + (NetworkManager.Singleton.IsServer ? " (Client)" : " (Server)"));
 
-        transform.position = spawnPos;
-        transform.forward = spawnFow;
+        teleportController.Teleport(spawnPos, Vector3.zero, spawnLook);
     }
 
     private void OnShadeValueChange()

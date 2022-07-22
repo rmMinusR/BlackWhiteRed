@@ -74,7 +74,7 @@ public class PlayerBow : MonoBehaviour
         if (wantsToCharge)
         {
             wantsToCharge = false;
-            onChargingChange.Invoke(wantsToCharge);
+            onChargingChange?.Invoke(wantsToCharge);
 
             if (weaponHolding.CanPreform(WeaponHeld.BOW))
             {
@@ -98,6 +98,6 @@ public class PlayerBow : MonoBehaviour
     private void BowCharging()
     {
         wantsToCharge = true;
-        onChargingChange.Invoke(wantsToCharge);
+        onChargingChange?.Invoke(wantsToCharge);
     }
 }

@@ -24,7 +24,7 @@ public class MatchManager : NetworkBehaviour
     List<ulong> readyClientIds;
     [Space]
     [SerializeField]
-    Transform[] spawnPoints;
+    SpawnPointMarker[] spawnPoints;
 
     [Space]
     [InspectorReadOnly]
@@ -53,7 +53,7 @@ public class MatchManager : NetworkBehaviour
 
     private void Init()
     {
-        spawnPoints = new Transform[2];
+        spawnPoints = new SpawnPointMarker[2];
     }
 
     [ServerRpc(Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
@@ -91,7 +91,7 @@ public class MatchManager : NetworkBehaviour
         //Assign Player Objects to Teams
         for (int i = 0; i < playerCount; i++)
         {
-            NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoints[(int)teams[i]].position, spawnPoints[(int)teams[i]].forward);
+            NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoints[(int)teams[i]].transform.position, spawnPoints[(int)teams[i]].look);
             NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().ResetToSpawnPoint();
         }
 
@@ -105,7 +105,7 @@ public class MatchManager : NetworkBehaviour
         OnMatchStartClientRpc();
     }
 
-    public void SetSpawnPoint(Team team, Transform point)
+    public void SetSpawnPoint(Team team, SpawnPointMarker point)
     {
         if (team == Team.INVALID)
         {

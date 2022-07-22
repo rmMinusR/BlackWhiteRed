@@ -344,6 +344,10 @@ PrefabInstance:
       propertyPath: m_Depth
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3728024378799235639, guid: ebe2d2a50a5863e449f714d391e781d1, type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
     - target: {fileID: 3728024379655713954, guid: ebe2d2a50a5863e449f714d391e781d1, type: 3}
       propertyPath: m_Name
       value: FirstPersonAnim
@@ -1609,7 +1613,8 @@ MonoBehaviour:
   blackDebug: {fileID: 2100000, guid: 499244d4bd129f748b4d9b3c7a4ab207, type: 2}
   whiteDebug: {fileID: 2100000, guid: a1eade2aed1c01d449b101b3b1ec276b, type: 2}
   spawnPos: {x: 0, y: 0, z: 0}
-  spawnFow: {x: 0, y: 0, z: 0}
+  spawnLook: {x: 0, y: 0}
+  teleportController: {fileID: 0}
 --- !u!1001 &4842441919683497740
 PrefabInstance:
   m_ObjectHideFlags: 0

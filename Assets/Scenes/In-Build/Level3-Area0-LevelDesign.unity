@@ -418,6 +418,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 7808511767078453098, guid: 1fd2a3486b332e64eb506e7911d00350, type: 3}
+      propertyPath: look.y
+      value: -90
+      objectReference: {fileID: 0}
     - target: {fileID: 7808511767078453099, guid: 1fd2a3486b332e64eb506e7911d00350, type: 3}
       propertyPath: m_RootOrder
       value: 5
@@ -465,6 +469,10 @@ PrefabInstance:
     - target: {fileID: 7808511767078453100, guid: 1fd2a3486b332e64eb506e7911d00350, type: 3}
       propertyPath: m_Name
       value: Black Spawn Point
+      objectReference: {fileID: 0}
+    - target: {fileID: 7808511767078453100, guid: 1fd2a3486b332e64eb506e7911d00350, type: 3}
+      propertyPath: m_Layer
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1fd2a3486b332e64eb506e7911d00350, type: 3}
@@ -773,6 +781,10 @@ PrefabInstance:
     - target: {fileID: 8446263391128937416, guid: 447e239a044f7b044aca4ed28bacf196, type: 3}
       propertyPath: m_Name
       value: White Spawn Point Variant
+      objectReference: {fileID: 0}
+    - target: {fileID: 8446263391128937416, guid: 447e239a044f7b044aca4ed28bacf196, type: 3}
+      propertyPath: m_Layer
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8446263391128937423, guid: 447e239a044f7b044aca4ed28bacf196, type: 3}
       propertyPath: m_RootOrder

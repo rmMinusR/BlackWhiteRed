@@ -55,7 +55,8 @@ MonoBehaviour:
     m_Bits: 577
   minimumStartingVelocity: 6
   maximumStartingVelocity: 60.5
-  timeBeforeDespawn: 2
+  timeBeforeDespawn: 16
+  timeBeforeDespawnOnceLanded: 2
   rb: {fileID: 3055371873543667270}
 --- !u!114 &2627163635325708533
 MonoBehaviour:

@@ -61,7 +61,7 @@ public class ArrowPool : NetworkBehaviour
         }
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [ServerRpc(Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
     public void RequestArrowFireServerRpc(Team team, ulong shooterId, int shadeValue, Vector3 startingPosition, Vector3 startDirection, float amountCharged, float timeShot)
     {
         Debug.Log("Requested Arrow Fire");

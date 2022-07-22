@@ -6,11 +6,13 @@ public class SpawnPointMarker : MonoBehaviour
 {
     [SerializeField]
     Team team;
+    [SerializeField]
+    public Vector2 look;
 
     // Start is called before the first frame update
     void Start()
     {
-        MatchManager.Instance.SetSpawnPoint(team, transform);
+        MatchManager.Instance.SetSpawnPoint(team, this);
     }
 
     private void OnDrawGizmos()

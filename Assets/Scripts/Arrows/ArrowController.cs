@@ -18,8 +18,11 @@ public class ArrowController : NetworkBehaviour
     float maximumStartingVelocity;
 
     [SerializeField]
-    [Min(1)]
+    [Min(10)]
     float timeBeforeDespawn;
+    [SerializeField]
+    [Min(1)]
+    float timeBeforeDespawnOnceLanded;
 
     float timer;
 
@@ -27,6 +30,8 @@ public class ArrowController : NetworkBehaviour
     Team team;
     int shadeValue;
     ulong shooterId;
+
+    bool landed = false;
 
     [SerializeField]
     Rigidbody rb;
@@ -36,7 +41,7 @@ public class ArrowController : NetworkBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    [ClientRpc]
+    [ClientRpc(Delivery = RpcDelivery.Reliable)]
     public void InitClientRpc(Team _team, ulong _shooterId, int _shadeValue, Vector3 startingPosition, Vector3 startDirection, float amountCharged, float timeShot)
     {
         Debug.Log("Arrow Inited");
@@ -52,6 +57,10 @@ public class ArrowController : NetworkBehaviour
         shooterId = _shooterId;
         transform.position = startingPosition + startingVelocity * timeSinceShot + .5f * Physics.gravity * timeSinceShot * timeSinceShot;
         rb.velocity = startingVelocity + Physics.gravity * timeSinceShot;
+
+        timer = timeBeforeDespawn;
+        appearance.forward = rb.velocity;
+        landed = false;
 
         if (IsServer || IsHost)
         {
@@ -88,7 +97,7 @@ public class ArrowController : NetworkBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!IsServer && !IsHost)
+        if ((!IsServer && !IsHost) || landed)
         {
             return;
         }
@@ -104,11 +113,14 @@ public class ArrowController : NetworkBehaviour
         {
             //Ground
             case 0:
+                Debug.Log("Arrow hit ground " + hit.name);
                 StickIntoPlaceClientRpc(hit.ClosestPoint(transform.position));
-                timer = timeBeforeDespawn;
+                timer = timeBeforeDespawnOnceLanded;
+                landed = true;
                 break;
             //Players
             case 6:
+                Debug.Log("Arrow hit player " + hit.name);
                 PlayerController playerController = hit.GetComponent<PlayerController>();
                 if (playerController.Team != team)
                 {

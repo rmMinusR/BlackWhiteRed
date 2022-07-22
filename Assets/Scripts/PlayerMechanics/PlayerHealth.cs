@@ -20,9 +20,7 @@ public class PlayerHealth : NetworkBehaviour
 
     PlayerController playerController;
 
-    [SerializeField]
-    [InspectorReadOnly]
-    private NetworkVariable<int> health = new NetworkVariable<int>(default,NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> health = new NetworkVariable<int>(MAX_HEALTH, NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Server);
 
     public delegate void TriggerEvent();
     public event TriggerEvent onPlayerDeath;
@@ -32,7 +30,6 @@ public class PlayerHealth : NetworkBehaviour
 
     void Start()
     {
-        health.Value = MAX_HEALTH;
         playerController = GetComponent<PlayerController>();
     }
 
@@ -53,7 +50,7 @@ public class PlayerHealth : NetworkBehaviour
     public void TakeDamage(float attackDamage, DamageSource damageSource, PlayerController attacker = null)
     {
         //Account for armor lessening damage
-        int damage = Mathf.FloorToInt(attackDamage * (1 - PERCENTAGE_PROTECTION * playerController.CurrentStats.armorStrength));
+        int damage = Mathf.CeilToInt(attackDamage * (1 - PERCENTAGE_PROTECTION * playerController.CurrentStats.armorStrength));
 
         TakeDamageFlat(damage);
     }
@@ -68,6 +65,8 @@ public class PlayerHealth : NetworkBehaviour
         if (health.Value == 0)
         {
             onPlayerDeath?.Invoke();
+            playerController.ResetToSpawnPoint();
+            HandleTeamScore(Team.INVALID);
         }
     }
 
@@ -78,6 +77,8 @@ public class PlayerHealth : NetworkBehaviour
         if (newValue == 0)
         {
             onPlayerDeath?.Invoke();
+            playerController.ResetToSpawnPoint();
+            HandleTeamScore(Team.INVALID);
         }
     }
 
@@ -95,4 +96,5 @@ public class PlayerHealth : NetworkBehaviour
     {
         return health.Value;
     }
+
 }

@@ -83,7 +83,7 @@ public class HealthBarController : MonoBehaviour
         {
             //Set variables
             maxHealth = localPlayerHealth.GetMaxHealth();
-            currentHealth = localPlayerHealth.GetCurrentHealth();
+            currentHealth = localPlayerHealth.GetMaxHealth();
 
             //Set events
             localPlayerHealth.onHealthChange += HandleHealthChange;

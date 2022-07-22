@@ -101,7 +101,7 @@ public class EquipmentStatsDisplayController : MonoBehaviour
 
         bowPanel.SetActive(currentStats.armedWithBow);
 
-        bowDataText.text = "Damage x" + currentStats.damageMultiplier + "\n" +
+        bowDataText.text = "Damage x" + currentStats.bowDamageMultiplier + "\n" +
             "Knockback x" + currentStats.bowKnockbackMultiplier;
 
         //Handle Sword
