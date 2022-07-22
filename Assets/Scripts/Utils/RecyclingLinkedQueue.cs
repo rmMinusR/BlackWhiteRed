@@ -136,20 +136,20 @@ public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackRec
         return ptr;
     }
 
-    public RecyclingNode<T> FindNode(Func<T, bool> selector)
+    public (RecyclingNode<T> node, int index) FindNode(Func<T, bool> selector) => FindNode(i => selector(i.value));
+    
+    public (RecyclingNode<T> node, int index) FindNode(Func<RecyclingNode<T>, bool> selector)
     {
         if (Count == 0) throw new IndexOutOfRangeException("Collection is empty");
-        for (RecyclingNode<T> i = _head; i != null; i = i.next) if (selector(i.value)) return i;
+        int ind = 0;
+        for (RecyclingNode<T> i = _head; i != null; i = i.next)
+        {
+            if (selector(i)) return (i, ind);
+            ++ind;
+        }
         throw new IndexOutOfRangeException("Selector didn't match any nodes");
     }
     
-    public RecyclingNode<T> FindNode(Func<RecyclingNode<T>, bool> selector)
-    {
-        if (Count == 0) throw new IndexOutOfRangeException("Collection is empty");
-        for (RecyclingNode<T> i = _head; i != null; i = i.next) if (selector(i)) return i;
-        throw new IndexOutOfRangeException("Selector didn't match any nodes");
-    }
-
     public IEnumerator<T> GetEnumerator()
     {
         for (RecyclingNode<T> i = _head; i != null; i = i.next) yield return i.value;

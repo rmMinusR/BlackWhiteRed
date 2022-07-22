@@ -14,7 +14,6 @@ public class PlayerMoveController : NetworkBehaviour
 
     [Header("Bindings")]
     [SerializeField] private CharacterKinematics kinematicsLayer;
-    [SerializeField] private Transform frameOfReference;
     [SerializeField] private PlayerInput playerInput;
     private InputAction controlMove;
     [SerializeField] private string controlMoveName = "Move";
@@ -23,11 +22,11 @@ public class PlayerMoveController : NetworkBehaviour
 
     private void Start()
     {
-        kinematicsLayer.PreMove -= ApplyMovement;
-        kinematicsLayer.PreMove += ApplyMovement;
-
         kinematicsLayer.PreMove -= UpdateInput;
         kinematicsLayer.PreMove += UpdateInput;
+
+        kinematicsLayer.MoveStep -= ApplyMovement;
+        kinematicsLayer.MoveStep += ApplyMovement;
 
         controlMove = playerInput.actions.FindActionMap(playerInput.defaultActionMap).FindAction(controlMoveName);
         controlJump = playerInput.actions.FindActionMap(playerInput.defaultActionMap).FindAction(controlJumpName);
@@ -41,6 +40,8 @@ public class PlayerMoveController : NetworkBehaviour
         base.OnDestroy();
 
         kinematicsLayer.PreMove -= UpdateInput;
+
+        kinematicsLayer.MoveStep -= ApplyMovement;
 
         controlMove.performed -= UpdateMoveState;
         controlMove.canceled  -= UpdateMoveState;
@@ -72,25 +73,26 @@ public class PlayerMoveController : NetworkBehaviour
     private void UpdateInput(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
     {
         //Don't read input if simulating, or if we're a remote player
-        if (mode == CharacterKinematics.StepMode.LiveForward)
+        //Also suppress if we're teleporting
+        if (mode == CharacterKinematics.StepMode.LiveForward && frame.mode == PlayerPhysicsFrame.Mode.NormalMove)
         {
-            frame.inputMove = moveState; //controlMove.ReadValue<Vector2>();
-            frame.inputJump = controlJump.IsPressed();
+            frame.input.move = moveState; //controlMove.ReadValue<Vector2>();
+            frame.input.jump = controlJump.IsPressed();
         }
     }
 
     public void ApplyMovement(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
     {
         //Handle horizontal movement
-        Vector3 targetVelocity = speed*( frame.Right   * frame.inputMove.x
-                                       + frame.Forward * frame.inputMove.y );
+        Vector3 targetVelocity = speed*( frame.Right   * frame.input.move.x
+                                       + frame.Forward * frame.input.move.y );
 
         float slippageThisFrame = Mathf.Pow(frame.isGrounded ? groundSlipperiness : airSlipperiness, Time.fixedDeltaTime);
-        Vector3 newVel = Vector3.Lerp(targetVelocity, frame.velocity, slippageThisFrame);
-        frame.velocity = new Vector3(newVel.x, frame.velocity.y, newVel.z);
+        frame.velocity.x = Mathf.Lerp(targetVelocity.x, frame.velocity.x, slippageThisFrame);
+        frame.velocity.z = Mathf.Lerp(targetVelocity.z, frame.velocity.z, slippageThisFrame);
 
         //Handle jumping
-        if (frame.inputJump && frame.isGrounded && frame.timeCanNextJump < frame.time)
+        if (frame.input.jump && frame.isGrounded && frame.timeCanNextJump < frame.time)
         {
             frame.timeCanNextJump = (float)NetworkManager.ServerTime.FixedTime + jumpCooldown;
             frame.velocity.y += jumpPower;

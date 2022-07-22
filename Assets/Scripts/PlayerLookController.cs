@@ -52,22 +52,22 @@ public sealed class PlayerLookController : NetworkBehaviour
             //Add given movement
             frame.look += bufferedInput * sensitivity;
             bufferedInput = Vector2.zero;
-
-            if (cursorController == this)
-            {
-                //Lock cursor
-                Cursor.lockState = cursorLocked ? CursorLockMode.Locked : CursorLockMode.None;
-                Cursor.visible = !cursorLocked;
-            }
         }
 
         //Limit
-        frame.look.y = Mathf.Clamp(frame.look.y, minVerticalAngle, maxVerticalAngle);
+        frame.look = new Vector2(frame.look.x, Mathf.Clamp(frame.look.y, minVerticalAngle, maxVerticalAngle));
     }
 
     private void Update()
     {
         target.rotation = Quaternion.Euler(kinematicsLayer.frame.look.y, kinematicsLayer.frame.look.x, 0);
+
+        if (cursorController == this)
+        {
+            //Lock cursor
+            Cursor.lockState = cursorLocked ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.visible = !cursorLocked;
+        }
     }
 
     private void OnDisable()

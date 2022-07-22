@@ -61,8 +61,9 @@ public sealed class CharacterKinematics : NetworkBehaviour
     }
 
     public delegate void MoveDelegate(ref PlayerPhysicsFrame frame, StepMode mode);
-    public event MoveDelegate PreMove = default; //Must be pure if live=true. Applied in Step().
-    public event Action FinalizeMove = default; //Only applied in FixedUpdate()
+    public event MoveDelegate PreMove  = default; //Intended for input fetching. Should be pure. Applied in Step().
+    public event MoveDelegate MoveStep = default; //Intended for logic that changes kinematics data. Should be pure. Applied in Step().
+    public event Action FinalizeMove = default; //Called after a live frame has been applied, in FixedUpdate()
 
     //Transient I/O
 #if UNITY_EDITOR
@@ -100,12 +101,13 @@ public sealed class CharacterKinematics : NetworkBehaviour
         frame.isGrounded = frame.timeSinceLastGround < coyoteTime;
 
         //Gravity
-        if (!frame.isGrounded || !suspendGravityOnGround) frame.velocity += RawGravityExperienced * (1-Mathf.Clamp01(frame.timeSinceLastGround/coyoteTime)) * dt;
+        if (!(suspendGravityOnGround && frame.isGrounded)) frame.velocity += RawGravityExperienced * (1-Mathf.Clamp01(frame.timeSinceLastGround/coyoteTime)) * dt;
         
-        //Custom logic hook
+        //Custom logic hooks
         if (PreMove != null) PreMove(ref frame, mode);
+        if (MoveStep != null) MoveStep(ref frame, mode);
         
-        //Move step
+        //Do move
         Vector3 move = frame.velocity*dt;
         if (PlayerPhysicsFrame.DoCollisionTest(frame.mode) && proj.Shapecast(out RaycastHit hit, frame.position, move.normalized, Quaternion.identity, move.magnitude))
         {
@@ -121,6 +123,6 @@ public sealed class CharacterKinematics : NetworkBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position + Vector3.down*(coll.height/2-coll.radius+groundProbeOffset), coll.radius+groundProbeRadius);
+        Gizmos.DrawWireSphere((Application.isPlaying ? frame.position : transform.position) + Vector3.down*(coll.height/2-coll.radius+groundProbeOffset), coll.radius+groundProbeRadius);
     }
 }
