@@ -15,7 +15,7 @@ public struct PlayerPhysicsFrame : INetworkSerializable
     public float   time;
 
     public uint id; //Ensure time-adjustment parity
-    public Mode mode;
+    public Type type;
 
     //Look is similar to input, but never rejected by validation. Can be overwritten by Teleport, and can indicate aimbotting.
     [SerializeField] private Vector2 _look;
@@ -41,7 +41,7 @@ public struct PlayerPhysicsFrame : INetworkSerializable
     public float timeCanNextJump;
 
     [Flags]
-    public enum Mode
+    public enum Type
     {
         NormalMove,
         Teleport,
@@ -49,9 +49,9 @@ public struct PlayerPhysicsFrame : INetworkSerializable
         Default = NormalMove
     }
 
-    public static bool DoCollisionTest(Mode m)
+    public static bool DoCollisionTest(Type m)
     {
-        return m != Mode.Teleport;
+        return m != Type.Teleport;
     }
 
     #region Cached expensive math
@@ -93,7 +93,7 @@ public struct PlayerPhysicsFrame : INetworkSerializable
         serializer.SerializeValue(ref time);
 
         serializer.SerializeValue(ref id);
-        serializer.SerializeValue(ref mode);
+        serializer.SerializeValue(ref type);
 
         serializer.SerializeValue(ref input);
     }

@@ -31,8 +31,9 @@ public sealed class CharacterKinematics : NetworkBehaviour
         frame = Step(frame, (float)NetworkManager.ServerTime.FixedTime - frame.time, IsLocalPlayer ? StepMode.LiveForward : StepMode.LiveSpeculation); //Only local player has live input. Anything serverside is speculation until proven otherwise.
 
         //Apply
-        if (PlayerPhysicsFrame.DoCollisionTest(frame.mode)) coll.Move(frame.position - transform.position);
-        else transform.position = frame.position;
+        transform.position = frame.position;
+        //if (PlayerPhysicsFrame.DoCollisionTest(frame.mode)) coll.Move(frame.position - transform.position);
+        //else transform.position = frame.position;
 
         if (FinalizeMove != null) FinalizeMove();
     }
@@ -60,7 +61,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
         SimulateRecalc
     }
 
-    public delegate void MoveDelegate(ref PlayerPhysicsFrame frame, StepMode mode);
+    public delegate void MoveDelegate(ref PlayerPhysicsFrame frame, float dt, StepMode mode);
     public event MoveDelegate PreMove  = default; //Intended for input fetching. Should be pure. Applied in Step().
     public event MoveDelegate MoveStep = default; //Intended for logic that changes kinematics data. Should be pure. Applied in Step().
     public event Action FinalizeMove = default; //Called after a live frame has been applied, in FixedUpdate()
@@ -89,7 +90,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
     [Pure] //Only if mode != StepMode.Live
     public PlayerPhysicsFrame Step(PlayerPhysicsFrame frame, float dt, StepMode mode)
     {
-        if (mode != StepMode.SimulateRecalc) frame.mode = PlayerPhysicsFrame.Mode.Default;
+        if (mode != StepMode.SimulateRecalc) frame.type = PlayerPhysicsFrame.Type.Default;
         frame.time += dt;
         ++frame.id;
         
@@ -104,12 +105,12 @@ public sealed class CharacterKinematics : NetworkBehaviour
         if (!(suspendGravityOnGround && frame.isGrounded)) frame.velocity += RawGravityExperienced * (1-Mathf.Clamp01(frame.timeSinceLastGround/coyoteTime)) * dt;
         
         //Custom logic hooks
-        if (PreMove != null) PreMove(ref frame, mode);
-        if (MoveStep != null) MoveStep(ref frame, mode);
+        if (PreMove  != null) PreMove (ref frame, dt, mode);
+        if (MoveStep != null) MoveStep(ref frame, dt, mode);
         
-        //Do move
+        //Do kinematic move
         Vector3 move = frame.velocity*dt;
-        if (PlayerPhysicsFrame.DoCollisionTest(frame.mode) && proj.Shapecast(out RaycastHit hit, frame.position, move.normalized, Quaternion.identity, move.magnitude))
+        if (PlayerPhysicsFrame.DoCollisionTest(frame.type) && proj.Shapecast(out RaycastHit hit, frame.position, move.normalized, Quaternion.identity, move.magnitude))
         {
             //Collision response
             move = move.normalized * hit.distance;

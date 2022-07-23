@@ -45,7 +45,7 @@ public sealed class PlayerLookController : NetworkBehaviour
         if (IsLocalPlayer) cursorController = this;
     }
 
-    private void UpdateLook(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
+    private void UpdateLook(ref PlayerPhysicsFrame frame, float dt, CharacterKinematics.StepMode mode)
     {
         if (mode == CharacterKinematics.StepMode.LiveForward)
         {

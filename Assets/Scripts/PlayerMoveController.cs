@@ -70,24 +70,24 @@ public class PlayerMoveController : NetworkBehaviour
         }
     }
 
-    private void UpdateInput(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
+    private void UpdateInput(ref PlayerPhysicsFrame frame, float dt, CharacterKinematics.StepMode mode)
     {
         //Don't read input if simulating, or if we're a remote player
         //Also suppress if we're teleporting
-        if (mode == CharacterKinematics.StepMode.LiveForward && frame.mode == PlayerPhysicsFrame.Mode.NormalMove)
+        if (mode == CharacterKinematics.StepMode.LiveForward && frame.type == PlayerPhysicsFrame.Type.NormalMove)
         {
             frame.input.move = moveState; //controlMove.ReadValue<Vector2>();
             frame.input.jump = controlJump.IsPressed();
         }
     }
 
-    public void ApplyMovement(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
+    public void ApplyMovement(ref PlayerPhysicsFrame frame, float dt, CharacterKinematics.StepMode mode)
     {
         //Handle horizontal movement
         Vector3 targetVelocity = speed*( frame.Right   * frame.input.move.x
                                        + frame.Forward * frame.input.move.y );
 
-        float slippageThisFrame = Mathf.Pow(frame.isGrounded ? groundSlipperiness : airSlipperiness, Time.fixedDeltaTime);
+        float slippageThisFrame = Mathf.Pow(frame.isGrounded ? groundSlipperiness : airSlipperiness, dt);
         frame.velocity.x = Mathf.Lerp(targetVelocity.x, frame.velocity.x, slippageThisFrame);
         frame.velocity.z = Mathf.Lerp(targetVelocity.z, frame.velocity.z, slippageThisFrame);
 

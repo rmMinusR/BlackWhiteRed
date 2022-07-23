@@ -78,10 +78,15 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
 
         for (RecyclingNode<PlayerPhysicsFrame> i = lastValid; i.next != null; i = i.next)
         {
-            PlayerPhysicsFrame next = i.value;
-            next.input = i.next.value.input; //Keep input
-            next.look  = i.next.value.look ; //Keep look
-            next = kinematics.Step(next, i.next.value.time-i.value.time, CharacterKinematics.StepMode.SimulateRecalc);
+            //Simulate PreMove
+            PlayerPhysicsFrame prev = i.value;
+            prev.input = i.next.value.input; //Keep input
+            prev.look  = i.next.value.look ; //Keep look
+
+            //Do simulation step
+            PlayerPhysicsFrame next = kinematics.Step(prev, i.next.value.time-i.value.time, CharacterKinematics.StepMode.SimulateRecalc);
+
+            //Assign
             i.next.value = next;
         }
     }
@@ -134,7 +139,7 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             PlayerPhysicsFrame authorityFrame = SimulateVerify(kinematics, lastValid.value, untrustedFrame);
 
             //Validate - Special case: If teleporting, always overwrite ALL values
-            if (authorityFrame.mode == PlayerPhysicsFrame.Mode.Teleport) overwrite |= OverwriteFlags.All;
+            if (authorityFrame.type == PlayerPhysicsFrame.Type.Teleport) overwrite |= OverwriteFlags.All;
 
             //Validate - compare untrusted value to authority value, and copy over (within bounds)
             //No point in bounding if already overwritten by a more precise source
@@ -142,9 +147,8 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             if (!overwrite.HasFlag(OverwriteFlags.Velocity) && ValidationUtility.Bound(in untrustedFrame.velocity, out authorityFrame.velocity, authorityFrame.velocity, velocityForgiveness)) overwrite |= OverwriteFlags.Velocity;
 
             //Finalize - record
-            Debug.Log($"Recording at {lastValidIndex}: {lastValid.value.time} <= {authorityFrame.time} <= {lastValid.next?.value.time}", this);
-            if (lastValid.value.time == authorityFrame.time) lastValid.value = authorityFrame; //TODO should this use stable ID instead?
-            else speculativeFutures.Insert(lastValid, authorityFrame); //TODO should this overwrite instead?
+            Debug.Log($"Inserting at {lastValidIndex+1}: {lastValid.value.time} <= {authorityFrame.time} <= {lastValid.next?.value.time}", this);
+            speculativeFutures.Insert(lastValid, authorityFrame); //TODO should this overwrite instead? If so, when?
 
             //Finalize - anything before is already valid by extension and therefore irrelevant
             if (overwrite != 0) RecalcAfter(speculativeFutures, authorityFrame.time);
@@ -169,10 +173,10 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         OverwriteFlags overwrite = 0;
 
         //Sanitize - players don't have the authority to teleport, forbid
-        if (untrusted.mode == PlayerPhysicsFrame.Mode.Teleport)
+        if (untrusted.type == PlayerPhysicsFrame.Type.Teleport)
         {
             Debug.LogWarning("Player tried to send Teleport frame!");
-            untrusted.mode = PlayerPhysicsFrame.Mode.Default;
+            untrusted.type = PlayerPhysicsFrame.Type.Default;
             overwrite |= OverwriteFlags.Position | OverwriteFlags.Velocity | OverwriteFlags.Look;
         }
 
@@ -211,16 +215,16 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         //if (IsHost) return; //Authority copy is already up to date
         //if (IsLocalPlayer) return;
 
-        //Ignore if we're in the process of responding to a rollback
-        //Special case: Teleport always happens anyway
-        if (authorityFrame.mode != PlayerPhysicsFrame.Mode.Teleport && authorityFrame.time < rejectCooldownEndTime) return;
-
         authorityFrame.time += NetHeartbeat.Self.SmoothedRTT * rxAdj; //Adjust for travel delay in builtin time sync
-
-        if (IsLocalPlayer && reject != 0) Debug.Log("Received frame-reject: "+reject);
 
         //If we're showing a remote player, ALL values are copied over.
         if (!IsLocalPlayer) reject = OverwriteFlags.All;
+
+        //Ignore if we're in the process of responding to a rollback
+        //Special case: Teleport always happens anyway
+        if (authorityFrame.type != PlayerPhysicsFrame.Type.Teleport && authorityFrame.time < rejectCooldownEndTime) return;
+
+        if (IsLocalPlayer && reject != 0) Debug.Log("Received frame-reject: "+reject);
 
         //Locate relevant frame
         RecyclingNode<PlayerPhysicsFrame> n = null;

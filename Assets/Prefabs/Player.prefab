@@ -160,10 +160,11 @@ MonoBehaviour:
     velocity: {x: 0, y: 0, z: 0}
     time: 0
     id: 0
-    mode: 0
-    look: {x: 0, y: 0}
-    inputMove: {x: 0, y: 0}
-    inputJump: 0
+    type: 0
+    _look: {x: 0, y: 0}
+    input:
+      move: {x: 0, y: 0}
+      jump: 0
     isGrounded: 0
     timeSinceLastGround: 0
     timeCanNextJump: 0
@@ -206,8 +207,12 @@ MonoBehaviour:
     _serializedRepr: []
   unvalidatedHistory:
     _serializedRepr: []
-  positionForgiveness: 0.4
-  velocityForgiveness: 0.4
+  txFreq: 5
+  txAdj: 0
+  rxAdj: 0
+  positionForgiveness: 0.3
+  velocityForgiveness: 0.3
+  showFutures: 0
 --- !u!114 &2709372960629483514
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -541,7 +546,6 @@ MonoBehaviour:
   jumpPower: 5
   jumpCooldown: 0.5
   kinematicsLayer: {fileID: 3587278699711730041}
-  frameOfReference: {fileID: 2931471490281750659}
   playerInput: {fileID: 1334152775563438803}
   controlMoveName: Move
   controlJumpName: Jump
