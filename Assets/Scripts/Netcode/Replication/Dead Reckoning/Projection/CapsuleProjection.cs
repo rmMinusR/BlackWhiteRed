@@ -21,9 +21,8 @@ public sealed class CapsuleProjection : ProjectionShape
         };
     }
 
-    public CapsuleProjection(CapsuleCollider source) : this(source.center, CapsuleDirToVector(source.direction) * source.height/2, source.radius) { }
-
-    public CapsuleProjection(CharacterController source) : this(source.center, Vector3.up * source.height/2, source.radius) { }
+    public CapsuleProjection(    CapsuleCollider source, Vector3 parentCenter) : this(source.center + source.transform.position-parentCenter, CapsuleDirToVector(source.direction) * source.height/2, source.radius) { }
+    public CapsuleProjection(CharacterController source, Vector3 parentCenter) : this(source.center + source.transform.position-parentCenter,                           Vector3.up * source.height/2, source.radius) { }
 
     public CapsuleProjection(Vector3 center, Vector3 halfExtents, float radius)
     {
@@ -32,19 +31,10 @@ public sealed class CapsuleProjection : ProjectionShape
         this.radius = radius;
     }
 
-    public override bool Check(Vector3 pos, Quaternion rotation) => Physics.CheckCapsule(pos + rotation*End1, pos + rotation*End2, radius);
+    public override bool         Check       (                    Vector3 pos,                                         int layerMask) => Physics.CheckCapsule  (  pos + End1,   pos + End2, radius, layerMask);
+    public override Collider[]   Overlap     (                    Vector3 pos,                                         int layerMask) => Physics.OverlapCapsule(  pos + End1,   pos + End2, radius, layerMask);
+    public override bool         Shapecast   (out RaycastHit hit, Vector3 start, Vector3 direction, float maxDistance, int layerMask) => Physics.CapsuleCast   (start + End1, start + End2, radius, direction, out hit, maxDistance, layerMask);
+    public override RaycastHit[] ShapecastAll(                    Vector3 start, Vector3 direction, float maxDistance, int layerMask) => Physics.CapsuleCastAll(start + End1, start + End2, radius, direction,          maxDistance, layerMask);
 
-    public override Collider[] Overlap(Vector3 pos, Quaternion rotation) => Physics.OverlapCapsule(pos + rotation*End1, pos + rotation*End2, radius);
-
-    public override bool Shapecast(out RaycastHit hit, Vector3 start, Vector3 direction, Quaternion rotation, float maxDistance)
-    {
-        Vector3 glob_center = rotation * center;
-        return Physics.CapsuleCast(start + rotation*End1, start + rotation*End2, radius, direction, out hit, maxDistance);
-    }
-
-    public override RaycastHit[] ShapecastAll(Vector3 start, Vector3 direction, Quaternion rotation, float maxDistance)
-    {
-        Vector3 glob_center = rotation * center;
-        return Physics.CapsuleCastAll(start + rotation*End1, start + rotation*End2, radius, direction, maxDistance);
-    }
+    protected internal override void DrawAsGizmos(Vector3 root) => Gizmos.DrawWireMesh(PrimitiveHelper.GetPrimitiveMesh(PrimitiveType.Capsule), root + center);
 }
