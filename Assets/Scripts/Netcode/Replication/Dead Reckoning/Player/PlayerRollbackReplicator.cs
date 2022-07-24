@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using Unity.Netcode;
+using UnityEditor;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterKinematics))]
@@ -275,6 +276,8 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         }
     }
 
+#if UNITY_EDITOR
+
     [Header("DEBUG")]
     [SerializeField] private bool showFutures;
     private void OnDrawGizmos()
@@ -283,14 +286,8 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         {
             for (RecyclingNode<PlayerPhysicsFrame> i = speculativeFutures.Head; i != null; i = i.next)
             {
-                //Positions
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawWireCube(i.value.position, Vector3.one*0.05f);
+                GizmosRenderFrame(i.value);
                 //if (i.next != null) Gizmos.DrawLine(i.value.position, i.next.value.position);
-
-                //Velocities
-                Gizmos.color = Color.red;
-                Gizmos.DrawLine(i.value.position, i.value.position+i.value.velocity);
             }
         }
 
@@ -298,15 +295,73 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         {
             for (RecyclingNode<PlayerPhysicsFrame> i = unvalidatedHistory.Head; i != null; i = i.next)
             {
-                //Positions
-                Gizmos.color = Color.cyan;
-                Gizmos.DrawWireCube(i.value.position, Vector3.one*0.05f);
+                GizmosRenderFrame(i.value);
                 //if (i.next != null) Gizmos.DrawLine(i.value.position, i.next.value.position);
-
-                //Velocities
-                Gizmos.color = Color.magenta;
-                Gizmos.DrawLine(i.value.position, i.value.position+i.value.velocity);
             }
         }
     }
+
+    private static void GizmosRenderFrame(PlayerPhysicsFrame frame) => DebugRenderFrame(frame, Gizmos.DrawLine, (c) => Gizmos.color = c, HandlesDrawString);
+
+    private static void HandlesDrawString(Vector3 pos, string s) //FIXME performance? probably not important...
+    {
+        Handles.BeginGUI();
+        Handles.Label(pos, s);
+        Handles.EndGUI();
+    }
+
+    private static void DebugRenderFrame(PlayerPhysicsFrame frame, Action<Vector3, Vector3> line, Action<Color> setColor, Action<Vector3, string> label)
+    {
+        const float relScale = 0.25f;
+
+        void cube(Vector3 center, Vector3 size)
+        {
+            size /= 2;
+            Vector3 aaa = center + new Vector3( size.x,  size.y,  size.z);
+            Vector3 aab = center + new Vector3(-size.x,  size.y,  size.z);
+            Vector3 aba = center + new Vector3( size.x, -size.y,  size.z);
+            Vector3 abb = center + new Vector3(-size.x, -size.y,  size.z);
+            Vector3 baa = center + new Vector3( size.x,  size.y, -size.z);
+            Vector3 bab = center + new Vector3(-size.x,  size.y, -size.z);
+            Vector3 bba = center + new Vector3( size.x, -size.y, -size.z);
+            Vector3 bbb = center + new Vector3(-size.x, -size.y, -size.z);
+
+            //X axis
+            line(aaa, baa);
+            line(aab, bab);
+            line(aba, bba);
+            line(abb, bbb);
+
+            //Y axis
+            line(aaa, aba);
+            line(aab, abb);
+            line(baa, bba);
+            line(bab, bbb);
+
+            //Z axis
+            line(aaa, aab);
+            line(aba, abb);
+            line(baa, bab);
+            line(bba, bbb);
+        }
+
+        //Position
+        setColor(Color.white);
+        cube(frame.position, Vector3.one * 0.05f);
+
+        //Velocity
+        setColor(Color.green);
+        line(frame.position, frame.position + relScale*frame.velocity);
+
+        //Look
+        frame.RefreshLookTrig();
+        setColor(Color.blue);
+        line(frame.position, frame.position + relScale*frame.Forward);
+        setColor(Color.red);
+        line(frame.position, frame.position + relScale*frame.Right);
+        
+        if(label != null) label(frame.position, $"{frame.id}@{frame.time}");
+    }
+
+#endif
 }
