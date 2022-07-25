@@ -148,7 +148,7 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             if (!overwrite.HasFlag(OverwriteFlags.Velocity) && ValidationUtility.Bound(in untrustedFrame.velocity, out authorityFrame.velocity, authorityFrame.velocity, velocityForgiveness)) overwrite |= OverwriteFlags.Velocity;
 
             //Finalize - record
-            Debug.Log($"Inserting at {lastValidIndex+1}: {lastValid.value.time} <= {authorityFrame.time} <= {lastValid.next?.value.time}", this);
+            //Debug.Log($"Inserting at {lastValidIndex+1}: {lastValid.value.time} <= {authorityFrame.time} <= {lastValid.next?.value.time}", this);
             speculativeFutures.Insert(lastValid, authorityFrame); //TODO should this overwrite instead? If so, when?
 
             //Finalize - anything before is already valid by extension and therefore irrelevant
@@ -248,7 +248,7 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         //Default to first time with good continuity, or if that fails, to Tail
         if (n == null) (n, nInd) = unvalidatedHistory.FindNode(i => i.next == null || (i.value.time < authorityFrame.time && authorityFrame.time <= i.next.value.time));
 
-        if (IsLocalPlayer) Debug.Log($"Overwriting at {nInd}/{unvalidatedHistory.Count}: {n.value.id}@{n.value.time} <= {authorityFrame.id}@{authorityFrame.time} <= {n.next?.value.id.ToString()??"(null)"}@{n.next?.value.time.ToString()??"(null)"}", this);
+        //if (IsLocalPlayer) Debug.Log($"Overwriting at {nInd}/{unvalidatedHistory.Count}: {n.value.id}@{n.value.time} <= {authorityFrame.id}@{authorityFrame.time} <= {n.next?.value.id.ToString()??"(null)"}@{n.next?.value.time.ToString()??"(null)"}", this);
 
         //Apply changes
         if (reject.HasFlag(OverwriteFlags.Position)) n.value.position = authorityFrame.position;

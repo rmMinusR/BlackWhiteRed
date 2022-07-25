@@ -174,6 +174,7 @@ MonoBehaviour:
   groundProbeRadius: 0
   groundProbeOffset: 0.05
   coyoteTime: 0.12
+  raycastEpsilon: 0.01
 --- !u!114 &-8085840946421382588
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -188,7 +189,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   kinematicsLayer: {fileID: 3587278699711730041}
   rollback: {fileID: 455297323731713935}
-  teleportPos: {x: 0, y: 0, z: 0}
+  teleportPos: {x: 0, y: 1, z: 0}
   teleportVel: {x: 0, y: 0, z: 0}
   teleportLook: {x: 0, y: 0}
 --- !u!114 &455297323731713935
@@ -208,8 +209,8 @@ MonoBehaviour:
   unvalidatedHistory:
     _serializedRepr: []
   txFreq: 5
-  txAdj: 0
-  rxAdj: 0
+  txAdj: -0.25
+  rxAdj: 0.25
   positionForgiveness: 0.3
   velocityForgiveness: 0.3
   showFutures: 0
