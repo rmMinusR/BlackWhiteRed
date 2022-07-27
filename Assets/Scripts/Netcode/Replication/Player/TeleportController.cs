@@ -25,23 +25,23 @@ public sealed class TeleportController : NetworkBehaviour
         if (kinematicsLayer == null) kinematicsLayer = GetComponentInParent<CharacterKinematics>();
         if (rollback == null) rollback = kinematicsLayer.GetComponent<PlayerRollbackReplicator>();
 
-        kinematicsLayer.PreMove -= ApplyPendingTeleportation;
-        kinematicsLayer.PreMove += ApplyPendingTeleportation;
+        kinematicsLayer.MoveStep -= ApplyPendingTeleportation;
+        kinematicsLayer.MoveStep += ApplyPendingTeleportation;
     }
 
     private void OnDisable()
     {
-        kinematicsLayer.PreMove -= ApplyPendingTeleportation;
+        kinematicsLayer.MoveStep -= ApplyPendingTeleportation;
     }
 
     //FIXME this technically violates pure function requirement of PreMove, since it reads and writes to values that change at runtime!
-    private void ApplyPendingTeleportation(ref PlayerPhysicsFrame frame, CharacterKinematics.StepMode mode)
+    private void ApplyPendingTeleportation(ref PlayerPhysicsFrame frame, float dt, CharacterKinematics.StepMode mode)
     {
         if (teleportPending && mode == CharacterKinematics.StepMode.SimulateVerify)
         {
             teleportPending = false;
 
-            frame.mode     = PlayerPhysicsFrame.Mode.Teleport;
+            frame.type     = PlayerPhysicsFrame.Type.Teleport;
             frame.position = teleportPos;
             frame.look     = teleportLook;
             frame.velocity = teleportVel;

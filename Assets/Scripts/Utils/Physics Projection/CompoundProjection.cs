@@ -12,24 +12,24 @@ public sealed class CompoundProjection : ProjectionShape
         contents = source;
     }
 
-    public override bool Check(Vector3 pos, Quaternion rotation)
+    public override bool Check(Vector3 pos, int layerMask)
     {
-        foreach (ProjectionShape c in contents) if(c.Check(pos, rotation)) return true;
+        foreach (ProjectionShape c in contents) if(c.Check(pos, layerMask)) return true;
         return false;
     }
 
-    public override Collider[] Overlap(Vector3 pos, Quaternion rotation)
+    public override Collider[] Overlap(Vector3 pos, int layerMask)
     {
         List<Collider> vals = new List<Collider>();
-        foreach (ProjectionShape c in contents) vals.AddRange(c.Overlap(pos, rotation));
+        foreach (ProjectionShape c in contents) vals.AddRange(c.Overlap(pos, layerMask));
         return vals.ToArray();
     }
 
-    public override bool Shapecast(out RaycastHit hit, Vector3 start, Vector3 direction, Quaternion rotation, float maxDistance)
+    public override bool Shapecast(out RaycastHit hit, Vector3 start, Vector3 direction, float maxDistance, int layerMask)
     {
         //Gather all hits
         List<RaycastHit> hits = new List<RaycastHit>();
-        foreach (ProjectionShape c in contents) if(c.Shapecast(out RaycastHit h, start, direction, rotation, maxDistance)) hits.Add(h);
+        foreach (ProjectionShape c in contents) if(c.Shapecast(out RaycastHit h, start, direction, maxDistance, layerMask)) hits.Add(h);
         
         if (hits.Count == 0)
         {
@@ -48,10 +48,15 @@ public sealed class CompoundProjection : ProjectionShape
 
     }
 
-    public override RaycastHit[] ShapecastAll(Vector3 start, Vector3 direction, Quaternion rotation, float maxDistance)
+    public override RaycastHit[] ShapecastAll(Vector3 start, Vector3 direction, float maxDistance, int layerMask)
     {
         List<RaycastHit> vals = new List<RaycastHit>();
-        foreach (ProjectionShape c in contents) vals.AddRange(c.ShapecastAll(start, direction, rotation, maxDistance));
+        foreach (ProjectionShape c in contents) vals.AddRange(c.ShapecastAll(start, direction, maxDistance, layerMask));
         return vals.ToArray();
+    }
+
+    protected internal override void DrawAsGizmos(Vector3 root)
+    {
+        foreach (ProjectionShape c in contents) c.DrawAsGizmos(root);
     }
 }
