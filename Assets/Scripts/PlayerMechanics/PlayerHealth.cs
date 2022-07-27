@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using System;
 
 public enum DamageSource
 {
@@ -20,7 +21,7 @@ public class PlayerHealth : NetworkBehaviour
 
     PlayerController playerController;
 
-    private NetworkVariable<int> health = new NetworkVariable<int>(MAX_HEALTH, NetworkVariableReadPermission.Everyone,NetworkVariableWritePermission.Server);
+    private NetworkVariable<int> health = new NetworkVariable<int>(MAX_HEALTH, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     public delegate void TriggerEvent();
     public event TriggerEvent onPlayerDeath;
@@ -31,6 +32,22 @@ public class PlayerHealth : NetworkBehaviour
     void Start()
     {
         playerController = GetComponent<PlayerController>();
+    }
+
+    private void Update()
+    {
+        CheckForVoid();
+    }
+
+    private void CheckForVoid()
+    {
+        if (IsHost || IsServer)
+        {
+            if (transform.position.y < -15)
+            {
+                TakeDamage(1000, DamageSource.ABYSS);
+            }
+        }
     }
 
     private void OnEnable()

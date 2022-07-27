@@ -188,6 +188,8 @@ public class GameManager : MonoBehaviour
 
     private void HandleSceneLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
+        Debug.Log("HandleSceneLoadEventCompleted " + sceneName);
+
         if (NetworkManager.Singleton.IsHost)
         {
             switch (sceneName)
@@ -215,7 +217,7 @@ public class GameManager : MonoBehaviour
             {
                 case SceneNamePlayers:
                 case SceneNameLevelDesign:
-                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+                    //NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
                     break;
                 case SceneNameEnvironmentArt:
                     AsyncOperation oper = SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
