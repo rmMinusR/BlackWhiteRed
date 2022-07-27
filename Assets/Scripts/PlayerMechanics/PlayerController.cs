@@ -30,6 +30,7 @@ public class PlayerController : NetworkBehaviour
     Material whiteDebug;
 
     private PlayerStats currentStats => kit.playerStats[shadeValue];
+    public Team CurrentTeam => currentTeam;
     public int TeamValue => (int)currentTeam;
 
     [ClientRpc]
