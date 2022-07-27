@@ -31,8 +31,9 @@ public sealed class CharacterKinematics : NetworkBehaviour
         frame = Step(frame, (float)NetworkManager.ServerTime.FixedTime - frame.time, IsLocalPlayer ? StepMode.LiveForward : StepMode.LiveSpeculation); //Only local player has live input. Anything serverside is speculation until proven otherwise.
 
         //Apply
-        if (PlayerPhysicsFrame.DoCollisionTest(frame.mode)) coll.Move(frame.position - transform.position);
-        else transform.position = frame.position;
+        transform.position = frame.position;
+        //if (PlayerPhysicsFrame.DoCollisionTest(frame.mode)) coll.Move(frame.position - transform.position);
+        //else transform.position = frame.position;
 
         if (FinalizeMove != null) FinalizeMove();
     }
@@ -60,9 +61,10 @@ public sealed class CharacterKinematics : NetworkBehaviour
         SimulateRecalc
     }
 
-    public delegate void MoveDelegate(ref PlayerPhysicsFrame frame, StepMode mode);
-    public event MoveDelegate PreMove = default; //Must be pure if live=true. Applied in Step().
-    public event Action FinalizeMove = default; //Only applied in FixedUpdate()
+    public delegate void MoveDelegate(ref PlayerPhysicsFrame frame, float dt, StepMode mode);
+    public event MoveDelegate PreMove  = default; //Intended for input fetching. Should be pure. Applied in Step().
+    public event MoveDelegate MoveStep = default; //Intended for logic that changes kinematics data. Should be pure. Applied in Step().
+    public event Action FinalizeMove = default; //Called after a live frame has been applied, in FixedUpdate()
 
     //Transient I/O
 #if UNITY_EDITOR
@@ -82,13 +84,14 @@ public sealed class CharacterKinematics : NetworkBehaviour
     [SerializeField] [Min(0)] private float groundProbeRadius = 0.05f;
     [SerializeField] [Min(0)] private float groundProbeOffset = 0.05f;
     [SerializeField] [Min(0)] private float coyoteTime = 0.12f;
+    [SerializeField] [Min(0)] private float raycastEpsilon = 0.01f;
 
-    public const int INTERACTABLE_LAYERS = ~(1<<6 | 1<<2 | 1<<3); //Everything but the Player, Ignore Raycast, and Shade layers
+    public const int INTERACTABLE_LAYERS = ~(1<<6 | 1<<2 | 1<<3); //Everything but the Player, Ignore Raycast, and Shade layers. TODO fetch from Physics at runtime
 
     [Pure] //Only if mode != StepMode.Live
     public PlayerPhysicsFrame Step(PlayerPhysicsFrame frame, float dt, StepMode mode)
     {
-        if (mode != StepMode.SimulateRecalc) frame.mode = PlayerPhysicsFrame.Mode.Default;
+        if (mode != StepMode.SimulateRecalc) frame.type = PlayerPhysicsFrame.Type.Default;
         frame.time += dt;
         ++frame.id;
         
@@ -100,18 +103,22 @@ public sealed class CharacterKinematics : NetworkBehaviour
         frame.isGrounded = frame.timeSinceLastGround < coyoteTime;
 
         //Gravity
-        if (!frame.isGrounded || !suspendGravityOnGround) frame.velocity += RawGravityExperienced * (1-Mathf.Clamp01(frame.timeSinceLastGround/coyoteTime)) * dt;
+        float currentGravityStrength = (suspendGravityOnGround && frame.isGrounded) ? Mathf.Clamp01(frame.timeSinceLastGround/coyoteTime) : 1;
+        frame.velocity += RawGravityExperienced * dt * currentGravityStrength;
         
-        //Custom logic hook
-        if (PreMove != null) PreMove(ref frame, mode);
-        
-        //Move step
+        //Custom logic hooks
+        if (PreMove  != null) PreMove (ref frame, dt, mode);
+        if (MoveStep != null) MoveStep(ref frame, dt, mode);
+
+        //Do collision test and kinematics
         Vector3 move = frame.velocity*dt;
-        if (PlayerPhysicsFrame.DoCollisionTest(frame.mode) && proj.Shapecast(out RaycastHit hit, frame.position, move.normalized, Quaternion.identity, move.magnitude))
+        if (PlayerPhysicsFrame.DoCollisionTest(frame.type) && proj.Shapecast(out RaycastHit hit, frame.position, move.normalized, move.magnitude, INTERACTABLE_LAYERS))
         {
+            Debug.Log("Hit something d="+hit.distance, this);
             //Collision response
             move = move.normalized * hit.distance;
             frame.velocity = Vector3.ProjectOnPlane(frame.velocity, hit.normal);
+            frame.position += hit.normal * raycastEpsilon; //Prevent clipping
         }
         frame.position += move;
 
@@ -120,7 +127,12 @@ public sealed class CharacterKinematics : NetworkBehaviour
 
     private void OnDrawGizmos()
     {
+        Vector3 pos = Application.isPlaying ? frame.position : transform.position;
+
+        //Gizmos.color = Color.green;
+        //proj.DrawAsGizmos(pos);
+
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position + Vector3.down*(coll.height/2-coll.radius+groundProbeOffset), coll.radius+groundProbeRadius);
+        Gizmos.DrawWireSphere(pos + Vector3.down*(coll.height/2-coll.radius+groundProbeOffset), coll.radius+groundProbeRadius);
     }
 }

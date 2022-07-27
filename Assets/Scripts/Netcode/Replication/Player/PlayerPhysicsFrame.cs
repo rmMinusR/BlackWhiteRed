@@ -15,12 +15,25 @@ public struct PlayerPhysicsFrame : INetworkSerializable
     public float   time;
 
     public uint id; //Ensure time-adjustment parity
-    public Mode mode;
+    public Type type;
 
-    //Additional player-specific vars
-    public Vector2 look; //Almost always trusted
-    public Vector2 inputMove; //Raw input, always trusted
-    public bool inputJump; //Raw input, always trusted
+    //Look is similar to input, but never rejected by validation. Can be overwritten by Teleport, and can indicate aimbotting.
+    [SerializeField] private Vector2 _look;
+    public Vector2 look {
+        get => _look;
+        set
+        {
+            _look = value;
+            __lookTrigDirty = true;
+        }
+    }
+
+    [Serializable] public struct Input : INetworkSerializeByMemcpy
+    {
+        public Vector2 move; //Raw input, trusted if length < 1
+        public bool jump; //Raw input, always trusted
+    }
+    public Input input;
 
     //Derivative state data. Never trust player copy.
     public bool isGrounded;
@@ -28,7 +41,7 @@ public struct PlayerPhysicsFrame : INetworkSerializable
     public float timeCanNextJump;
 
     [Flags]
-    public enum Mode
+    public enum Type
     {
         NormalMove,
         Teleport,
@@ -36,29 +49,28 @@ public struct PlayerPhysicsFrame : INetworkSerializable
         Default = NormalMove
     }
 
-    public static bool DoCollisionTest(Mode m)
+    public static bool DoCollisionTest(Type m)
     {
-        return m != Mode.Teleport;
+        return m != Type.Teleport;
     }
 
     #region Cached expensive math
 
-    private float __lastLookX;
+    private bool __lookTrigDirty;
     private float __sinLookX;
     private float __cosLookX;
-    private bool __ShouldRefreshLookTrig => __lastLookX != look.x || (__lastLookX == 0 && __sinLookX == 0 && __cosLookX == 0);
     public void RefreshLookTrig()
     {
-        __lastLookX = look.x;
         __sinLookX = Mathf.Sin(look.x * Mathf.Deg2Rad);
         __cosLookX = Mathf.Cos(look.x * Mathf.Deg2Rad);
+        __lookTrigDirty = false;
     }
 
     internal Vector3 Right
     {
         get
         {
-            if (__ShouldRefreshLookTrig) RefreshLookTrig();
+            if (__lookTrigDirty) RefreshLookTrig();
             return new Vector3(__cosLookX, 0, -__sinLookX);
         }
     }
@@ -67,7 +79,7 @@ public struct PlayerPhysicsFrame : INetworkSerializable
     {
         get
         {
-            if (__ShouldRefreshLookTrig) RefreshLookTrig();
+            if (__lookTrigDirty) RefreshLookTrig();
             return new Vector3(__sinLookX, 0, __cosLookX);
         }
     }
@@ -81,10 +93,13 @@ public struct PlayerPhysicsFrame : INetworkSerializable
         serializer.SerializeValue(ref time);
 
         serializer.SerializeValue(ref id);
-        serializer.SerializeValue(ref mode);
+        serializer.SerializeValue(ref type);
 
-        serializer.SerializeValue(ref look);
-        serializer.SerializeValue(ref inputMove);
-        serializer.SerializeValue(ref inputJump);
+        serializer.SerializeValue(ref input);
+        
+        //Special logic to detect changes to look and recalc trig.
+        Vector2 prevLookVal = look;
+        serializer.SerializeValue(ref _look);
+        __lookTrigDirty |= (look != prevLookVal);
     }
 }
