@@ -1,0 +1,74 @@
+{
+    "name": "PlayerFightingInput",
+    "maps": [
+        {
+            "name": "Combat",
+            "id": "e3892684-5ca3-49ed-b229-3c04b2b5a8eb",
+            "actions": [
+                {
+                    "name": "Melee",
+                    "type": "Button",
+                    "id": "24908566-249b-4053-b1d8-f4e887d49637",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Bow Charge",
+                    "type": "Button",
+                    "id": "46970701-1c05-4fbe-a627-eb172070e858",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Change Weapon",
+                    "type": "Value",
+                    "id": "8ba1ab2b-800d-44c1-ace9-2d41da9f76f2",
+                    "expectedControlType": "Axis",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "7aad4454-0964-47fa-bc55-e9830d170c24",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Melee",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e9d37a3b-c93c-4531-a1ea-2518752e61b5",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Bow Charge",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ba89c332-4f63-4ed0-bcf0-5d4bbdb8f904",
+                    "path": "<Mouse>/scroll/y",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Change Weapon",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

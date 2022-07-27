@@ -8,23 +8,49 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkObject))]
 public class NetHeartbeat : NetworkBehaviour
 {
+    #region Pseudo-singleton
+
+    public static NetHeartbeat Self => NetHeartbeat.Of(NetworkManager.Singleton.LocalClientId);
+    public static bool IsConnected => __Instances.TryGetValue(NetworkManager.Singleton.LocalClientId, out NetHeartbeat i) ? i.IsSpawned : false;
+
+    private static Dictionary<ulong, NetHeartbeat> __Instances = new Dictionary<ulong, NetHeartbeat>();
+    public static NetHeartbeat Of(ulong playerID) => __Instances.TryGetValue(playerID, out NetHeartbeat i) ? i : throw new IndexOutOfRangeException();
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-        
-        if (IsOwner) heartbeatPingWorker = StartCoroutine(HeartbeatPingWorker());
+
+        if (!__Instances.TryAdd(OwnerClientId, this)) Debug.LogError("NetHeartbeat already registered for player "+OwnerClientId+"!");
+
+        if (IsLocalPlayer)
+        {
+            heartbeatWorker = StartCoroutine(HeartbeatWorker());
+        }
     }
 
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
 
-        if (heartbeatPingWorker != null)
+        if (!__Instances.Remove(OwnerClientId)) Debug.LogError("NetHeartbeat already unregistered for player "+OwnerClientId+"!");
+
+        if (heartbeatWorker != null)
         {
-            StopCoroutine(heartbeatPingWorker);
-            heartbeatPingWorker = null;
+            StopCoroutine(heartbeatWorker);
+            heartbeatWorker = null;
         }
     }
+
+    #endregion
+
+    [SerializeField] [Range(2, 20)]
+    private float heartbeatsPerSecond = 10;
+
+    [SerializeField] [Min(1)] [Tooltip("How many pings should we use to find the average? Set to 1 to always use the most recent ping (not recommended.")]
+    private int rttAverageCount = 30;
+
+    [SerializeField] [Min(0.2f)] [Tooltip("How long until a ping should be considered failed? Measured in seconds.")]
+    private double pingTimeout = 10;
 
     [Serializable]
     protected struct CompletePing
@@ -32,7 +58,7 @@ public class NetHeartbeat : NetworkBehaviour
         public int id;
         public double sendTime;
         public double recieveTime;
-        public double rtt;
+        public float rtt;
     }
 
     [Serializable]
@@ -42,65 +68,76 @@ public class NetHeartbeat : NetworkBehaviour
         public double sendTime;
     }
 
-    [SerializeField] [Range(2, 20)] public float heartbeatsPerSecond = 10;
-    [SerializeField] [Min(1)] public int rttHistory = 30;
-
     [SerializeField] protected List<CompletePing> pastPings = new List<CompletePing>(); // TODO Queue would be more efficient, but List shows in Inspector
     [SerializeField] protected List<OutgoingPing> travelingPings = new List<OutgoingPing>();
 
-    [SerializeField] private Coroutine heartbeatPingWorker;
-    private IEnumerator HeartbeatPingWorker()
+    public float SmoothedRTT => _smoothedRtt.Value;
+    [InspectorReadOnly] [SerializeField] protected NetworkVariable<float> _smoothedRtt = new NetworkVariable<float>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
+    public float Jitter => _jitter.Value;
+    [InspectorReadOnly] [SerializeField] protected NetworkVariable<float> _jitter      = new NetworkVariable<float>(readPerm: NetworkVariableReadPermission.Everyone, writePerm: NetworkVariableWritePermission.Owner);
+
+    private Coroutine heartbeatWorker;
+    private IEnumerator HeartbeatWorker()
     {
-        // FIXME heartbeat might not keep connection alive in dedicated server mode
         while (true)
         {
-            SendHeartbeatPing();
+            SendHeartbeat();
+            
+            //Remove timed-out pings
+            travelingPings.RemoveAll(p => p.sendTime + pingTimeout < Time.realtimeSinceStartupAsDouble);
 
             yield return new WaitForSecondsRealtime(1/heartbeatsPerSecond);
         }
     }
 
     protected readonly static System.Random pingRNG = new System.Random();
-    protected virtual void SendHeartbeatPing()
+    protected virtual void SendHeartbeat()
     {
         OutgoingPing ping = new OutgoingPing { id = pingRNG.Next(), sendTime = Time.realtimeSinceStartupAsDouble };
         travelingPings.Add(ping);
 
-        ServerRpcParams p = new ServerRpcParams();
-        p.Receive.SenderClientId = NetworkManager.Singleton.LocalClientId;
-
-        Ping_ServerRpc(ping.id, p);
+        Heartbeat_ServerRpc(ping.id);
     }
 
     [ServerRpc(Delivery = RpcDelivery.Unreliable, RequireOwnership = false)]
-    protected virtual void Ping_ServerRpc(int id, ServerRpcParams src)
+    protected virtual void Heartbeat_ServerRpc(int pingID, ServerRpcParams src = default)
     {
-        ClientRpcParams dst = new ClientRpcParams();
-        dst.Send.TargetClientIds = ClientIDCache.Narrowcast(src.Receive.SenderClientId); // Alloc-free version of new ulong[] { src.Receive.SenderClientId };
-
-        Pong_ClientRpc(id, dst);
+        HeartbeatResponse_ClientRpc(pingID, src.ReturnToSender()); //TODO replace with match timer
     }
 
     [ClientRpc(Delivery = RpcDelivery.Unreliable)]
-    protected virtual void Pong_ClientRpc(int id, ClientRpcParams src)
+    protected virtual void HeartbeatResponse_ClientRpc(int id, ClientRpcParams src = default)
     {
         IEnumerable<OutgoingPing> query = travelingPings.Where(d => d.id == id);
         if(query.Any())
         {
+            //Retrieve record and calculate RTT
             OutgoingPing received = query.First();
             travelingPings.Remove(received);
-
+            
             CompletePing complete = new CompletePing()
             {
                 id          = received.id,
                 sendTime    = received.sendTime,
                 recieveTime = Time.realtimeSinceStartupAsDouble,
             };
-            complete.rtt = complete.recieveTime-complete.sendTime;
+            complete.rtt = (float) (complete.recieveTime-complete.sendTime);
 
             pastPings.Add(complete);
-            while (pastPings.Count > rttHistory) pastPings.RemoveAt(0);
+            pastPings.RemoveRange(0, Mathf.Max(0, pastPings.Count-rttAverageCount));
+
+            RecalcAvgRTT();
         }
         else Debug.LogWarning("PING packet recieved twice: " + id);
+    }
+
+    protected void RecalcAvgRTT()
+    {
+        //Calculate average
+        _smoothedRtt.Value = pastPings.Average(c => (float)c.rtt);
+
+        //Calculate jitter as standard deviation
+        static float sq(float v) => v*v;
+        _jitter.Value = Mathf.Sqrt(pastPings.Sum(x => sq(x.rtt-_smoothedRtt.Value)) / pastPings.Count);
     }
 }
