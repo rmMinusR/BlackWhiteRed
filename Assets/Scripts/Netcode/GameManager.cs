@@ -188,18 +188,16 @@ public class GameManager : MonoBehaviour
 
     private void HandleSceneLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
-        Debug.Log("HandleSceneLoadEventCompleted " + sceneName);
+        Debug.LogWarning("HandleSceneLoadEventCompleted " + sceneName);
 
         if (NetworkManager.Singleton.IsHost)
         {
             switch (sceneName)
             {
                 case SceneNamePlayers:
-                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
                     NetworkManager.Singleton.SceneManager.LoadScene(SceneNameLevelDesign, LoadSceneMode.Additive);
                     break;
                 case SceneNameLevelDesign:
-                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
                     NetworkManager.Singleton.SceneManager.LoadScene(SceneNameEnvironmentArt, LoadSceneMode.Additive);
                     break;
                 case SceneNameEnvironmentArt:
@@ -211,6 +209,8 @@ public class GameManager : MonoBehaviour
 
     private void HandleSceneLoadCompleted(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
     {
+        Debug.LogWarning("HandleSceneLoadCompleted " + sceneName);
+
         if (!NetworkManager.Singleton.IsHost)
         {
             switch (sceneName)
@@ -220,8 +220,15 @@ public class GameManager : MonoBehaviour
                     //NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
                     break;
                 case SceneNameEnvironmentArt:
-                    AsyncOperation oper = SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
-                    oper.completed += HandleUnloadEnded;
+                    if (SceneManager.GetActiveScene().name != SceneNamePlayers)
+                    {
+                        AsyncOperation oper = SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
+                        oper.completed += HandleUnloadEnded;
+                    }
+                    else
+                    {
+                        StartCoroutine(ReadyUp());
+                    }
                     break;
             }
         }
