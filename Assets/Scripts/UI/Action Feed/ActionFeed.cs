@@ -20,18 +20,19 @@ public sealed class ActionFeed : MonoBehaviour
     internal RectTransform ContentRoot => contentRoot;
     [SerializeField] private List<ActionFeedEntry> entries;
 
-    //private int? __maxDisplayCount = null;
+    private (float, int) __maxDisplay; //Flyweight
     private int MaxDisplayCount
     {
         get
         {
-            //if (__maxDisplayCount.HasValue) return __maxDisplayCount.Value;
+            float ownHeight = ((RectTransform)transform).rect.height;
+            if (__maxDisplay.Item1 == ownHeight) return __maxDisplay.Item2;
 
-            float availableHeight = ((RectTransform)transform).rect.height + layout.padding.top + layout.padding.bottom;
+            float availableHeight = ownHeight + layout.padding.top + layout.padding.bottom;
             float heightPerEntry = layout.spacing + ((RectTransform)entryPrefab.transform).rect.height;
             int c = (int)( (availableHeight+layout.spacing) / heightPerEntry );
 
-            //__maxDisplayCount = c;
+            __maxDisplay = (ownHeight, c);
             return c;
         }
     }
