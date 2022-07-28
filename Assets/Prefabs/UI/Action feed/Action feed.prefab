@@ -52,6 +52,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   entryPrefab: {fileID: 3400053498430647678, guid: ff5c92292dd94644da494604916a7cae, type: 3}
   contentRoot: {fileID: 3692851150469332480}
+  layout: {fileID: 3692851150469332481}
   entries: []
 --- !u!114 &3692851150469332481
 MonoBehaviour:

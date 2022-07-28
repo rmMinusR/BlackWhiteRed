@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public sealed class ActionFeedEntry : MonoBehaviour
 {
@@ -9,15 +10,36 @@ public sealed class ActionFeedEntry : MonoBehaviour
     [SerializeField] private NameDisplayPlate namePrefab;
 
     [Header("Content")]
-    [SerializeField] private Transform contentRoot;
-    [SerializeField] [InspectorReadOnly] private ActionFeed feed;
+    [SerializeField] private RectTransform contentRoot;
     [SerializeField] private GameObject background;
+    [SerializeField] [InspectorReadOnly] private ActionFeed feed;
+    [SerializeField] [InspectorReadOnly] private List<GameObject> content;
 
+    [Space]
+    [SerializeField] [InspectorReadOnly] private float timeToLive;
 
-    internal void StartBuilding(ActionFeed feed)
+    internal void StartBuilding(ActionFeed feed, float timeToLive)
     {
         this.feed = feed;
         Background(false);
+        this.timeToLive = timeToLive;
+        PrettyOpen();
+    }
+
+    private IEnumerator Start()
+    {
+        //Functions similar to .Build in typical Builder pattern
+
+        //First, refresh contents
+        foreach (GameObject o in content) LayoutRebuilder.MarkLayoutForRebuild((RectTransform)o.transform);
+        yield return null;
+
+        //Then refresh self once content dimensions are known
+        LayoutRebuilder.MarkLayoutForRebuild(contentRoot);
+        yield return null;
+
+        //Then refresh parent once own dimensions are known
+        LayoutRebuilder.MarkLayoutForRebuild(feed.ContentRoot);
     }
 
     public ActionFeedEntry WithIcon(Sprite icon)
@@ -41,6 +63,12 @@ public sealed class ActionFeedEntry : MonoBehaviour
         background.SetActive(enable);
 
         return this;
+    }
+
+    private void Update()
+    {
+        timeToLive -= Time.deltaTime;
+        if (timeToLive < 0) PrettyClose();
     }
 
     private void OnDestroy()
