@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public sealed class ActionFeedIcon : MonoBehaviour
+public sealed class NotificationIconElement : MonoBehaviour
 {
     public Image icon;
 }

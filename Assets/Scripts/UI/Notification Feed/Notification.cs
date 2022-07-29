@@ -3,22 +3,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public sealed class ActionFeedEntry : MonoBehaviour
+public sealed class Notification : MonoBehaviour
 {
     [Header("Content prefabs")]
-    [SerializeField] private ActionFeedIcon iconPrefab;
+    [SerializeField] private NotificationIconElement iconPrefab;
     [SerializeField] private NameDisplayPlate namePrefab;
 
     [Header("Content")]
     [SerializeField] private RectTransform contentRoot;
     [SerializeField] private GameObject background;
-    [SerializeField] [InspectorReadOnly] private ActionFeed feed;
+    [SerializeField] [InspectorReadOnly] private NotificationFeed feed;
     [SerializeField] [InspectorReadOnly] private List<GameObject> content;
 
     [Space]
     [SerializeField] [InspectorReadOnly] private float timeToLive;
 
-    internal void StartBuilding(ActionFeed feed, float timeToLive)
+    internal void StartBuilding(NotificationFeed feed, float timeToLive)
     {
         this.feed = feed;
         Background(false);
@@ -42,15 +42,15 @@ public sealed class ActionFeedEntry : MonoBehaviour
         LayoutRebuilder.MarkLayoutForRebuild(feed.ContentRoot);
     }
 
-    public ActionFeedEntry WithIcon(Sprite icon)
+    public Notification WithIcon(Sprite icon)
     {
-        ActionFeedIcon i = Instantiate(iconPrefab.gameObject, contentRoot).GetComponent<ActionFeedIcon>();
+        NotificationIconElement i = Instantiate(iconPrefab.gameObject, contentRoot).GetComponent<NotificationIconElement>();
         i.icon.sprite = icon;
 
         return this;
     }
 
-    public ActionFeedEntry WithPlayer(PlayerController player)
+    public Notification WithPlayer(PlayerController player)
     {
         NameDisplayPlate n = Instantiate(namePrefab.gameObject, contentRoot).GetComponent<NameDisplayPlate>();
         n.Write(player);
@@ -58,7 +58,7 @@ public sealed class ActionFeedEntry : MonoBehaviour
         return this;
     }
 
-    public ActionFeedEntry Background(bool enable)
+    public Notification Background(bool enable)
     {
         background.SetActive(enable);
 

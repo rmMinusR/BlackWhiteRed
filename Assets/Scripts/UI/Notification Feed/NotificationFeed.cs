@@ -5,20 +5,20 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public sealed class ActionFeed : MonoBehaviour
+public sealed class NotificationFeed : MonoBehaviour
 {
     [TestButton("Test kill message", nameof(__TestKillMessage), isActiveAtRuntime = true, isActiveInEditor = false, order = 100)]
     [TestButton("Spam kill message", nameof(__SpamKillMessage), isActiveAtRuntime = true, isActiveInEditor = false, order = 101)]
     [TestButton("Test close"       , nameof(__TestClose      ), isActiveAtRuntime = true, isActiveInEditor = false, order = 200)]
     [TestButton("Test close all"   , nameof(__TestClear      ), isActiveAtRuntime = true, isActiveInEditor = false, order = 202)]
-    [SerializeField] private ActionFeedEntry entryPrefab;
+    [SerializeField] private Notification entryPrefab;
 
     [Space]
     [SerializeField] [Min(0.5f)] private float entryDisplayTime = 2.5f;
     [SerializeField] private RectTransform contentRoot;
     [SerializeField] private VerticalLayoutGroup layout;
     internal RectTransform ContentRoot => contentRoot;
-    [SerializeField] private List<ActionFeedEntry> entries;
+    [SerializeField] private List<Notification> entries;
 
     private (float, int) __maxDisplay; //Flyweight
     private int MaxDisplayCount
@@ -66,11 +66,11 @@ public sealed class ActionFeed : MonoBehaviour
 
     #endregion
 
-    public ActionFeedEntry Add()
+    public Notification Add()
     {
         //OverflowCheck();
 
-        ActionFeedEntry e = Instantiate(entryPrefab.gameObject, contentRoot).GetComponent<ActionFeedEntry>();
+        Notification e = Instantiate(entryPrefab.gameObject, contentRoot).GetComponent<Notification>();
         e.StartBuilding(this, entryDisplayTime);
         entries.Add(e);
         return e;
@@ -84,17 +84,17 @@ public sealed class ActionFeed : MonoBehaviour
         for (int i = 0; i < toRemove; ++i) entries[i].PrettyClose();
     }
 
-    internal void Remove(ActionFeedEntry e) => entries.Remove(e);
+    internal void Remove(Notification e) => entries.Remove(e);
 
     public void Clear(bool pretty)
     {
         if (pretty)
         {
-            foreach (ActionFeedEntry e in entries) e.PrettyClose();
+            foreach (Notification e in entries) e.PrettyClose();
         }
         else
         {
-            foreach (ActionFeedEntry e in entries) Destroy(e.gameObject);
+            foreach (Notification e in entries) Destroy(e.gameObject);
             entries.Clear();
         }
     }
