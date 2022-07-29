@@ -91,7 +91,7 @@ public class HealthBarController : MonoBehaviour
         SetUpHealthDisplay();
     }
 
-    private void HandleHealthChange(int _value)
+    private void HandleHealthChange(int _value, DamageSource _, PlayerController _2)
     {
         currentHealth = _value;
         UpdateHealthDisplay();

@@ -7,11 +7,6 @@ using UnityEngine.UI;
 
 public sealed class NotificationFeed : NetworkBehaviour
 {
-    [TestButton("Test kill message"  , nameof(__TestKillMessage  ), isActiveAtRuntime = true, isActiveInEditor = false, order = 100)]
-    [TestButton("Spam kill message"  , nameof(__SpamKillMessage  ), isActiveAtRuntime = true, isActiveInEditor = false, order = 101)]
-    [TestButton("Test scored message", nameof(__TestScoredMessage), isActiveAtRuntime = true, isActiveInEditor = false, order = 120)]
-    [TestButton("Test close"         , nameof(__TestClose        ), isActiveAtRuntime = true, isActiveInEditor = false, order = 200)]
-    [TestButton("Test close all"     , nameof(__TestClear        ), isActiveAtRuntime = true, isActiveInEditor = false, order = 202)]
     [SerializeField] private Notification entryPrefab;
 
     [Space]
@@ -38,37 +33,14 @@ public sealed class NotificationFeed : NetworkBehaviour
         }
     }
 
-    #region TESTING ONLY
-
-    [Header("TESTING")]
-    [SerializeField] private PlayerController testKiller;
-    [SerializeField] private PlayerController testKilled;
-    [SerializeField] private KillSource testKillSource;
-    private void __TestKillMessage() => ShowDeathMessage(testKiller, testKilled, testKillSource);
-    private void __SpamKillMessage() { for (int i = 0; i < 5; ++i) __TestKillMessage(); }
-    private void __TestScoredMessage() => ShowScoredMessage(testKiller);
-
-    private void __TestClose() => entries[0].PrettyClose();
-    private void __TestClear() => Clear(true);
-
-    #endregion
-
     #region Notification type definitions
 
     [Header("Icons")]
     [SerializeField] private Sprite swordKillIcon;
     [SerializeField] private Sprite   bowKillIcon;
     [SerializeField] private Sprite   fellOffIcon;
+    [SerializeField] private Sprite explosionIcon;
     [SerializeField] private Sprite    scoredIcon;
-
-    [Flags]
-    public enum KillSource
-    {
-        Sword = (1 << 0),
-        Bow   = (1 << 1),
-
-        FellOff = (1 << 8)
-    }
 
     //Helpers
     private void EnsureHasSpawnPermission()
@@ -83,14 +55,14 @@ public sealed class NotificationFeed : NetworkBehaviour
 
     #region Death message
 
-    public void ShowDeathMessage(PlayerController killer, PlayerController killed, KillSource killSource)
+    public void BroadcastDeathMessage(PlayerController killer, PlayerController killed, DamageSource killSource)
     {
         EnsureHasSpawnPermission();
         DONOTCALL_ShowDeathMessage_ClientRpc(TxPlayer(killer, require: false), TxPlayer(killed), killSource); //Broadcast to all
     }
 
     [ClientRpc]
-    private void DONOTCALL_ShowDeathMessage_ClientRpc(ulong killerID, ulong killedID, KillSource killSource, ClientRpcParams p = default)
+    private void DONOTCALL_ShowDeathMessage_ClientRpc(ulong killerID, ulong killedID, DamageSource killSource, ClientRpcParams p = default)
     {
         PlayerController killer = RxPlayer(killerID, require: false);
         PlayerController killed = RxPlayer(killedID);
@@ -99,9 +71,10 @@ public sealed class NotificationFeed : NetworkBehaviour
         if (killer != null) notif.WithPlayer(killer);
 
         //Write relevant icons
-        if (killSource.HasFlag(KillSource.Sword  )) notif.WithIcon(swordKillIcon);
-        if (killSource.HasFlag(KillSource.Bow    )) notif.WithIcon(  bowKillIcon);
-        if (killSource.HasFlag(KillSource.FellOff)) notif.WithIcon(  fellOffIcon);
+        if (killSource.HasFlag(DamageSource.SWORD    )) notif.WithIcon(swordKillIcon);
+        if (killSource.HasFlag(DamageSource.ARROW    )) notif.WithIcon(  bowKillIcon);
+        if (killSource.HasFlag(DamageSource.ABYSS    )) notif.WithIcon(  fellOffIcon);
+        if (killSource.HasFlag(DamageSource.EXPLOSION)) notif.WithIcon(explosionIcon);
 
         notif.WithPlayer(killed);
     }
@@ -110,7 +83,7 @@ public sealed class NotificationFeed : NetworkBehaviour
 
     #region Scored message
 
-    public void ShowScoredMessage(PlayerController whoScored)
+    public void BroadcastScoredMessage(PlayerController whoScored)
     {
         EnsureHasSpawnPermission();
         DONOTCALL_ShowScoredMessage_ClientRpc(TxPlayer(whoScored)); //Broadcast to all
@@ -131,6 +104,7 @@ public sealed class NotificationFeed : NetworkBehaviour
 
     #endregion
 
+    #region Builders/helpers
 
     private Notification Add() //Would be public, but we need to make sure Notifications are only spawned through the Show commands
     {
@@ -163,5 +137,24 @@ public sealed class NotificationFeed : NetworkBehaviour
             foreach (Notification e in entries) Destroy(e.gameObject);
             entries.Clear();
         }
+    }
+
+    #endregion
+
+    public static NotificationFeed Instance { get; private set; }
+
+    private void OnEnable()
+    {
+        Instance = this;
+
+        MatchManager.serverside_onScore -= BroadcastScoredMessage;
+        MatchManager.serverside_onScore += BroadcastScoredMessage;
+    }
+
+    private void OnDisable()
+    {
+        Instance = null;
+
+        MatchManager.serverside_onScore -= BroadcastScoredMessage;
     }
 }

@@ -4,13 +4,16 @@ using UnityEngine;
 using Unity.Netcode;
 using System;
 
+[Flags]
 public enum DamageSource
 {
-    INVALID = -1,
-    SWORD,
-    ARROW,
-    EXPLOSION,
-    ABYSS
+    INVALID = 0,
+
+    SWORD     = 1 << 0,
+    ARROW     = 1 << 1,
+
+    ABYSS     = 1 << 8,
+    EXPLOSION = 1 << 9
 }
 
 public class PlayerHealth : NetworkBehaviour
@@ -23,11 +26,9 @@ public class PlayerHealth : NetworkBehaviour
 
     private NetworkVariable<int> health = new NetworkVariable<int>(MAX_HEALTH, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
-    public delegate void TriggerEvent();
-    public event TriggerEvent onPlayerDeath;
-
-    public delegate void IntEvent(int _value);
-    public event IntEvent onHealthChange;
+    public event Action<     DamageSource, PlayerController> onPlayerDeath;
+    
+    public event Action<int, DamageSource, PlayerController> onHealthChange;
 
     void Start()
     {
@@ -69,19 +70,19 @@ public class PlayerHealth : NetworkBehaviour
         //Account for armor lessening damage
         int damage = Mathf.CeilToInt(attackDamage * (1 - PERCENTAGE_PROTECTION * playerController.CurrentStats.armorStrength));
 
-        TakeDamageFlat(damage);
+        TakeDamageFlat(damage, damageSource, attacker);
     }
 
-    private void TakeDamageFlat(int damage)
+    private void TakeDamageFlat(int damage, DamageSource damageSource = DamageSource.INVALID, PlayerController attacker = null)
     {
         health.Value = Mathf.Max(health.Value - damage,0);
         health.SetDirty(true);
 
-        onHealthChange?.Invoke(health.Value);
+        onHealthChange?.Invoke(health.Value, damageSource, attacker);
 
         if (health.Value == 0)
         {
-            onPlayerDeath?.Invoke();
+            onPlayerDeath?.Invoke(damageSource, attacker);
             playerController.ResetToSpawnPoint();
             HandleTeamScore(Team.INVALID);
         }
@@ -89,11 +90,12 @@ public class PlayerHealth : NetworkBehaviour
 
     private void OnHealthChange(int oldValue, int newValue)
     {
-        onHealthChange?.Invoke(newValue);
+        //RSC: Clientside - Can't easily access player who hit, so use null
+        onHealthChange?.Invoke(newValue, DamageSource.INVALID, null);
 
         if (newValue == 0)
         {
-            onPlayerDeath?.Invoke();
+            onPlayerDeath?.Invoke(DamageSource.INVALID, null);
             playerController.ResetToSpawnPoint();
             HandleTeamScore(Team.INVALID);
         }

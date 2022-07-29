@@ -555,11 +555,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3692851150469332480, guid: 6eefefe75449d62459ebeae2d08133b2, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: -20
       objectReference: {fileID: 0}
     - target: {fileID: 3692851150469332480, guid: 6eefefe75449d62459ebeae2d08133b2, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: -20
       objectReference: {fileID: 0}
     - target: {fileID: 3692851150469332480, guid: 6eefefe75449d62459ebeae2d08133b2, type: 3}
       propertyPath: m_LocalPosition.x
