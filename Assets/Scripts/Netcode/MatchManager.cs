@@ -27,7 +27,7 @@ public class MatchManager : NetworkBehaviour
     SpawnPointMarker[] spawnPoints;
 
     [Space]
-    [InspectorReadOnly]
+    [SerializeField]
     public PlayerController localPlayerController;
 
     public delegate void TriggerEvent();
@@ -141,7 +141,7 @@ public class MatchManager : NetworkBehaviour
     [ClientRpc(Delivery = RpcDelivery.Reliable)]
     private void OnMatchStartClientRpc()
     {
-        NetworkManager.Singleton.LocalClient.PlayerObject.TryGetComponent<PlayerController>(out localPlayerController);
+        localPlayerController = NetworkManager.Singleton.LocalClient.PlayerObject.GetComponent<PlayerController>();
         onMatchStart?.Invoke();
     }
 

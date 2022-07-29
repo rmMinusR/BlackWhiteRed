@@ -75,6 +75,9 @@ public class PlayerWeaponHolding : NetworkBehaviour
 
     private void HandleMatchStart()
     {
+        Debug.Log("PlayerWeaponHolding HandleMatchStart");
+
+
         isLocalPlayer = gameObject == NetworkManager.Singleton.LocalClient.PlayerObject.gameObject;
     }
 
@@ -92,8 +95,6 @@ public class PlayerWeaponHolding : NetworkBehaviour
             if(oldHolding != holding.Value)
             {
                 onWeaponChange?.Invoke(holding.Value);
-
-                //TODO: Get animator to change its parameters
             }
         }
     }

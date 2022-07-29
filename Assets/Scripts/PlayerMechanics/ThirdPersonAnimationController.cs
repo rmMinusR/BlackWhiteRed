@@ -1,0 +1,191 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using Unity.Netcode;
+using UnityEngine;
+
+[System.Serializable]
+public struct MaterialSetUp
+{
+    public SkinnedMeshRenderer skinnedMeshRenderer;
+    public MeshRenderer meshRenderer;
+    public int materialIndex;
+    public Material ifBlack;
+    public Material ifWhite;
+}
+
+public class ThirdPersonAnimationController : NetworkBehaviour
+{
+    [SerializeField]
+    List<MaterialSetUp> materialSetUps;
+    [Space]
+    [SerializeField]
+    PlayerController playerController;
+    [SerializeField]
+    CharacterKinematics characterKinematics;
+
+    Animator animator;
+
+    [SerializeField]
+    PlayerWeaponHolding playerWeaponHolding;
+    [SerializeField]
+    PlayerBow playerBow;
+    [SerializeField]
+    PlayerMelee playerMelee;
+    [SerializeField]
+    PlayerHealth playerHealth;
+
+    [SerializeField]
+    bool isOther;
+
+    void Start()
+    {
+        animator = GetComponent<Animator>();
+    }
+
+    private void OnEnable()
+    {
+        MatchManager.onMatchStart += HandleMatchStart;
+
+        if (playerWeaponHolding != null)
+        {
+            playerWeaponHolding.onWeaponChange += HandleWeaponChange;
+        }
+
+        if (playerMelee != null)
+        {
+            playerMelee.onSwing += HandleSwordSwing;
+        }
+
+        if (playerBow != null)
+        {
+            playerBow.onChargingChange += HandleBowCharging;
+        }
+
+        if (playerHealth != null)
+        {
+            playerHealth.onHealthChange += HandleHealthChange;
+        }
+    }
+
+    private void OnDisable()
+    {
+        MatchManager.onMatchStart -= HandleMatchStart;
+
+        if (playerWeaponHolding != null)
+        {
+            playerWeaponHolding.onWeaponChange -= HandleWeaponChange;
+        }
+
+        if (playerMelee != null)
+        {
+            playerMelee.onSwing -= HandleSwordSwing;
+        }
+
+        if (playerBow != null)
+        {
+            playerBow.onChargingChange -= HandleBowCharging;
+        }
+
+        if (playerHealth != null)
+        {
+            playerHealth.onHealthChange -= HandleHealthChange;
+        }
+    }
+
+    private void HandleBowCharging(bool _value)
+    {
+        if (!IsOwner)
+        {
+            return;
+        }
+
+        animator.SetBool("BowPull", _value);
+    }
+
+    private void HandleSwordSwing()
+    {
+        if(!IsOwner)
+        {
+            return;
+        }
+
+        animator.SetTrigger("SwordSwing");
+    }
+
+    private void HandleWeaponChange(WeaponHeld weaponHeld)
+    {
+        if (!IsOwner)
+        {
+            return;
+        }
+
+        animator.SetBool("Weapon", weaponHeld == WeaponHeld.BOW);
+    }
+
+    private void HandleMatchStart()
+    {
+        Debug.Log("ThirdPersonAnimationController HandleMatchStart");
+
+        SetMaterials();
+    }
+
+    private void HandleHealthChange(int _value)
+    {
+        animator.SetTrigger("Pain");
+    }
+
+    private void SetMaterials()
+    {
+        Team team = playerController.Team;
+
+        isOther = playerController != MatchManager.Instance.localPlayerController;
+
+        foreach(MaterialSetUp e in materialSetUps)
+        {
+            if (e.meshRenderer != null)
+            {
+                if (team == Team.BLACK)
+                {
+                    e.meshRenderer.materials[e.materialIndex] = e.ifBlack;
+                }
+                else
+                {
+                    e.meshRenderer.materials[e.materialIndex] = e.ifWhite;
+                }
+
+                e.meshRenderer.enabled = isOther;
+            }
+            else
+            {
+                if (team == Team.BLACK)
+                {
+                    e.skinnedMeshRenderer.materials[e.materialIndex] = e.ifBlack;
+                }
+                else
+                {
+                    e.skinnedMeshRenderer.materials[e.materialIndex] = e.ifWhite;
+                }
+
+                e.skinnedMeshRenderer.enabled = isOther;
+            }
+        }
+    }
+
+    private void Update()
+    {
+        animator.SetBool("IsGrounded", characterKinematics.frame.isGrounded);
+
+        if(characterKinematics.frame.input.jump)
+        {
+            animator.SetTrigger("Jump");
+        }
+
+        //TODO: Rotate player to work with look value
+
+        //TODO: Convert Velocity for Pos X to be facing forward
+
+        animator.SetFloat("VelocityX", characterKinematics.frame.velocity.x);
+        animator.SetFloat("VelocityZ", characterKinematics.frame.velocity.z);
+    }
+}

@@ -24,12 +24,6 @@ public class PlayerController : NetworkBehaviour
     float radiusCheck = 0.1f;
 
     [Space]
-    [Header("Debugging")]
-    [SerializeField]
-    Material blackDebug;
-    [SerializeField]
-    Material whiteDebug;
-
     [SerializeField]
     Vector3 spawnPos;
     [SerializeField]
@@ -52,23 +46,6 @@ public class PlayerController : NetworkBehaviour
         currentTeam = _team;
         spawnPos = _spawnPos;
         spawnLook = _spawnLook;
-
-        //For Debugging Purposes
-
-        foreach(MeshRenderer meshRenderer in GetComponentsInChildren<MeshRenderer>())
-        {
-            if (currentTeam == Team.BLACK)
-            {
-                meshRenderer.material = blackDebug;
-                shadeValue = 0;
-            }
-            else
-            {
-                meshRenderer.material = whiteDebug;
-                shadeValue = 6;
-            }
-        }
-        //End of "For Debugging Purposes"
     }
 
     private void OnEnable()
@@ -130,9 +107,10 @@ public class PlayerController : NetworkBehaviour
 
     public void ResetToSpawnPoint()
     {
-        Debug.Log(name +": Resetting Spawn Point " + (NetworkManager.Singleton.IsServer ? " (Client)" : " (Server)"));
-
-        teleportController.Teleport(spawnPos, Vector3.zero, spawnLook);
+        if (IsServer || IsHost)
+        {
+            teleportController.Teleport(spawnPos, Vector3.zero, spawnLook);
+        }
     }
 
     private void OnShadeValueChange()
