@@ -145,11 +145,11 @@ public class ThirdPersonAnimationController : NetworkBehaviour
             {
                 if (team == Team.BLACK)
                 {
-                    e.meshRenderer.materials[e.materialIndex] = e.ifBlack;
+                    e.meshRenderer.material = e.ifBlack;
                 }
                 else
                 {
-                    e.meshRenderer.materials[e.materialIndex] = e.ifWhite;
+                    e.meshRenderer.material = e.ifWhite;
                 }
 
                 e.meshRenderer.enabled = isOther;
@@ -158,11 +158,11 @@ public class ThirdPersonAnimationController : NetworkBehaviour
             {
                 if (team == Team.BLACK)
                 {
-                    e.skinnedMeshRenderer.materials[e.materialIndex] = e.ifBlack;
+                    e.skinnedMeshRenderer.material = e.ifBlack;
                 }
                 else
                 {
-                    e.skinnedMeshRenderer.materials[e.materialIndex] = e.ifWhite;
+                    e.skinnedMeshRenderer.material = e.ifWhite;
                 }
 
                 e.skinnedMeshRenderer.enabled = isOther;
