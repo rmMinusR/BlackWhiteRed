@@ -34,6 +34,7 @@ MonoBehaviour:
   playerBow: {fileID: -2340775154603896931}
   playerMelee: {fileID: 5978525050431701936}
   playerHealth: {fileID: -8610394602819512607}
+  isOther: 0
 --- !u!114 &8346532232828221507
 MonoBehaviour:
   m_ObjectHideFlags: 0

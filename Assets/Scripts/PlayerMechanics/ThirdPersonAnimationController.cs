@@ -125,8 +125,6 @@ public class ThirdPersonAnimationController : NetworkBehaviour
 
     private void HandleMatchStart()
     {
-        Debug.Log("ThirdPersonAnimationController HandleMatchStart");
-
         SetMaterials();
     }
 
@@ -181,11 +179,16 @@ public class ThirdPersonAnimationController : NetworkBehaviour
             animator.SetTrigger("Jump");
         }
 
-        //TODO: Rotate player to work with look value
+        //Rotate player to work with look value
+        Quaternion q = Quaternion.Euler(new Vector3(0, characterKinematics.frame.look.x, 0));
+        transform.rotation = q;
 
-        //TODO: Convert Velocity for Pos X to be facing forward
+        //TODO: Wait for the animation parameter for head turning
 
-        animator.SetFloat("VelocityX", characterKinematics.frame.velocity.x);
-        animator.SetFloat("VelocityZ", characterKinematics.frame.velocity.z);
+        //Convert Velocity for Pos Z to be facing forward
+        Vector3 vel = Quaternion.AngleAxis(-characterKinematics.frame.look.x, Vector3.up) * characterKinematics.frame.velocity;
+
+        animator.SetFloat("VelocityX", vel.x);
+        animator.SetFloat("VelocityZ", vel.z);
     }
 }
