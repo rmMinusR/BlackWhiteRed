@@ -188,21 +188,20 @@ public class GameManager : MonoBehaviour
 
     private void HandleSceneLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
     {
+        Debug.LogWarning("HandleSceneLoadEventCompleted " + sceneName);
+
         if (NetworkManager.Singleton.IsHost)
         {
             switch (sceneName)
             {
                 case SceneNamePlayers:
-                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
                     NetworkManager.Singleton.SceneManager.LoadScene(SceneNameLevelDesign, LoadSceneMode.Additive);
                     break;
                 case SceneNameLevelDesign:
-                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
                     NetworkManager.Singleton.SceneManager.LoadScene(SceneNameEnvironmentArt, LoadSceneMode.Additive);
                     break;
                 case SceneNameEnvironmentArt:
-                    Debug.Log("MATCH CAN START");
-                    MatchManager.Instance.LogAsReadyServerRpc(NetworkManager.Singleton.LocalClientId);
+                    StartCoroutine(ReadyUp());
                     break;
             }
         }
@@ -210,17 +209,26 @@ public class GameManager : MonoBehaviour
 
     private void HandleSceneLoadCompleted(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
     {
+        Debug.LogWarning("HandleSceneLoadCompleted " + sceneName);
+
         if (!NetworkManager.Singleton.IsHost)
         {
             switch (sceneName)
             {
                 case SceneNamePlayers:
                 case SceneNameLevelDesign:
-                    NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+                    //NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
                     break;
                 case SceneNameEnvironmentArt:
-                    AsyncOperation oper = SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
-                    oper.completed += HandleUnloadEnded;
+                    if (SceneManager.GetActiveScene().name != SceneNamePlayers)
+                    {
+                        AsyncOperation oper = SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
+                        oper.completed += HandleUnloadEnded;
+                    }
+                    else
+                    {
+                        StartCoroutine(ReadyUp());
+                    }
                     break;
             }
         }
@@ -228,9 +236,20 @@ public class GameManager : MonoBehaviour
 
     private void HandleUnloadEnded(AsyncOperation oper)
     {
+        StartCoroutine(ReadyUp());
+        oper.completed -= HandleUnloadEnded;
+    }
+
+    IEnumerator ReadyUp()
+    {
+        while(NetworkManager.Singleton.LocalClient.PlayerObject == null)
+        {
+            var delay = new WaitForSecondsRealtime(0.2f);
+            yield return delay;
+        }
+
         Debug.Log("MATCH CAN START");
         MatchManager.Instance.LogAsReadyServerRpc(NetworkManager.Singleton.LocalClientId);
-        oper.completed -= HandleUnloadEnded;
     }
 
     #endregion

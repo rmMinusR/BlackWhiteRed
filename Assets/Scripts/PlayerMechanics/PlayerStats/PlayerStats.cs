@@ -33,7 +33,7 @@ public class PlayerStats : ScriptableObject
     [SerializeField]
     public bool armedWithBow;
     [SerializeField]
-    public float damageMultiplier;
+    public float bowDamageMultiplier;
     [SerializeField]
     public float bowKnockbackMultiplier;
 }

@@ -16,7 +16,7 @@ MonoBehaviour:
   speedMultiplier: 2
   jumpMultiplier: 1
   damageDealt: 5
-  swordKnockbackMultiplier: 2
+  swordKnockbackMultiplier: 2.05
   armedWithBow: 0
   damageMultiplier: 0
   bowKnockbackMultiplier: 0
