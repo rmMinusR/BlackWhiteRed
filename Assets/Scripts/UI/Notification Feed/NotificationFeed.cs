@@ -95,7 +95,7 @@ public sealed class NotificationFeed : NetworkBehaviour
         PlayerController killer = RxPlayer(killerID, require: false);
         PlayerController killed = RxPlayer(killedID);
 
-        Notification notif = Add().Background(killerID == OwnerClientId);
+        Notification notif = Add().Background(killerID == NetworkManager.LocalClientId);
         if (killer != null) notif.WithPlayer(killer);
 
         //Write relevant icons
@@ -120,9 +120,9 @@ public sealed class NotificationFeed : NetworkBehaviour
     private void DONOTCALL_ShowScoredMessage_ClientRpc(ulong whoScoredID, ClientRpcParams p = default)
     {
         PlayerController whoScored = RxPlayer(whoScoredID);
-
+        
         Add()
-            .Background(whoScoredID == OwnerClientId)
+            .Background(whoScoredID == NetworkManager.LocalClientId)
             .WithPlayer(whoScored)
             .WithIcon(scoredIcon);
     }

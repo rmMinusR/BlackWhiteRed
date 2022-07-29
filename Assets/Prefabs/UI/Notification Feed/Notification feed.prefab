@@ -59,8 +59,8 @@ MonoBehaviour:
   testKiller: {fileID: 0}
   testKilled: {fileID: 0}
   testKillSource: 0
-  swordKillIcon: {fileID: 0}
-  bowKillIcon: {fileID: 0}
+  swordKillIcon: {fileID: 21300000, guid: d9dbeba56e2be9e4bbbbf0f5e2ffc7a6, type: 3}
+  bowKillIcon: {fileID: 21300000, guid: 452e6ed11730e04479556d42ac88e6b2, type: 3}
   fellOffIcon: {fileID: 0}
   scoredIcon: {fileID: 0}
 --- !u!114 &3692851150469332481
