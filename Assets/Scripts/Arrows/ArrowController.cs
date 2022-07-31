@@ -126,10 +126,15 @@ public class ArrowController : NetworkBehaviour
                 PlayerController playerController = hit.GetComponent<PlayerController>();
                 if (playerController.Team != team)
                 {
+                    //TODO: Knockback
+
+                    //Damage
                     playerController.GetComponent<PlayerHealth>().TakeDamage(
-                        rb.velocity.magnitude * damageMultiplier * kit.playerStats[shadeValue].bowDamageMultiplier, 
-                        DamageSource.ARROW, 
+                        rb.velocity.magnitude * damageMultiplier * kit.playerStats[shadeValue].bowDamageMultiplier,
+                        DamageSource.ARROW,
                         NetworkManager.Singleton.SpawnManager.SpawnedObjects[shooterId].GetComponent<PlayerController>());
+
+                    //Unload
                     ArrowPool.Instance.UnloadArrow(gameObject);
                 }
                 break;
