@@ -95,32 +95,47 @@ public class ThirdPersonAnimationController : NetworkBehaviour
 
     private void HandleBowCharging(bool _value)
     {
-        if (!IsOwner)
-        {
-            return;
-        }
+        //if (!IsOwner)
+        //{
+        //    return;
+        //}
 
         animator.SetBool("BowPull", _value);
+        SetAnimatorBoolServerRpc("BowPull", _value);
     }
 
     private void HandleSwordSwing()
     {
-        if(!IsOwner)
-        {
-            return;
-        }
+        //if (!IsOwner)
+        //{
+        //    return;
+        //}
 
         animator.SetTrigger("SwordSwing");
+        SetAnimatorTriggerServerRpc("SwordSwing");
     }
 
     private void HandleWeaponChange(WeaponHeld weaponHeld)
     {
-        if (!IsOwner)
-        {
-            return;
-        }
+        //if (!IsOwner)
+        //{
+        //    return;
+        //}
 
         animator.SetBool("Weapon", weaponHeld == WeaponHeld.BOW);
+        SetAnimatorBoolServerRpc("Weapon", weaponHeld == WeaponHeld.BOW);
+    }
+
+    [ServerRpc(Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
+    private void SetAnimatorBoolServerRpc(string tag, bool value)
+    {
+        animator.SetBool(tag, value);
+    }
+
+    [ServerRpc(Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
+    private void SetAnimatorTriggerServerRpc(string tag)
+    {
+        animator.SetTrigger(tag);
     }
 
     private void HandleMatchStart()
