@@ -16,6 +16,8 @@ public class ArrowController : NetworkBehaviour
     float minimumStartingVelocity;
     [SerializeField]
     float maximumStartingVelocity;
+    [SerializeField]
+    float damageMultiplier = 0.1f;
 
     [SerializeField]
     [Min(10)]
@@ -125,7 +127,7 @@ public class ArrowController : NetworkBehaviour
                 if (playerController.Team != team)
                 {
                     playerController.GetComponent<PlayerHealth>().TakeDamage(
-                        rb.velocity.magnitude * kit.playerStats[shadeValue].bowDamageMultiplier, 
+                        rb.velocity.magnitude * damageMultiplier * kit.playerStats[shadeValue].bowDamageMultiplier, 
                         DamageSource.ARROW, 
                         NetworkManager.Singleton.SpawnManager.SpawnedObjects[shooterId].GetComponent<PlayerController>());
                     ArrowPool.Instance.UnloadArrow(gameObject);

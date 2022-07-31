@@ -55,6 +55,7 @@ MonoBehaviour:
     m_Bits: 577
   minimumStartingVelocity: 6
   maximumStartingVelocity: 60.5
+  damageMultiplier: 0.08264463
   timeBeforeDespawn: 16
   timeBeforeDespawnOnceLanded: 2
   rb: {fileID: 3055371873543667270}
