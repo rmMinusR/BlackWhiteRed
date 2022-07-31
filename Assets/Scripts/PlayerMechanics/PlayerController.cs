@@ -32,8 +32,7 @@ public class PlayerController : NetworkBehaviour
     [SerializeField]
     TeleportController teleportController;
 
-    [SerializeField]
-    NetworkVariable<FixedString128Bytes> playerTag = new NetworkVariable<FixedString128Bytes>("Shade", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    public NetworkVariable<FixedString128Bytes> playerTag = new NetworkVariable<FixedString128Bytes>("Shade", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     public delegate void PlayerStatsEvent(PlayerStats _value);
     public event PlayerStatsEvent onShadeChange;
