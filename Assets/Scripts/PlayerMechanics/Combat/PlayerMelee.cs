@@ -103,12 +103,14 @@ public class PlayerMelee : NetworkBehaviour
     private void MeleeCheckServerRpc(Vector3 directionFacing, float castDistance, ulong playerHitId)
     {
         PlayerHealth playerHit = NetworkManager.Singleton.SpawnManager.SpawnedObjects[playerHitId].GetComponent<PlayerHealth>();
+        PlayerKnockbackController playerKnockback = playerHit.GetComponent<PlayerKnockbackController>();
 
         //Verify the hit was not blocked by something server-side
         if (!Physics.Raycast(new Ray(transform.position, directionFacing), castDistance, groundLayer))
         {
             Debug.Log("Melee hits server-side!");
-            playerHit.TakeDamage((int)playerController.CurrentStats.damageDealt,DamageSource.SWORD,playerController);
+            playerKnockback.KnockbackPlayer(directionFacing, playerController.CurrentStats.swordKnockbackMultiplier);
+            playerHit.TakeDamage(playerController.CurrentStats.damageDealt,DamageSource.SWORD,playerController);
         }
     }
 

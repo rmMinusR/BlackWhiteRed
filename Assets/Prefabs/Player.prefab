@@ -150,9 +150,10 @@ GameObject:
   - component: {fileID: -3852071104688765420}
   - component: {fileID: 4052683045127445090}
   - component: {fileID: -8610394602819512607}
+  - component: {fileID: 7795655312826885053}
+  - component: {fileID: 1917337575216211240}
   - component: {fileID: 5978525050431701936}
   - component: {fileID: -2340775154603896931}
-  - component: {fileID: 1917337575216211240}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -246,6 +247,7 @@ MonoBehaviour:
   teleportPos: {x: 0, y: 1, z: 0}
   teleportVel: {x: 0, y: 0, z: 0}
   teleportLook: {x: 0, y: 0}
+  pending: 0
 --- !u!114 &455297323731713935
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -356,6 +358,38 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3b2834a56fe7264595309764340e090, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &7795655312826885053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a25246fa2884c546a292501640898c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  baseVerticalKnockback: 1
+  baseHorizontalKnockbackOnLand: 1
+  baseHorizontalKnockbackInAir: 2
+--- !u!114 &1917337575216211240
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9b3d1e087c8ad445a06fa7e96949a5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scrollThreshold: 600
+  scrollResetTime: 0.5
+  isLocalPlayer: 0
+  holding:
+    m_InternalValue: 0
 --- !u!114 &5978525050431701936
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -391,23 +425,6 @@ MonoBehaviour:
   timeToFullyCharge: 1
   timeCharging: 0
   wantsToCharge: 0
---- !u!114 &1917337575216211240
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2931471489676092143}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9b3d1e087c8ad445a06fa7e96949a5c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  scrollThreshold: 600
-  scrollResetTime: 0.5
-  isLocalPlayer: 0
-  holding:
-    m_InternalValue: 0
 --- !u!1 &2931471490281750658
 GameObject:
   m_ObjectHideFlags: 0
@@ -767,9 +784,14 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d0fbd693b34a734469fe999bcbbe29cf, type: 3}
---- !u!1 &2749717988701817576 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6951474983781916586, guid: d0fbd693b34a734469fe999bcbbe29cf, type: 3}
+--- !u!23 &5906887133023822386 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 1704919045812451184, guid: d0fbd693b34a734469fe999bcbbe29cf, type: 3}
+  m_PrefabInstance: {fileID: 5066668723122148674}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &8899967773482895912 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 4455016412483182442, guid: d0fbd693b34a734469fe999bcbbe29cf, type: 3}
   m_PrefabInstance: {fileID: 5066668723122148674}
   m_PrefabAsset: {fileID: 0}
 --- !u!4 &3270498838844182610 stripped
@@ -777,9 +799,9 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7724598077262497040, guid: d0fbd693b34a734469fe999bcbbe29cf, type: 3}
   m_PrefabInstance: {fileID: 5066668723122148674}
   m_PrefabAsset: {fileID: 0}
---- !u!95 &8899967773482895912 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 4455016412483182442, guid: d0fbd693b34a734469fe999bcbbe29cf, type: 3}
+--- !u!1 &2749717988701817576 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6951474983781916586, guid: d0fbd693b34a734469fe999bcbbe29cf, type: 3}
   m_PrefabInstance: {fileID: 5066668723122148674}
   m_PrefabAsset: {fileID: 0}
 --- !u!137 &8242145174952638299 stripped
@@ -790,10 +812,5 @@ SkinnedMeshRenderer:
 --- !u!137 &6222645800781240992 stripped
 SkinnedMeshRenderer:
   m_CorrespondingSourceObject: {fileID: 1156065253078028258, guid: d0fbd693b34a734469fe999bcbbe29cf, type: 3}
-  m_PrefabInstance: {fileID: 5066668723122148674}
-  m_PrefabAsset: {fileID: 0}
---- !u!23 &5906887133023822386 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 1704919045812451184, guid: d0fbd693b34a734469fe999bcbbe29cf, type: 3}
   m_PrefabInstance: {fileID: 5066668723122148674}
   m_PrefabAsset: {fileID: 0}

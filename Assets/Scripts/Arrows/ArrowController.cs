@@ -126,7 +126,8 @@ public class ArrowController : NetworkBehaviour
                 PlayerController playerController = hit.GetComponent<PlayerController>();
                 if (playerController.Team != team)
                 {
-                    //TODO: Knockback
+                    //Knockback
+                    playerController.GetComponent<PlayerKnockbackController>().KnockbackPlayer(rb.velocity, kit.playerStats[shadeValue].bowKnockbackMultiplier);
 
                     //Damage
                     playerController.GetComponent<PlayerHealth>().TakeDamage(
