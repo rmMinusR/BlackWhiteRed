@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Collections;
 using Unity.Services.Authentication;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ public class PlayerAuthenticationManager
 {
     //Player Customization
     public const string PLAYER_NAME_KEY = "PLAYERNAME";
-    private string playerName = "Shade";
+    private FixedString128Bytes playerName = "Shade";
 
     //Authentication
     private string playerId = "Not signed in";
@@ -48,11 +49,11 @@ public class PlayerAuthenticationManager
         }
         else
         {
-            PlayerPrefs.SetString(PLAYER_NAME_KEY, playerName);
+            PlayerPrefs.SetString(PLAYER_NAME_KEY, playerName.ConvertToString());
         }
     }
 
-    public string GetPlayerName()
+    public FixedString128Bytes GetPlayerName()
     {
         return playerName;
     }

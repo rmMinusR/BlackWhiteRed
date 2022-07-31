@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using System;
+using Unity.Collections;
 
 public class PlayerController : NetworkBehaviour
 {
@@ -31,6 +32,9 @@ public class PlayerController : NetworkBehaviour
     [SerializeField]
     TeleportController teleportController;
 
+    [SerializeField]
+    NetworkVariable<FixedString128Bytes> playerTag = new NetworkVariable<FixedString128Bytes>("Shade", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
     public delegate void PlayerStatsEvent(PlayerStats _value);
     public event PlayerStatsEvent onShadeChange;
 
@@ -46,6 +50,15 @@ public class PlayerController : NetworkBehaviour
         currentTeam = _team;
         spawnPos = _spawnPos;
         spawnLook = _spawnLook;
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        if (IsOwner)
+        {
+            playerTag.Value = PlayerAuthenticationManager.Instance.GetPlayerName();
+            playerTag.SetDirty(true);
+        }
     }
 
     private void OnEnable()
@@ -120,6 +133,8 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleMatchStart()
     {
+        gameObject.name = "Player " + playerTag.Value.ToString();
+
         ResetToSpawnPoint();
     }
 
