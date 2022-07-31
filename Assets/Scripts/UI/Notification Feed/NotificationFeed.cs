@@ -49,25 +49,18 @@ public sealed class NotificationFeed : NetworkBehaviour
         if (!IsServer) throw new AccessViolationException("Only server may send notifications!");
     }
 
-    private const ulong NULL_PLAYER_ID = ulong.MaxValue;
-    private static ulong TxPlayer(PlayerController c, bool require = true) => require||c!=null ? c.OwnerClientId : NULL_PLAYER_ID;
-    private static PlayerController RxPlayer(ulong id, bool require = true) => require||id!=NULL_PLAYER_ID ? NetHeartbeat.Of(id).GetComponent<PlayerController>() : null;
-
     #region Death message
 
     public void BroadcastDeathMessage(PlayerController killer, PlayerController killed, DamageSource killSource)
     {
         EnsureHasSpawnPermission();
-        DONOTCALL_ShowDeathMessage_ClientRpc(TxPlayer(killer, require: false), TxPlayer(killed), killSource); //Broadcast to all
+        DONOTCALL_ShowDeathMessage_ClientRpc(killer, killed, killSource); //Broadcast to all
     }
 
     [ClientRpc]
-    private void DONOTCALL_ShowDeathMessage_ClientRpc(ulong killerID, ulong killedID, DamageSource killSource, ClientRpcParams p = default)
+    private void DONOTCALL_ShowDeathMessage_ClientRpc(PlayerController killer, PlayerController killed, DamageSource killSource, ClientRpcParams p = default)
     {
-        PlayerController killer = RxPlayer(killerID, require: false);
-        PlayerController killed = RxPlayer(killedID);
-
-        Notification notif = Add().Background(killerID == NetworkManager.LocalClientId);
+        Notification notif = Add().Background(killer != null && killer.OwnerClientId == NetworkManager.LocalClientId);
         if (killer != null) notif.WithPlayer(killer);
 
         //Write relevant icons
@@ -86,16 +79,14 @@ public sealed class NotificationFeed : NetworkBehaviour
     public void BroadcastScoredMessage(PlayerController whoScored)
     {
         EnsureHasSpawnPermission();
-        DONOTCALL_ShowScoredMessage_ClientRpc(TxPlayer(whoScored)); //Broadcast to all
+        DONOTCALL_ShowScoredMessage_ClientRpc(whoScored); //Broadcast to all
     }
 
     [ClientRpc]
-    private void DONOTCALL_ShowScoredMessage_ClientRpc(ulong whoScoredID, ClientRpcParams p = default)
+    private void DONOTCALL_ShowScoredMessage_ClientRpc(PlayerController whoScored, ClientRpcParams p = default)
     {
-        PlayerController whoScored = RxPlayer(whoScoredID);
-        
         Add()
-            .Background(whoScoredID == NetworkManager.LocalClientId)
+            .Background(whoScored.OwnerClientId == NetworkManager.LocalClientId)
             .WithPlayer(whoScored)
             .WithIcon(scoredIcon);
     }

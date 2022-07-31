@@ -26,9 +26,11 @@ public class PlayerHealth : NetworkBehaviour
 
     private NetworkVariable<int> health = new NetworkVariable<int>(MAX_HEALTH, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
-    public event Action<     DamageSource, PlayerController> onPlayerDeath;
-    
-    public event Action<int, DamageSource, PlayerController> onHealthChange;
+    public event Action<     DamageSource, PlayerController> clientside_onPlayerDeath;
+    public event Action<int, DamageSource, PlayerController> clientside_onHealthChange;
+
+    public event Action<     DamageSource, PlayerController> serverside_onPlayerDeath;
+    public event Action<int, DamageSource, PlayerController> serverside_onHealthChange;
 
     void Start()
     {
@@ -67,6 +69,9 @@ public class PlayerHealth : NetworkBehaviour
 
     public void TakeDamage(float attackDamage, DamageSource damageSource, PlayerController attacker = null)
     {
+        //RSC: Deny clients from calling this
+        if (!IsServer) throw new AccessViolationException(nameof(TakeDamage)+" is only callable by server!");
+
         //Account for armor lessening damage
         int damage = Mathf.CeilToInt(attackDamage * (1 - PERCENTAGE_PROTECTION * playerController.CurrentStats.armorStrength));
 
@@ -75,33 +80,41 @@ public class PlayerHealth : NetworkBehaviour
 
     private void TakeDamageFlat(int damage, DamageSource damageSource = DamageSource.INVALID, PlayerController attacker = null)
     {
+        //RSC: Deny clients from calling this
+        if (!IsServer) throw new AccessViolationException(nameof(TakeDamage)+" is only callable by server!");
+
         health.Value = Mathf.Max(health.Value - damage,0);
         health.SetDirty(true);
+        ChangeHealthClientRpc(health.Value, -damage, damageSource, attacker, ClientIDCache.Narrowcast(OwnerClientId)); //Should we broadcast instead?
 
-        onHealthChange?.Invoke(health.Value, damageSource, attacker);
+        serverside_onHealthChange?.Invoke(health.Value, damageSource, attacker);
 
-        if (health.Value == 0)
+        if (health.Value == 0) //RSC - TODO: add IsDead to prevent duplicates
         {
-            onPlayerDeath?.Invoke(damageSource, attacker);
+            serverside_onPlayerDeath?.Invoke(damageSource, attacker);
             playerController.ResetToSpawnPoint();
             HandleTeamScore(Team.INVALID);
         }
+    }
+
+    [ClientRpc]
+    private void ChangeHealthClientRpc(int newHealth, int delta, DamageSource deltaSource, PlayerController deltaActor, ClientRpcParams p)
+    {
+        clientside_onHealthChange?.Invoke(newHealth, deltaSource, deltaActor);
+        if (newHealth == 0) clientside_onPlayerDeath?.Invoke(deltaSource, deltaActor);
     }
 
     private void OnHealthChange(int oldValue, int newValue)
     {
-        //RSC: Clientside - Can't easily access player who hit, so use null
-        onHealthChange?.Invoke(newValue, DamageSource.INVALID, null);
-
         if (newValue == 0)
         {
-            onPlayerDeath?.Invoke(DamageSource.INVALID, null);
+            //RSC: This probably should be done server side only (similar to Teleport)
             playerController.ResetToSpawnPoint();
             HandleTeamScore(Team.INVALID);
         }
     }
 
-    private void HandleTeamScore(Team team)
+    private void HandleTeamScore(Team team) //RSC - TODO needs to be renamed
     {
         health.Value = MAX_HEALTH;
     }

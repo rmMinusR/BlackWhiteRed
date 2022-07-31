@@ -17,18 +17,20 @@ public class PlayerHealthUINotifier : NetworkBehaviour
 
         if (IsServer)
         {
-            src.onHealthChange -= RecordDamager;
-            src.onHealthChange += RecordDamager;
+            src.serverside_onHealthChange -= RecordDamager;
+            src.serverside_onHealthChange += RecordDamager;
 
-            src.onPlayerDeath -= OnDeath;
-            src.onPlayerDeath += OnDeath;
+            src.serverside_onPlayerDeath -= OnDeath;
+            src.serverside_onPlayerDeath += OnDeath;
         }
     }
 
-    private void OnDisable()
+    public override void OnNetworkDespawn()
     {
-        src.onHealthChange -= RecordDamager;
-        src.onPlayerDeath -= OnDeath;
+        base.OnNetworkDespawn();
+
+        src.serverside_onHealthChange -= RecordDamager;
+        src.serverside_onPlayerDeath -= OnDeath;
     }
 
     private (DamageSource, PlayerController)? recordedLastDamage; //Cleared when touching ground
@@ -49,7 +51,7 @@ public class PlayerHealthUINotifier : NetworkBehaviour
             damageSource |= recordedLastDamage.Value.Item1;
             killer = recordedLastDamage.Value.Item2;
         }
-        
+
         NotificationFeed.Instance.BroadcastDeathMessage(killer, src.GetComponent<PlayerController>(), damageSource);
     }
 }
