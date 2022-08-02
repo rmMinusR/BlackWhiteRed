@@ -53,8 +53,8 @@ public sealed class TeleportController : NetworkBehaviour
     {
         if (!IsServer) throw new AccessViolationException("Server frame is authority! Can only teleport on serverside.");
 
-        if (pos .HasValue) { pending |= PlayerRollbackReplicator.OverwriteFlags.Position; teleportLook = pos .Value; }
-        if (vel .HasValue) { pending |= PlayerRollbackReplicator.OverwriteFlags.Velocity; teleportLook = vel .Value; }
+        if (pos .HasValue) { pending |= PlayerRollbackReplicator.OverwriteFlags.Position; teleportPos  = pos .Value; }
+        if (vel .HasValue) { pending |= PlayerRollbackReplicator.OverwriteFlags.Velocity; teleportVel  = vel .Value; }
         if (look.HasValue) { pending |= PlayerRollbackReplicator.OverwriteFlags.Look    ; teleportLook = look.Value; }
     }
 
