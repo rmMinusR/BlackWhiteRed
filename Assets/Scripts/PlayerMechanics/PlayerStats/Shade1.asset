@@ -18,5 +18,5 @@ MonoBehaviour:
   damageDealt: 6
   swordKnockbackMultiplier: 1
   armedWithBow: 1
-  damageMultiplier: 1
+  bowDamageMultiplier: 2
   bowKnockbackMultiplier: 2

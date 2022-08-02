@@ -11,6 +11,7 @@ using UnityEngine;
 /// GC-friendliness of a circular buffer.
 /// </summary>
 /// <typeparam name="T">Type stored</typeparam>
+
 [Serializable]
 public class RecyclingLinkedQueue<T> : IEnumerable<T>, ISerializationCallbackReceiver
 {

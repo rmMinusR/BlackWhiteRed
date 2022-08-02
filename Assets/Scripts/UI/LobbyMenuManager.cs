@@ -255,4 +255,9 @@ public class LobbyMenuManager : MonoBehaviour
     {
         lobbySizeDataDisplay.text = LobbyManager.Instance.GetLobbySize();
     }
+
+    public void CopyCode()
+    {
+        GUIUtility.systemCopyBuffer = LobbyManager.Instance.GetLobbyCode();
+    }
 }

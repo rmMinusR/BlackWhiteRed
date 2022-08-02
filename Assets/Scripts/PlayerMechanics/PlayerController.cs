@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using System;
+using Unity.Collections;
 
 public class PlayerController : NetworkBehaviour
 {
+
     [SerializeField]
     [InspectorReadOnly]
     Team currentTeam = Team.INVALID;
@@ -23,35 +25,53 @@ public class PlayerController : NetworkBehaviour
     float radiusCheck = 0.1f;
 
     [Space]
-    [Header("Debugging")]
     [SerializeField]
-    Material blackDebug;
+    Vector3 spawnPos;
     [SerializeField]
-    Material whiteDebug;
+    Vector2 spawnLook;
+    [SerializeField]
+    TeleportController teleportController;
 
+    public NetworkVariable<FixedString128Bytes> playerTag = new NetworkVariable<FixedString128Bytes>("Shade", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    public delegate void PlayerStatsEvent(PlayerStats _value);
+    public event PlayerStatsEvent onShadeChange;
+
+    public int ShadeValue => shadeValue;
     private PlayerStats currentStats => kit.playerStats[shadeValue];
+    public PlayerStats CurrentStats => currentStats;
+    public Team Team => currentTeam;
     public int TeamValue => (int)currentTeam;
 
     [ClientRpc]
-    public void AssignTeamClientRpc(Team _team)
+    public void AssignTeamClientRpc(Team _team, Vector3 _spawnPos, Vector2 _spawnLook)
     {
         currentTeam = _team;
+        spawnPos = _spawnPos;
+        spawnLook = _spawnLook;
+    }
 
-        //For Debugging Purposes
-
-        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
-
-        if(currentTeam == Team.BLACK)
+    public override void OnNetworkSpawn()
+    {
+        if (IsOwner)
         {
-            meshRenderer.material = blackDebug;
-            shadeValue = 0;
+            playerTag.Value = PlayerAuthenticationManager.Instance.GetPlayerName();
+            playerTag.SetDirty(true);
         }
-        else
-        {
-            meshRenderer.material = whiteDebug;
-            shadeValue = 6;
-        }
-        //End of "For Debugging Purposes"
+    }
+
+    private void OnEnable()
+    {
+        MatchManager.onMatchStart += HandleMatchStart;
+        MatchManager.onTeamScore += HandleTeamScore;
+        MatchManager.onTeamWin += HandleTeamScore;
+    }
+
+    private void OnDisable()
+    {
+        MatchManager.onMatchStart -= HandleMatchStart;
+        MatchManager.onTeamScore -= HandleTeamScore;
+        MatchManager.onTeamWin -= HandleTeamScore;
     }
 
     private void FixedUpdate()
@@ -61,8 +81,8 @@ public class PlayerController : NetworkBehaviour
 
     private void CheckForNewShade()
     {
-        Ray r = new Ray(transform.position, Vector3.down);
-        RaycastHit hit;
+        //Ray r = new Ray(transform.position, Vector3.down);
+        //RaycastHit hit;
 
         Vector3 pos = transform.position;
 
@@ -91,14 +111,34 @@ public class PlayerController : NetworkBehaviour
 
             if(oldShadeValue != shadeValue)
             {
-                HandleShadeValueChange();
+                OnShadeValueChange();
             }
         }
 
     }
 
-    private void HandleShadeValueChange()
+    public void ResetToSpawnPoint()
     {
-        //TODO:
+        if (IsServer || IsHost)
+        {
+            teleportController.Teleport(spawnPos, Vector3.zero, spawnLook);
+        }
+    }
+
+    private void OnShadeValueChange()
+    {
+        onShadeChange?.Invoke(currentStats);
+    }
+
+    private void HandleMatchStart()
+    {
+        gameObject.name = "Player " + playerTag.Value.ToString();
+
+        ResetToSpawnPoint();
+    }
+
+    private void HandleTeamScore(Team team)
+    {
+        ResetToSpawnPoint();
     }
 }

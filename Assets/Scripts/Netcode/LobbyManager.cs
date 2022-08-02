@@ -39,7 +39,7 @@ public class LobbyManager
     public event TriggerEvent onLobbyShutdown;
 
     private string playerId => PlayerAuthenticationManager.Instance.GetPlayerID();
-    private string playerName => PlayerAuthenticationManager.Instance.GetPlayerName();
+    private string playerName => PlayerAuthenticationManager.Instance.GetPlayerName().ToString();
 
     private LobbyManager()
     {

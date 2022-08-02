@@ -52,7 +52,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Overlay:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 24969375771055147aea80d0bbd10811, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ParallaxMap:
@@ -61,8 +61,12 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AO: 0
     - _BUILTIN_QueueControl: 0
     - _BUILTIN_QueueOffset: 0
+    - _Baked_GI_Opacity: 1
+    - _Baked_GI_Power: 3
+    - _Baked_GI_Scale: 1
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
@@ -73,7 +77,7 @@ Material:
     - _Metallic: 0
     - _Mode: 0
     - _OcclusionStrength: 1
-    - _Overlay_Scale: 1
+    - _Overlay_Scale: 100
     - _Parallax: 0.02
     - _Smoothness: 0.43
     - _SmoothnessTextureChannel: 0
