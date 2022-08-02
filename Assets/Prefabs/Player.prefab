@@ -621,6 +621,19 @@ MonoBehaviour:
   kinematicsLayer: {fileID: 3587278699711730041}
   dataSource: {fileID: 1334152775563438803}
   controlLookName: Look
+--- !u!114 &9045543264444434544
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4356945211083503336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 349fdddf9948e0c4593d96d2cfc48268, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  player: {fileID: 4052683045127445090}
 --- !u!1 &4977216193079503987
 GameObject:
   m_ObjectHideFlags: 0
@@ -952,6 +965,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bd906471918df9a4ca9e086b45dc78e2, type: 3}
+--- !u!1 &4356945211083503336 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5106905450633587680, guid: bd906471918df9a4ca9e086b45dc78e2, type: 3}
+  m_PrefabInstance: {fileID: 8838778155163311368}
+  m_PrefabAsset: {fileID: 0}
 --- !u!224 &9214131962777248723 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 393653566974525147, guid: bd906471918df9a4ca9e086b45dc78e2, type: 3}

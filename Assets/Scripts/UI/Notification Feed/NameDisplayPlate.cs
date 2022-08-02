@@ -28,7 +28,7 @@ public sealed class NameDisplayPlate : MonoBehaviour
         if (player.CurrentTeam == Team.INVALID) throw new InvalidOperationException("Must assign a team to player first!");
 
         Write(
-            player.name, //FIXME placeholder, use player's display name instead
+            player.playerTag.Value.ToString(),
             player.CurrentTeam == Team.BLACK ? blackTeamFg : whiteTeamFg,
             player.CurrentTeam == Team.BLACK ? blackTeamBg : whiteTeamBg
         );
