@@ -22,23 +22,9 @@ public sealed class NameDisplayPlateDriver : NetworkBehaviour
         MatchManager.onMatchStart -= SetName;
     }
 
-    public override void OnNetworkSpawn()
-    {
-        base.OnNetworkSpawn();
-
-        //In case players join midgame
-        //Delay by a frame to ensure PlayerController's OnNetworkSpawn() runs first
-        StartCoroutine(DelayedSetName());
-    }
-
-    private IEnumerator DelayedSetName()
-    {
-        yield return null;
-        SetName();
-    }
-
     private void SetName()
     {
+        if (!IsSpawned) return;
         GetComponent<NameDisplayPlate>().Write(player);
     }
 }

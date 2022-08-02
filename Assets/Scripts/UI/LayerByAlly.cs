@@ -23,23 +23,10 @@ public sealed class LayerByAlly : NetworkBehaviour
         MatchManager.onMatchStart -= UpdateLayer;
     }
 
-    public override void OnNetworkSpawn()
-    {
-        base.OnNetworkSpawn();
-
-        //In case players join midgame
-        //Delay by a frame to ensure PlayerController's OnNetworkSpawn() runs first
-        StartCoroutine(DelayedUpdateLayer());
-    }
-
-    private IEnumerator DelayedUpdateLayer()
-    {
-        yield return null;
-        UpdateLayer();
-    }
-
     private void UpdateLayer()
     {
+        if (!IsSpawned) return;
+
         int targetLayer = (NetHeartbeat.Self.GetComponent<PlayerController>().CurrentTeam == playerController.CurrentTeam)
                 ? ifAlly
                 : ifEnemy;
