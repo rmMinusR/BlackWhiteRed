@@ -45,7 +45,7 @@ public class MenuManager : MonoBehaviour
         //Close All Windows
         changeNamePanel.SetActive(false);
 
-        nameTagDisplay.text = PlayerAuthenticationManager.Instance.GetPlayerName();
+        nameTagDisplay.text = PlayerAuthenticationManager.Instance.GetPlayerName().ToString();
     }
 
     public void OpenNameTagChange()

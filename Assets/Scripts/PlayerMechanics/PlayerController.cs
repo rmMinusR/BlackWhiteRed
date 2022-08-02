@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using System;
+using Unity.Collections;
 
 public class PlayerController : NetworkBehaviour
 {
@@ -24,18 +25,14 @@ public class PlayerController : NetworkBehaviour
     float radiusCheck = 0.1f;
 
     [Space]
-    [Header("Debugging")]
-    [SerializeField]
-    Material blackDebug;
-    [SerializeField]
-    Material whiteDebug;
-
     [SerializeField]
     Vector3 spawnPos;
     [SerializeField]
     Vector2 spawnLook;
     [SerializeField]
     TeleportController teleportController;
+
+    public NetworkVariable<FixedString128Bytes> playerTag = new NetworkVariable<FixedString128Bytes>("Shade", NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     public delegate void PlayerStatsEvent(PlayerStats _value);
     public event PlayerStatsEvent onShadeChange;
@@ -52,23 +49,15 @@ public class PlayerController : NetworkBehaviour
         currentTeam = _team;
         spawnPos = _spawnPos;
         spawnLook = _spawnLook;
+    }
 
-        //For Debugging Purposes
-
-        foreach(MeshRenderer meshRenderer in GetComponentsInChildren<MeshRenderer>())
+    public override void OnNetworkSpawn()
+    {
+        if (IsOwner)
         {
-            if (currentTeam == Team.BLACK)
-            {
-                meshRenderer.material = blackDebug;
-                shadeValue = 0;
-            }
-            else
-            {
-                meshRenderer.material = whiteDebug;
-                shadeValue = 6;
-            }
+            playerTag.Value = PlayerAuthenticationManager.Instance.GetPlayerName();
+            playerTag.SetDirty(true);
         }
-        //End of "For Debugging Purposes"
     }
 
     private void OnEnable()
@@ -130,9 +119,10 @@ public class PlayerController : NetworkBehaviour
 
     public void ResetToSpawnPoint()
     {
-        Debug.Log(name +": Resetting Spawn Point " + (NetworkManager.Singleton.IsServer ? " (Client)" : " (Server)"));
-
-        teleportController.Teleport(spawnPos, Vector3.zero, spawnLook);
+        if (IsServer || IsHost)
+        {
+            teleportController.Teleport(spawnPos, Vector3.zero, spawnLook);
+        }
     }
 
     private void OnShadeValueChange()
@@ -142,6 +132,8 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleMatchStart()
     {
+        gameObject.name = "Player " + playerTag.Value.ToString();
+
         ResetToSpawnPoint();
     }
 

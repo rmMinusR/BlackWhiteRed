@@ -55,7 +55,7 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
     }
 
     [Flags]
-    private enum OverwriteFlags
+    public enum OverwriteFlags
     {
         Position = (1 << 0),
         Velocity = (1 << 1),

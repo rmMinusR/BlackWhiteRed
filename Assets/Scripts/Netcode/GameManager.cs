@@ -242,11 +242,14 @@ public class GameManager : MonoBehaviour
 
     IEnumerator ReadyUp()
     {
-        while(NetworkManager.Singleton.LocalClient.PlayerObject == null)
+        var delay = new WaitForSecondsRealtime(0.2f);
+
+        while (NetworkManager.Singleton.LocalClient.PlayerObject == null)
         {
-            var delay = new WaitForSecondsRealtime(0.2f);
             yield return delay;
         }
+
+        yield return delay;
 
         Debug.Log("MATCH CAN START");
         MatchManager.Instance.LogAsReadyServerRpc(NetworkManager.Singleton.LocalClientId);
