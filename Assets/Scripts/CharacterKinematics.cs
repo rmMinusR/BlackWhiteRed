@@ -10,8 +10,13 @@ public sealed class CharacterKinematics : NetworkBehaviour
 {
     private CharacterController __coll;
     private CharacterController coll => __coll != null ? __coll : (__coll = GetComponent<CharacterController>());
-    private ProjectionShape proj;
+
+    [TestButton("Rebuild projection", nameof(__RebuildProjection), isActiveAtRuntime = true, isActiveInEditor = false, order = 1)]
+    [SubclassSelector(order = 2)]
+    [SerializeReference] private ProjectionShape proj;
     
+    private void __RebuildProjection() => proj = ProjectionShape.Build(gameObject);
+
     private void Awake()
     {
         proj = ProjectionShape.Build(gameObject);
