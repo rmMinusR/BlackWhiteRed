@@ -37,7 +37,7 @@ public sealed class TeleportController : NetworkBehaviour
     //FIXME this technically violates pure function requirement of PreMove, since it reads and writes to values that change at runtime!
     private void ApplyPendingTeleportation(ref PlayerPhysicsFrame frame, float dt, CharacterKinematics.StepMode mode)
     {
-        if (mode == CharacterKinematics.StepMode.SimulateVerify)
+        if (mode == CharacterKinematics.StepMode.SimulateVerify && pending != 0)
         {
             frame.type = PlayerPhysicsFrame.Type.Teleport;
             
