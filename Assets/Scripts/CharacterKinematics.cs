@@ -129,8 +129,8 @@ public sealed class CharacterKinematics : NetworkBehaviour
     {
         Vector3 pos = Application.isPlaying ? frame.position : transform.position;
 
-        //Gizmos.color = Color.green;
-        //proj.DrawAsGizmos(pos);
+        Gizmos.color = Color.green;
+        proj.DrawAsGizmos(pos);
 
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(pos + Vector3.down*(coll.height/2-coll.radius+groundProbeOffset), coll.radius+groundProbeRadius);

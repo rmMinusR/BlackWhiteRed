@@ -7,7 +7,8 @@ public sealed class SphereProjection : ProjectionShape
     public Vector3 center;
     public float radius;
 
-    public SphereProjection(SphereCollider source, Vector3 parentCenter) : this(source.center + source.transform.position-parentCenter, source.radius) { }
+    //public SphereProjection(SphereCollider source, Vector3 parentCenter) : this(source.center + source.transform.position-parentCenter, source.radius) { }
+    public SphereProjection(SphereCollider source, Vector3 parentCenter) : this(source.center, source.radius) { }
 
     public SphereProjection(Vector3 center, float radius)
     {
