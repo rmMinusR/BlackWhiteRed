@@ -39,7 +39,7 @@ public sealed class TeleportController : NetworkBehaviour
     {
         if (mode == CharacterKinematics.StepMode.SimulateVerify)
         {
-            frame.type     = PlayerPhysicsFrame.Type.Teleport;
+            frame.type = PlayerPhysicsFrame.Type.Teleport;
             
             if(pending.HasFlag(PlayerRollbackReplicator.OverwriteFlags.Position)) frame.position = teleportPos;
             if(pending.HasFlag(PlayerRollbackReplicator.OverwriteFlags.Velocity)) frame.velocity = teleportVel;
