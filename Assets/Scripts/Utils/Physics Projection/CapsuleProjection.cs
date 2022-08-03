@@ -21,8 +21,11 @@ public sealed class CapsuleProjection : ProjectionShape
         };
     }
 
-    public CapsuleProjection(    CapsuleCollider source, Vector3 parentCenter) : this(source.center + source.transform.position-parentCenter, CapsuleDirToVector(source.direction) * source.height/2, source.radius) { }
-    public CapsuleProjection(CharacterController source, Vector3 parentCenter) : this(source.center + source.transform.position-parentCenter,                           Vector3.up * source.height/2, source.radius) { }
+    //public CapsuleProjection(    CapsuleCollider source, Vector3 parentCenter) : this(source.center + source.transform.position-parentCenter, CapsuleDirToVector(source.direction) * source.height/2, source.radius) { }
+    //public CapsuleProjection(CharacterController source, Vector3 parentCenter) : this(source.center + source.transform.position-parentCenter,                           Vector3.up * source.height/2, source.radius) { }
+
+    public CapsuleProjection(    CapsuleCollider source, Vector3 parentCenter) : this(source.center, CapsuleDirToVector(source.direction) * source.height/2, source.radius) { }
+    public CapsuleProjection(CharacterController source, Vector3 parentCenter) : this(source.center,                           Vector3.up * source.height/2, source.radius) { }
 
     public CapsuleProjection(Vector3 center, Vector3 halfExtents, float radius)
     {
