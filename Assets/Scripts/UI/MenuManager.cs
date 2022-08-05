@@ -12,9 +12,15 @@ public class MenuManager : MonoBehaviour
     EventSystem eventSystem;
     [Header("Main Menu")]
     [SerializeField]
+    GameObject mainMenuPanel;
+    [SerializeField]
     TextMeshProUGUI nameTagDisplay;
     [SerializeField]
     Button mainToChangeNameButton;
+    [SerializeField]
+    Button mainToOptionsButton;
+    [SerializeField]
+    Button mainToCreditsButton;
     [Header("Change Name Menu")]
     [SerializeField]
     GameObject changeNamePanel;
@@ -22,11 +28,20 @@ public class MenuManager : MonoBehaviour
     TextMeshProUGUI changeNameWarningText;
     [SerializeField]
     TMP_InputField changeNameInputField;
+    [Header("Options Menu")]
+    [SerializeField]
+    GameObject optionsPanel;
+    [SerializeField]
+    GameObject optionsSelectedOnOpen;
+    [Header("Credits Menu")]
+    [SerializeField]
+    GameObject creditsPanel;
+    [SerializeField]
+    GameObject creditsSelectedOnOpen;
 
     // Start is called before the first frame update
     void Start()
     {
-
         OpenMainMenu();
     }
 
@@ -40,10 +55,19 @@ public class MenuManager : MonoBehaviour
         changeNameInputField.onSubmit.RemoveListener(SubmitChangeNametag);
     }
 
+    public void CloseAllWindows()
+    {
+        mainMenuPanel.SetActive(false);
+        changeNamePanel.SetActive(false);
+        optionsPanel.SetActive(false);
+        creditsPanel.SetActive(false);
+
+    }
+
     public void OpenMainMenu()
     {
-        //Close All Windows
-        changeNamePanel.SetActive(false);
+        CloseAllWindows();
+        mainMenuPanel.SetActive(true);
 
         nameTagDisplay.text = PlayerAuthenticationManager.Instance.GetPlayerName().ToString();
     }
@@ -81,5 +105,31 @@ public class MenuManager : MonoBehaviour
     public void PlayGameButton()
     {
         SceneManager.LoadScene(2);
+    }
+
+    public void OpenOptions()
+    {
+        CloseAllWindows();
+        optionsPanel.SetActive(true);
+        eventSystem.SetSelectedGameObject(optionsSelectedOnOpen);
+    }
+
+    public void CloseOptions()
+    {
+        OpenMainMenu();
+        eventSystem.SetSelectedGameObject(mainToOptionsButton.gameObject);
+    }
+
+    public void OpenCredits()
+    {
+        CloseAllWindows();
+        creditsPanel.SetActive(true);
+        eventSystem.SetSelectedGameObject(creditsSelectedOnOpen);
+    }
+
+    public void CloseCredits()
+    {
+        OpenMainMenu();
+        eventSystem.SetSelectedGameObject(mainToCreditsButton.gameObject);
     }
 }
