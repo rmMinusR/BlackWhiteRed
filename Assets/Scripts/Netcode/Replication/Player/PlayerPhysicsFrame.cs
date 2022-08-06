@@ -54,6 +54,11 @@ public struct PlayerPhysicsFrame : INetworkSerializable
         return m != Type.Teleport;
     }
 
+    public static bool DoSmoothing(Type m)
+    {
+        return m != Type.Teleport;
+    }
+
     #region Cached expensive math
 
     private bool __lookTrigDirty;

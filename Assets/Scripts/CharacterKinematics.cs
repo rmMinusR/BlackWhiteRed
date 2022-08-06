@@ -30,15 +30,22 @@ public sealed class CharacterKinematics : NetworkBehaviour
         frame.time = (float)NetworkManager.ServerTime.FixedTime;
     }
 
+    [SerializeField] [Range(0, 1)] private float visualSmoothing = 0.99f;
+    [SerializeField] [Range(-5, 5)] private float forwardProjection = 2;
+
     private void FixedUpdate()
     {
         //Derive next kinematics frame
         frame = Step(frame, (float)NetworkManager.ServerTime.FixedTime - frame.time, IsLocalPlayer ? StepMode.LiveForward : StepMode.LiveSpeculation); //Only local player has live input. Anything serverside is speculation until proven otherwise.
 
         //Apply
-        transform.position = frame.position;
-        //if (PlayerPhysicsFrame.DoCollisionTest(frame.mode)) coll.Move(frame.position - transform.position);
-        //else transform.position = frame.position;
+        if (IsClient && PlayerPhysicsFrame.DoSmoothing(frame.type))
+        {
+            Vector3 forwardProjectedPos = frame.position + frame.velocity * forwardProjection;
+            transform.position = Vector3.Lerp(forwardProjectedPos, transform.position, visualSmoothing);
+        }
+        else transform.position = frame.position;
+
 
         if (FinalizeMove != null) FinalizeMove();
     }
