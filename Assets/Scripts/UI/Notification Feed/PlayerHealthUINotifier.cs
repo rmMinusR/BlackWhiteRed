@@ -33,9 +33,10 @@ public class PlayerHealthUINotifier : NetworkBehaviour
         src.serverside_onPlayerDeath -= OnDeath;
     }
 
-    private (DamageSource, PlayerController)? recordedLastDamage; //Cleared when touching ground
+    private (DamageSource src, PlayerController who)? recordedLastDamage; //Cleared when touching ground
     private void RecordDamager(int newHP, DamageSource damageSource, PlayerController damager)
     {
+        Debug.Log("Recording damager", this);
         recordedLastDamage = (damageSource, damager);
     }
 
@@ -46,10 +47,12 @@ public class PlayerHealthUINotifier : NetworkBehaviour
 
     private void OnDeath(DamageSource damageSource, PlayerController killer)
     {
+        Debug.Log("Notifying of death", this);
+
         if (recordedLastDamage.HasValue && damageSource.HasFlag(DamageSource.ABYSS) && killer == null)
         {
-            damageSource |= recordedLastDamage.Value.Item1;
-            killer = recordedLastDamage.Value.Item2;
+            damageSource |= recordedLastDamage.Value.src;
+            killer = recordedLastDamage.Value.who;
         }
 
         NotificationFeed.Instance.BroadcastDeathMessage(killer, src.GetComponent<PlayerController>(), damageSource);

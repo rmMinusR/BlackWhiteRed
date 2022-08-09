@@ -69,7 +69,7 @@ public class PlayerHealth : NetworkBehaviour
 
     public void TakeDamage(float attackDamage, DamageSource damageSource, PlayerController attacker = null)
     {
-        //RSC: Deny clients from calling this
+        //RSC: Block clients from calling this
         if (!IsServer) throw new AccessViolationException(nameof(TakeDamage)+" is only callable by server!");
 
         //Account for armor lessening damage
@@ -80,18 +80,21 @@ public class PlayerHealth : NetworkBehaviour
 
     private void TakeDamageFlat(int damage, DamageSource damageSource = DamageSource.INVALID, PlayerController attacker = null)
     {
-        //RSC: Deny clients from calling this
+        //RSC: Block clients from calling this
         if (!IsServer) throw new AccessViolationException(nameof(TakeDamage)+" is only callable by server!");
 
-        health.Value = Mathf.Max(health.Value - damage,0);
-        health.SetDirty(true);
-        ChangeHealthClientRpc(health.Value, -damage, damageSource, attacker, ClientIDCache.Narrowcast(OwnerClientId)); //Should we broadcast instead?
+        health.Value = Mathf.Max(health.Value - damage, 0);
 
+        //Fire callbacks
         serverside_onHealthChange?.Invoke(health.Value, damageSource, attacker);
+        ChangeHealthClientRpc(health.Value, -damage, damageSource, attacker, ClientIDCache.Narrowcast(OwnerClientId)); //Should we broadcast instead?
 
         if (health.Value == 0) //RSC - TODO: add IsDead to prevent duplicates
         {
+            //Fire callbacks
             serverside_onPlayerDeath?.Invoke(damageSource, attacker);
+            OnDeathClientRpc(damageSource, attacker, default); //Broadcast
+
             playerController.ResetToSpawnPoint();
             HandleTeamScore(Team.INVALID);
         }
@@ -101,7 +104,12 @@ public class PlayerHealth : NetworkBehaviour
     private void ChangeHealthClientRpc(int newHealth, int delta, DamageSource deltaSource, PlayerController deltaActor, ClientRpcParams p)
     {
         clientside_onHealthChange?.Invoke(newHealth, deltaSource, deltaActor);
-        if (newHealth == 0) clientside_onPlayerDeath?.Invoke(deltaSource, deltaActor);
+    }
+
+    [ClientRpc]
+    private void OnDeathClientRpc(DamageSource finalBlow, PlayerController finalBlowDealer, ClientRpcParams p)
+    {
+        clientside_onPlayerDeath?.Invoke(finalBlow, finalBlowDealer);
     }
 
     private void OnHealthChange(int oldValue, int newValue)
