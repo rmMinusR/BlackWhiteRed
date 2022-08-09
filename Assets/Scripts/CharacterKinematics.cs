@@ -31,7 +31,6 @@ public sealed class CharacterKinematics : NetworkBehaviour
     }
 
     [SerializeField] [Range(0, 1)] private float visualSmoothing = 0.99f;
-    [SerializeField] [Range(-5, 5)] private float forwardProjection = 2;
 
     private void FixedUpdate()
     {
@@ -41,11 +40,10 @@ public sealed class CharacterKinematics : NetworkBehaviour
         //Apply
         if (IsClient && PlayerPhysicsFrame.DoSmoothing(frame.type))
         {
-            Vector3 forwardProjectedPos = frame.position + frame.velocity * forwardProjection;
+            Vector3 forwardProjectedPos = frame.position + frame.velocity * Time.fixedDeltaTime / (1 - visualSmoothing);
             transform.position = Vector3.Lerp(forwardProjectedPos, transform.position, visualSmoothing);
         }
         else transform.position = frame.position;
-
 
         if (FinalizeMove != null) FinalizeMove();
     }
