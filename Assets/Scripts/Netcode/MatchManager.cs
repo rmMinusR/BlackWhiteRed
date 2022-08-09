@@ -1,8 +1,10 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Random = UnityEngine.Random;
 
 public enum Team
 {
@@ -36,6 +38,8 @@ public class MatchManager : NetworkBehaviour
     public delegate void TeamEvent(Team team);
     public static event TeamEvent onTeamScore;
     public static event TeamEvent onTeamWin;
+    public static event Action<PlayerController> serverside_onScore;
+    public static event Action<Team>             serverside_onTeamWin;
 
     public static MatchManager Instance;
     private void Awake()
@@ -124,13 +128,15 @@ public class MatchManager : NetworkBehaviour
         //TODO: Invoke events that things like the sound and UI will be listening for
         if (teamScores[pc.TeamValue] >= scoreToWin)
         {
-            OnTeamWinClientRpc(pc.Team);
-            Debug.Log(pc.Team + " WON");
+            serverside_onTeamWin?.Invoke(pc.CurrentTeam);
+            OnTeamWinClientRpc(pc.CurrentTeam);
+            Debug.Log(pc.CurrentTeam + " WON");
         }
         else
         {
-            OnTeamScoreClientRpc(pc.Team);
-            Debug.Log(pc.Team + " SCORED");
+            serverside_onScore?.Invoke(pc);
+            OnTeamScoreClientRpc(pc.CurrentTeam);
+            Debug.Log(pc.CurrentTeam + " SCORED");
         }
 
 
