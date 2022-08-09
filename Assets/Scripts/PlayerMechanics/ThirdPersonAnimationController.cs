@@ -64,7 +64,7 @@ public class ThirdPersonAnimationController : NetworkBehaviour
 
         if (playerHealth != null)
         {
-            playerHealth.onHealthChange += HandleHealthChange;
+            playerHealth.clientside_onHealthChange += HandleHealthChange;
         }
     }
 
@@ -89,7 +89,7 @@ public class ThirdPersonAnimationController : NetworkBehaviour
 
         if (playerHealth != null)
         {
-            playerHealth.onHealthChange -= HandleHealthChange;
+            playerHealth.clientside_onHealthChange -= HandleHealthChange;
         }
     }
 
@@ -143,14 +143,14 @@ public class ThirdPersonAnimationController : NetworkBehaviour
         SetMaterials();
     }
 
-    private void HandleHealthChange(int _value)
+    private void HandleHealthChange(int value, DamageSource source, PlayerController whoDamaged)
     {
         animator.SetTrigger("Pain");
     }
 
     private void SetMaterials()
     {
-        Team team = playerController.Team;
+        Team team = playerController.CurrentTeam;
 
         isOther = playerController != MatchManager.Instance.localPlayerController;
 
