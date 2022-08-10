@@ -275,6 +275,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5b36006a0caf4675983fbcf2d7dbdc9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mouseSlider: {fileID: 5762773589032747866}
+  scrollSlider: {fileID: 5762773588115536618}
+  musicSlider: {fileID: 5762773588211075717}
+  sfxSlider: {fileID: 5762773588372667071}
+  fullscreenText: {fileID: 5762773588830334718}
 --- !u!1 &5762773587313131348
 GameObject:
   m_ObjectHideFlags: 0
@@ -1991,7 +1996,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 5762773588166733299}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1386089911202810949}
+        m_TargetAssemblyTypeName: OptionsPanel, Assembly-CSharp
+        m_MethodName: ToggleFullscreen
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &5762773588185575915
 GameObject:
   m_ObjectHideFlags: 0
@@ -2884,7 +2901,7 @@ GameObject:
   - component: {fileID: 5762773588830334719}
   - component: {fileID: 5762773588830334718}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: Fullscreen Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

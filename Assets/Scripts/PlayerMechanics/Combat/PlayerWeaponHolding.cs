@@ -13,7 +13,7 @@ public enum WeaponHeld
 
 public class PlayerWeaponHolding : NetworkBehaviour
 {
-    public static float scrollThreshold = 60.0f;
+    public static float scrollThreshold = 65.0f;
     [SerializeField]
     [Min(0.01f)]
     float scrollResetTime = 0.1f;
