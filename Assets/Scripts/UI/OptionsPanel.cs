@@ -17,16 +17,18 @@ public struct PlayerPrefOptionsBasis
 public class OptionsPanel : MonoBehaviour
 {
     //Keys for Player Preferences
-    public static readonly PlayerPrefOptionsBasis MOUSE_PREF = new PlayerPrefOptionsBasis("MOUSE_SENSITIVITY", 1.0f);
+    public static readonly PlayerPrefOptionsBasis MOUSE_PREF = new PlayerPrefOptionsBasis("MOUSE_SENSITIVITY", 10.0f);
     public static readonly PlayerPrefOptionsBasis SCROLL_PREF = new PlayerPrefOptionsBasis("SCROLL_SENSITIVITY",60.0f);
     public static readonly PlayerPrefOptionsBasis MUSIC_PREF = new PlayerPrefOptionsBasis("MUSIC_VOLUME", 1.0f);
     public static readonly PlayerPrefOptionsBasis SFX_PREF = new PlayerPrefOptionsBasis("SFX_VOLUME",1.0f);
+    public static readonly PlayerPrefOptionsBasis FULLSCREEN_PREF = new PlayerPrefOptionsBasis("FULLSCREEN",1.0f);
 
     //Variables
     float mouseValue;
     float scrollValue;
     float musicValue;
     float sfxValue;
+    float fullscreenValue;
 
     void OnEnable()
     {
@@ -48,6 +50,10 @@ public class OptionsPanel : MonoBehaviour
 
         //TODO: SFX
         CheckPref(SFX_PREF, ref sfxValue);
+
+        //Fullscreen
+        CheckPref(FULLSCREEN_PREF, ref fullscreenValue);
+        Screen.fullScreen = fullscreenValue > 0;
     }
 
     void CheckPref(PlayerPrefOptionsBasis basis, ref float value)
@@ -61,4 +67,6 @@ public class OptionsPanel : MonoBehaviour
             PlayerPrefs.SetFloat(basis.preferenceKey, basis.defaultValue);
         }
     }
+
+    
 }
