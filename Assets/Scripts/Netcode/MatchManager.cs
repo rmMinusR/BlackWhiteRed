@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -102,11 +103,9 @@ public class MatchManager : NetworkBehaviour
         //Set Scores
         teamScores = new int[] { 0, 0 };
 
-        //Attempting to make sure the server has these new transforms, but they're still getting reset.
-        ForcePlayerControllers();
-
-        //Send players to starting locations
         OnMatchStartClientRpc();
+        StartRound();
+        //FIXME: This is technically a race condition!
     }
 
     public void SetSpawnPoint(Team team, SpawnPointMarker point)
@@ -119,31 +118,6 @@ public class MatchManager : NetworkBehaviour
         spawnPoints[(int)team] = point;
     }
 
-    public void HandlePortalScore(PlayerController pc)
-    {
-        //Increase Score
-        teamScores[pc.TeamValue]++;
-
-        //Check For Win
-        //TODO: Invoke events that things like the sound and UI will be listening for
-        if (teamScores[pc.TeamValue] >= scoreToWin)
-        {
-            serverside_onTeamWin?.Invoke(pc.CurrentTeam);
-            OnTeamWinClientRpc(pc.CurrentTeam);
-            Debug.Log(pc.CurrentTeam + " WON");
-        }
-        else
-        {
-            serverside_onScore?.Invoke(pc);
-            OnTeamScoreClientRpc(pc.CurrentTeam);
-            Debug.Log(pc.CurrentTeam + " SCORED");
-        }
-
-
-        //Attempting to make sure the server has these new transforms, but they're still getting reset.
-        ForcePlayerControllers();
-    }
-
     [ClientRpc(Delivery = RpcDelivery.Reliable)]
     private void OnMatchStartClientRpc()
     {
@@ -151,23 +125,135 @@ public class MatchManager : NetworkBehaviour
         onMatchStart?.Invoke();
     }
 
-    [ClientRpc(Delivery = RpcDelivery.Reliable)]
-    private void OnTeamScoreClientRpc(Team team)
+    public void HandlePortalScore(PlayerController pc)
     {
-        onTeamScore?.Invoke(team);
+        //Increase Score
+        teamScores[pc.TeamValue]++;
+
+        //Send message to all (including self!)
+        MsgAll_TeamScored(pc.CurrentTeam, teamScores[pc.TeamValue], pc);
+    }
+
+    private void MsgAll_TeamScored(Team team, int newScore, PlayerController whoScored)
+    {
+        __HandleMsg_TeamScored(team, newScore, whoScored);
+        __MsgClients_OnTeamScoreClientRpc(team, newScore, whoScored);
     }
 
     [ClientRpc(Delivery = RpcDelivery.Reliable)]
-    private void OnTeamWinClientRpc(Team team)
+    private void __MsgClients_OnTeamScoreClientRpc(Team team, int newScore, PlayerController whoScored)
     {
-        onTeamWin?.Invoke(team);
+        if (!IsHost) __HandleMsg_TeamScored(team, newScore, whoScored);
     }
 
-    private void ForcePlayerControllers()
+    private (PlayerController player, Team team) mostRecentlyScored; //Stored for the Animation
+    private void __HandleMsg_TeamScored(Team team, int newScore, PlayerController whoScored)
     {
-        for (int i = 0; i < readyClientIds.Count; i++)
-        {
-            NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().ResetToSpawnPoint();
-        }
+        mostRecentlyScored = (whoScored, team);
+
+        //Run callbacks
+        if (newScore < scoreToWin) onTeamScore?.Invoke(team);
+        else                       onTeamWin  ?.Invoke(team);
+
+        //Start round-end animation
+        EndRound();
     }
+
+    #region Round management
+
+    //Animations trigger the actual 'work' functions on a timer
+    [Header("Animations")]
+    [SerializeField] private Animation roundAnimationHandler;
+    [SerializeField] private AnimationClip roundStartSequence;
+    [SerializeField] private AnimationClip roundEndSequence;
+
+    #region Round start and end
+    public void StartRound()
+    {
+        //Message all (including self) exactly once
+        __HandleMsg_StartRound();
+        __MsgClients_StartRoundClientRpc();
+    }
+
+    [ClientRpc(Delivery = RpcDelivery.Reliable)]
+    private void __MsgClients_StartRoundClientRpc()
+    {
+        if (!IsHost) __HandleMsg_StartRound();
+    }
+
+    private void __HandleMsg_StartRound()
+    {
+        roundAnimationHandler.Play(roundStartSequence.name);
+    }
+
+    //No need for message-all idiom since it's called from HandleMsg_TeamScored instead, and would be a race condition if we did
+    public void EndRound() => roundAnimationHandler.Play(roundEndSequence.name);
+    #endregion
+
+    #region 'Work' functions called from AnimationClips
+
+    [Header("Announcements")]
+    [SerializeField] private AnnouncementBannerDriver announcementBanner;
+    [SerializeField] private string announcementTeamScored = "{0} team scored!";
+    [SerializeField] private string announcementTeamWon = "{0} team won!";
+    [SerializeField] [Min(0)] private float announcementCountdownShowTime = 1f;
+
+    /// <summary>
+    /// State change requires server authority - does nothing if not server
+    /// </summary>
+    public void ANIM_MovePlayersToSpawn()
+    {
+        if (!IsServer) return;
+
+        foreach (NetworkClient c in NetworkManager.Singleton.ConnectedClientsList) c.PlayerObject.GetComponent<PlayerController>().ResetToSpawnPoint();
+    }
+
+    /// <summary>
+    /// UI - fires for all clients
+    /// </summary>
+    public void ANIM_ShowTeamScoredBanner(float time)
+    {
+        if (!IsClient) return;
+
+        bool isWin = teamScores[(int)mostRecentlyScored.team] >= scoreToWin;
+        string toShow = string.Format(isWin ? announcementTeamWon : announcementTeamScored, mostRecentlyScored.team.ToString());
+        announcementBanner.Show(toShow, time);
+    }
+
+    /// <summary>
+    /// UI - fires for all clients
+    /// </summary>
+    public void ANIM_ShowCountdownBanner(string text)
+    {
+        if (!IsClient) return;
+
+        announcementBanner.Close();
+        announcementBanner.Show(text, announcementCountdownShowTime);
+    }
+
+    /// <summary>
+    /// State change requires server authority - does nothing if not server
+    /// </summary>
+    public void ANIM_MoveToNextRoundOrLobby()
+    {
+        bool isWin = teamScores[(int)mostRecentlyScored.team] >= scoreToWin;
+
+        if (!isWin) StartRound();
+        else __ReturnToLobby();
+    }
+
+    /// <summary>
+    /// State change, but no server authority required. FIXME?
+    /// </summary>
+    public void ANIM_SetTimescale(float scale)
+    {
+        Time.timeScale = scale;
+        Time.fixedDeltaTime = 1/50f * scale;
+    }
+
+    private void __ReturnToLobby() => throw new NotImplementedException(); //TODO
+
+    #endregion
+
+    #endregion
 }

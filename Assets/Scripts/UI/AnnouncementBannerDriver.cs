@@ -6,17 +6,13 @@ using UnityEngine;
 
 public class AnnouncementBannerDriver : MonoBehaviour
 {
-    //Public interface function
-    public void Show(string text, float duration, bool showImmediately = false)
-    {
-        if (showImmediately)
-        {
-            queue.Clear();
-            timeUntilClose = 0;
-        }
+    #region Public interface functions
 
-        queue.Add(new Entry { text = text, duration = duration });
-    }
+    public void Show(string text, float duration) => queue.Add(new Entry { text = text, duration = duration });
+    public void Close() => timeUntilClose = 0;
+    public void Clear() => queue.Clear();
+
+    #endregion
 
     [SerializeField] private RectTransform contentRoot;
     [SerializeField] private TMP_Text textTarget;
