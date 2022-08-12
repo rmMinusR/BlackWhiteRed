@@ -7,7 +7,16 @@ using UnityEngine;
 public class AnnouncementBannerDriver : MonoBehaviour
 {
     //Public interface function
-    public void Show(string text, float duration) => queue.Add(new Entry { text = text, duration = duration });
+    public void Show(string text, float duration, bool showImmediately = false)
+    {
+        if (showImmediately)
+        {
+            queue.Clear();
+            timeUntilClose = 0;
+        }
+
+        queue.Add(new Entry { text = text, duration = duration });
+    }
 
     [SerializeField] private RectTransform contentRoot;
     [SerializeField] private TMP_Text textTarget;
