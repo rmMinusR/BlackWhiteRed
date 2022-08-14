@@ -64,6 +64,7 @@ public class MatchManager : NetworkBehaviour
     [ServerRpc(Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
     public void LogAsReadyServerRpc(ulong clientId)
     {
+        Debug.Log($"Client {clientId} ready");
         readyClientIds.Add(clientId);
         if (readyClientIds.Count == LobbyManager.Instance.GetNumberPlayers())
         {
@@ -74,6 +75,8 @@ public class MatchManager : NetworkBehaviour
 
     void StartMatch()
     {
+        Debug.Log("Starting match");
+
         //Randomize Teams
         List<Team> teams = new List<Team>();
         int playerCount = readyClientIds.Count;
@@ -96,6 +99,7 @@ public class MatchManager : NetworkBehaviour
         //Assign Player Objects to Teams
         for (int i = 0; i < playerCount; i++)
         {
+            //FIXME no PlayerObject spawned? Throws NPE.
             NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoints[(int)teams[i]].transform.position, spawnPoints[(int)teams[i]].look);
             NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().ResetToSpawnPoint();
         }
@@ -172,6 +176,8 @@ public class MatchManager : NetworkBehaviour
     {
         if (!IsServer) throw new AccessViolationException();
 
+        Debug.Log("[Server] Sending start-round signal");
+
         //Message all (including self) exactly once
         __HandleMsg_StartRound();
         __MsgClients_StartRoundClientRpc();
@@ -185,6 +191,8 @@ public class MatchManager : NetworkBehaviour
 
     private void __HandleMsg_StartRound()
     {
+        Debug.Log("Playing start-round animation");
+
         roundAnimationHandler.Play(roundStartSequence.name);
     }
 
