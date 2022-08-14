@@ -170,6 +170,8 @@ public class MatchManager : NetworkBehaviour
     #region Round start and end
     public void StartRound()
     {
+        if (!IsServer) throw new AccessViolationException();
+
         //Message all (including self) exactly once
         __HandleMsg_StartRound();
         __MsgClients_StartRoundClientRpc();
@@ -236,9 +238,14 @@ public class MatchManager : NetworkBehaviour
     /// </summary>
     public void ANIM_MoveToNextRoundOrLobby()
     {
-        bool isWin = teamScores[(int)mostRecentlyScored.team] >= scoreToWin;
+        if (!IsServer) return;
 
-        if (!isWin) StartRound();
+        bool keepPlaying = teamScores[(int)mostRecentlyScored.team] < scoreToWin;
+
+        if (keepPlaying)
+        {
+            if (IsServer) StartRound();
+        }
         else __ReturnToLobby();
     }
 
