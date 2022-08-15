@@ -10,7 +10,7 @@ public abstract class ProjectionShape
 
     public static ProjectionShape Build(GameObject source)
     {
-        List<ProjectionShape> projections = source.GetComponents<Collider>().Select(i => Resolve(i, i.transform.position)).ToList();
+        List<ProjectionShape> projections = source.GetComponents<Collider>().Select(i => Resolve(i, source.transform.position)).ToList();
         if (projections.Count == 1) return projections[0];
         else if (projections.Count == 0) throw new InvalidOperationException("Can't build projections for "+source+" because it has no colliders");
         else return new CompoundProjection(projections);

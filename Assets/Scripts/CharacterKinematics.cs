@@ -10,8 +10,13 @@ public sealed class CharacterKinematics : NetworkBehaviour
 {
     private CharacterController __coll;
     private CharacterController coll => __coll != null ? __coll : (__coll = GetComponent<CharacterController>());
-    private ProjectionShape proj;
+
+    [TestButton("Rebuild projection", nameof(__RebuildProjection), isActiveAtRuntime = true, isActiveInEditor = false, order = 1)]
+    [SubclassSelector(order = 2)]
+    [SerializeReference] private ProjectionShape proj;
     
+    private void __RebuildProjection() => proj = ProjectionShape.Build(gameObject);
+
     private void Awake()
     {
         proj = ProjectionShape.Build(gameObject);
@@ -25,15 +30,20 @@ public sealed class CharacterKinematics : NetworkBehaviour
         frame.time = (float)NetworkManager.ServerTime.FixedTime;
     }
 
+    [SerializeField] [Range(0, 1)] private float visualSmoothing = 0.99f;
+
     private void FixedUpdate()
     {
         //Derive next kinematics frame
         frame = Step(frame, (float)NetworkManager.ServerTime.FixedTime - frame.time, IsLocalPlayer ? StepMode.LiveForward : StepMode.LiveSpeculation); //Only local player has live input. Anything serverside is speculation until proven otherwise.
 
         //Apply
-        transform.position = frame.position;
-        //if (PlayerPhysicsFrame.DoCollisionTest(frame.mode)) coll.Move(frame.position - transform.position);
-        //else transform.position = frame.position;
+        if (IsClient && PlayerPhysicsFrame.DoSmoothing(frame.type))
+        {
+            Vector3 forwardProjectedPos = frame.position + frame.velocity * Time.fixedDeltaTime / (1 - visualSmoothing);
+            transform.position = Vector3.Lerp(forwardProjectedPos, transform.position, visualSmoothing);
+        }
+        else transform.position = frame.position;
 
         if (FinalizeMove != null) FinalizeMove();
     }
@@ -129,8 +139,8 @@ public sealed class CharacterKinematics : NetworkBehaviour
     {
         Vector3 pos = Application.isPlaying ? frame.position : transform.position;
 
-        //Gizmos.color = Color.green;
-        //proj.DrawAsGizmos(pos);
+        Gizmos.color = Color.green;
+        proj.DrawAsGizmos(pos);
 
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(pos + Vector3.down*(coll.height/2-coll.radius+groundProbeOffset), coll.radius+groundProbeRadius);
