@@ -262,7 +262,7 @@ public class MatchManager : NetworkBehaviour
     public void ANIM_SetTimescale(float scale)
     {
         Time.timeScale = scale; //Keep UI time
-        Time.fixedDeltaTime = 1/50f / scale; //Adjust physics time
+        Time.fixedDeltaTime = 1/50f * scale; //Adjust physics time
     }
 
     private void __ReturnToLobby() => throw new NotImplementedException(); //TODO
