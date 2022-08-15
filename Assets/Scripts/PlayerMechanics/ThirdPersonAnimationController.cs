@@ -143,7 +143,7 @@ public class ThirdPersonAnimationController : NetworkBehaviour
         SetMaterials();
     }
 
-    private void HandleHealthChange(int value, DamageSource type, PlayerController source)
+    private void HandleHealthChange(int value, DamageSource source, PlayerController whoDamaged)
     {
         animator.SetTrigger("Pain");
     }
