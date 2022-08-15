@@ -7,6 +7,6 @@ using System;
 public static class BuildInfo
 {
     public const int BUILD_NUMBER = 1;
-    public static readonly DateTime BUILD_TIME = new DateTime(2022, 7, 28, 21, 35, 38);
-    public static readonly string COMMIT = "dev@24ce3d717dff5412c2ff03a03776ee3a86e7a60b";
+    public static readonly DateTime BUILD_TIME = new DateTime(2022, 8, 15, 18, 32, 30);
+    public static readonly string COMMIT = "debug-logging@bfe4fcfdc2596d40bf59b78a723fd182b1dc857c";
 }
