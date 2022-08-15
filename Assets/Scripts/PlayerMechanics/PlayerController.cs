@@ -63,15 +63,11 @@ public class PlayerController : NetworkBehaviour
     private void OnEnable()
     {
         MatchManager.onMatchStart += HandleMatchStart;
-        MatchManager.onTeamScore += HandleTeamScore;
-        MatchManager.onTeamWin += HandleTeamScore;
     }
 
     private void OnDisable()
     {
         MatchManager.onMatchStart -= HandleMatchStart;
-        MatchManager.onTeamScore -= HandleTeamScore;
-        MatchManager.onTeamWin -= HandleTeamScore;
     }
 
     private void FixedUpdate()
@@ -134,11 +130,6 @@ public class PlayerController : NetworkBehaviour
     {
         gameObject.name = "Player " + playerTag.Value.ToString();
 
-        ResetToSpawnPoint();
-    }
-
-    private void HandleTeamScore(Team team)
-    {
         ResetToSpawnPoint();
     }
 }
