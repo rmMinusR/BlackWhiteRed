@@ -39,8 +39,8 @@ public class PlayerController : NetworkBehaviour
 
     public int ShadeValue => shadeValue;
     private PlayerStats currentStats => kit.playerStats[shadeValue];
+    public Team CurrentTeam => currentTeam;
     public PlayerStats CurrentStats => currentStats;
-    public Team Team => currentTeam;
     public int TeamValue => (int)currentTeam;
 
     [ClientRpc]
