@@ -19,6 +19,7 @@ public class AnnouncementBannerDriver : MonoBehaviour
     [SerializeField] private float padding;
     [SerializeField] private AnimationCurve animOpen  = AnimationCurve.EaseInOut(0, 0, 1, 1);
     [SerializeField] private AnimationCurve animClose = AnimationCurve.EaseInOut(0, 1, 1, 0);
+    [SerializeField] private bool useUnscaledTime;
 
     [Space]
     [SerializeField] private List<Entry> queue;
@@ -51,6 +52,8 @@ public class AnnouncementBannerDriver : MonoBehaviour
 
     void Update()
     {
+        float dt = useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+
         contentRoot.gameObject.SetActive(state != State.Closed);
 
         //Tick animation
@@ -62,7 +65,7 @@ public class AnnouncementBannerDriver : MonoBehaviour
                 State.Closing => animClose,
                 _ => throw new NotImplementedException(),
             };
-            animationTime += Time.deltaTime;
+            animationTime += dt;
 
             //Write to transform
             contentRoot.sizeDelta = new Vector2(
@@ -77,7 +80,7 @@ public class AnnouncementBannerDriver : MonoBehaviour
         //Close after a period of time being open
         if (state == State.Open)
         {
-            timeUntilClose -= Time.deltaTime;
+            timeUntilClose -= dt;
             if (timeUntilClose <= 0)
             {
                 state = State.Closing;

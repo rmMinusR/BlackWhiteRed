@@ -99,7 +99,6 @@ public class MatchManager : NetworkBehaviour
         //Assign Player Objects to Teams
         for (int i = 0; i < playerCount; i++)
         {
-            //FIXME no PlayerObject spawned? Throws NPE.
             NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoints[(int)teams[i]].transform.position, spawnPoints[(int)teams[i]].look);
             NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().ResetToSpawnPoint();
         }
@@ -167,9 +166,9 @@ public class MatchManager : NetworkBehaviour
 
     //Animations trigger the actual 'work' functions on a timer
     [Header("Animations")]
-    [SerializeField] private Animation roundAnimationHandler;
-    [SerializeField] private AnimationClip roundStartSequence;
-    [SerializeField] private AnimationClip roundEndSequence;
+    [SerializeField] private Animator roundAnimationHandler;
+    [SerializeField] private string roundStartTriggerBinding;
+    [SerializeField] private string roundEndTriggerBinding;
 
     #region Round start and end
     public void StartRound()
@@ -193,11 +192,11 @@ public class MatchManager : NetworkBehaviour
     {
         Debug.Log("Playing start-round animation");
 
-        roundAnimationHandler.Play(roundStartSequence.name);
+        roundAnimationHandler.SetTrigger(roundStartTriggerBinding);
     }
 
     //No need for message-all idiom since it's called from HandleMsg_TeamScored instead, and would be a race condition if we did
-    public void EndRound() => roundAnimationHandler.Play(roundEndSequence.name);
+    public void EndRound() => roundAnimationHandler.SetTrigger(roundEndTriggerBinding);
     #endregion
 
     #region 'Work' functions called from AnimationClips
@@ -262,8 +261,8 @@ public class MatchManager : NetworkBehaviour
     /// </summary>
     public void ANIM_SetTimescale(float scale)
     {
-        Time.timeScale = scale;
-        Time.fixedDeltaTime = 1/50f * scale;
+        Time.timeScale = scale; //Keep UI time
+        Time.fixedDeltaTime = 1/50f / scale; //Adjust physics time
     }
 
     private void __ReturnToLobby() => throw new NotImplementedException(); //TODO

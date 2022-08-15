@@ -184,7 +184,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4450156425366904259}
-  - component: {fileID: 4450156425366904256}
   - component: {fileID: 4450156425366904257}
   m_Layer: 5
   m_Name: Announcement banner
@@ -214,21 +213,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &4450156425366904256
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4450156425366904260}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf0fa9fd62309a04eacb70fea951e52e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  target: {fileID: 4450156425366904257}
-  text: Test announcement
-  duration: 3
 --- !u!114 &4450156425366904257
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -292,6 +276,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  useUnscaledTime: 1
   queue: []
   state: 0
   timeUntilClose: 0
