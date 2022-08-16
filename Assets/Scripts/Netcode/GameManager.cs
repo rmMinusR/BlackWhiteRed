@@ -244,7 +244,7 @@ public class GameManager : MonoBehaviour
     {
         var delay = new WaitForSecondsRealtime(0.2f);
 
-        while (NetworkManager.Singleton.LocalClient.PlayerObject == null)
+        while (!NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsServer)
         {
             yield return delay;
         }

@@ -33,7 +33,7 @@ public class HealthBarController : MonoBehaviour
         MatchManager.onMatchStart += HandleMatchStart;
         if (localPlayerHealth != null)
         {
-            localPlayerHealth.onHealthChange += HandleHealthChange;
+            localPlayerHealth.clientside_onHealthChange += HandleHealthChange;
         }
     }
 
@@ -42,7 +42,7 @@ public class HealthBarController : MonoBehaviour
         MatchManager.onMatchStart -= HandleMatchStart;
         if (localPlayerHealth != null)
         {
-            localPlayerHealth.onHealthChange -= HandleHealthChange;
+            localPlayerHealth.clientside_onHealthChange -= HandleHealthChange;
         }
     }
 
@@ -86,12 +86,12 @@ public class HealthBarController : MonoBehaviour
             currentHealth = localPlayerHealth.GetMaxHealth();
 
             //Set events
-            localPlayerHealth.onHealthChange += HandleHealthChange;
+            localPlayerHealth.clientside_onHealthChange += HandleHealthChange;
         }
         SetUpHealthDisplay();
     }
 
-    private void HandleHealthChange(int _value)
+    private void HandleHealthChange(int _value, DamageSource _, PlayerController _2)
     {
         currentHealth = _value;
         UpdateHealthDisplay();

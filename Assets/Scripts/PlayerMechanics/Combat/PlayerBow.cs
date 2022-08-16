@@ -89,7 +89,7 @@ public class PlayerBow : MonoBehaviour
 
                     float timeShot = NetworkManager.Singleton.LocalTime.TimeAsFloat;
 
-                    ArrowPool.Instance.RequestArrowFireServerRpc(playerController.Team, playerController.NetworkObjectId, playerController.ShadeValue, pos, dir, pullBack, timeShot);
+                    ArrowPool.Instance.RequestArrowFireServerRpc(playerController.CurrentTeam, playerController.NetworkObjectId, playerController.ShadeValue, pos, dir, pullBack, timeShot);
                 }
             }
         }

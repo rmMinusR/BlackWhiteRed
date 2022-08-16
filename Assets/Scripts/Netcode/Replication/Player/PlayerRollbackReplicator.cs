@@ -131,7 +131,7 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         {
             OverwriteFlags overwrite = 0;
 
-            overwrite |= Sanitize(untrustedFrame);
+            overwrite |= Sanitize(ref untrustedFrame);
 
             //Find insert position
             (RecyclingNode<PlayerPhysicsFrame> lastValid, int lastValidIndex) = speculativeFutures.FindNode(n => n.next == null || (n.value.time < untrustedFrame.time && untrustedFrame.time <= n.next.value.time));
@@ -140,7 +140,11 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             PlayerPhysicsFrame authorityFrame = SimulateVerify(kinematics, lastValid.value, untrustedFrame);
 
             //Validate - Special case: If teleporting, always overwrite ALL values
-            if (authorityFrame.type == PlayerPhysicsFrame.Type.Teleport) overwrite |= OverwriteFlags.All;
+            if (authorityFrame.type == PlayerPhysicsFrame.Type.Teleport)
+            {
+                Debug.Log("Teleporting player...", this);
+                overwrite |= OverwriteFlags.All;
+            }
 
             //Validate - compare untrusted value to authority value, and copy over (within bounds)
             //No point in bounding if already overwritten by a more precise source
@@ -169,7 +173,7 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         }
     }
 
-    private static OverwriteFlags Sanitize(PlayerPhysicsFrame untrusted)
+    private static OverwriteFlags Sanitize(ref PlayerPhysicsFrame untrusted)
     {
         OverwriteFlags overwrite = 0;
 
@@ -182,7 +186,11 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         }
 
         //Sanitize - protect against input outside allowed bounds
-        if (ValidationUtility.Bound(in untrusted.input.move, out untrusted.input.move, Vector2.zero, 1.02f)) overwrite |= OverwriteFlags.Position | OverwriteFlags.Velocity;
+        if (ValidationUtility.Bound(in untrusted.input.move, out untrusted.input.move, Vector2.zero, 1.02f))
+        {
+            Debug.LogWarning("Player tried to send unnormalized input!");
+            overwrite |= OverwriteFlags.Position | OverwriteFlags.Velocity;
+        }
 
         //Sanitize - protect against cached-data attack
         untrusted.RefreshLookTrig();

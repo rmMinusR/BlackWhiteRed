@@ -54,6 +54,11 @@ public struct PlayerPhysicsFrame : INetworkSerializable
         return m != Type.Teleport;
     }
 
+    public static bool DoSmoothing(Type m)
+    {
+        return m != Type.Teleport;
+    }
+
     #region Cached expensive math
 
     private bool __lookTrigDirty;
@@ -97,9 +102,7 @@ public struct PlayerPhysicsFrame : INetworkSerializable
 
         serializer.SerializeValue(ref input);
         
-        //Special logic to detect changes to look and recalc trig.
-        Vector2 prevLookVal = look;
         serializer.SerializeValue(ref _look);
-        __lookTrigDirty |= (look != prevLookVal);
+        if (serializer.IsReader) __lookTrigDirty = true;
     }
 }

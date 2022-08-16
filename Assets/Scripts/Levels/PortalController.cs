@@ -36,7 +36,7 @@ public class PortalController : MonoBehaviour
         PlayerController pc;
         if(other.TryGetComponent<PlayerController>(out pc))
         {
-            if(pc.Team != team)
+            if(pc.CurrentTeam != team)
             {
                 /* I'm aware that a public method may not be good 
                  * if cheaters became a problem but this was to make 

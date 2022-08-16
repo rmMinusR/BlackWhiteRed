@@ -124,7 +124,7 @@ public class ArrowController : NetworkBehaviour
             case 6:
                 Debug.Log("Arrow hit player " + hit.name);
                 PlayerController playerController = hit.GetComponent<PlayerController>();
-                if (playerController.Team != team)
+                if (playerController.CurrentTeam != team)
                 {
                     //Knockback
                     playerController.GetComponent<PlayerKnockbackController>().KnockbackPlayer(rb.velocity, kit.playerStats[shadeValue].bowKnockbackMultiplier);
