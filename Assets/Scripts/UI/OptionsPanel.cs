@@ -28,7 +28,7 @@ public struct PlayerPrefOptionsBasis
 public class OptionsPanel : MonoBehaviour
 {
     //Keys for Player Preferences
-    public static readonly PlayerPrefOptionsBasis MOUSE_PREF = new PlayerPrefOptionsBasis("MOUSE_SENSITIVITY", 10.0f);
+    public static readonly PlayerPrefOptionsBasis MOUSE_PREF = new PlayerPrefOptionsBasis("MOUSE_SENSITIVITY", 200.0f);
     public static readonly PlayerPrefOptionsBasis SCROLL_PREF = new PlayerPrefOptionsBasis("SCROLL_SENSITIVITY",65.0f);
     public static readonly PlayerPrefOptionsBasis MUSIC_PREF = new PlayerPrefOptionsBasis("MUSIC_VOLUME", 1.0f);
     public static readonly PlayerPrefOptionsBasis SFX_PREF = new PlayerPrefOptionsBasis("SFX_VOLUME",1.0f);
