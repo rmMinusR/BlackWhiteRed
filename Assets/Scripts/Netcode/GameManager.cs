@@ -19,10 +19,6 @@ public class GameManager : MonoBehaviour
 
     private Dictionary<string, Coroutine> coroutines;
 
-    const string SceneNamePlayers = "Level3-Area0-Players";
-    const string SceneNameLevelDesign = "Level3-Area0-LevelDesign";
-    const string SceneNameEnvironmentArt = "Level3-Area0-EnvironmentArt";
-
     public static GameManager Instance;
 
     private void Awake()
@@ -106,7 +102,6 @@ public class GameManager : MonoBehaviour
     private void OnDisable()
     {
         LobbyManager.Instance.onGameStartChanged -= JoinStartingMatch;
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoadEventCompleted;
     }
 
     #region lobby relay
@@ -170,9 +165,6 @@ public class GameManager : MonoBehaviour
             yield return null;
             temp = (RelayConnectionClient)RelayManager.Instance.Connection;
         }
-
-        NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Single);
-        NetworkManager.Singleton.SceneManager.OnLoadComplete += HandleSceneLoadCompleted;
     }
 
     #endregion
@@ -181,78 +173,9 @@ public class GameManager : MonoBehaviour
 
     private void WhenAllPlayersConnected()
     {
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoadEventCompleted;
-        NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Single);
-        NetworkManager.Singleton.SceneManager.LoadScene(SceneNamePlayers,LoadSceneMode.Single);
-    }
-
-    private void HandleSceneLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
-    {
-        Debug.LogWarning("HandleSceneLoadEventCompleted " + sceneName);
-
-        if (NetworkManager.Singleton.IsHost)
-        {
-            switch (sceneName)
-            {
-                case SceneNamePlayers:
-                    NetworkManager.Singleton.SceneManager.LoadScene(SceneNameLevelDesign, LoadSceneMode.Additive);
-                    break;
-                case SceneNameLevelDesign:
-                    NetworkManager.Singleton.SceneManager.LoadScene(SceneNameEnvironmentArt, LoadSceneMode.Additive);
-                    break;
-                case SceneNameEnvironmentArt:
-                    StartCoroutine(ReadyUp());
-                    break;
-            }
-        }
-    }
-
-    private void HandleSceneLoadCompleted(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
-    {
-        Debug.LogWarning("HandleSceneLoadCompleted " + sceneName);
-
-        if (!NetworkManager.Singleton.IsHost)
-        {
-            switch (sceneName)
-            {
-                case SceneNamePlayers:
-                case SceneNameLevelDesign:
-                    //NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
-                    break;
-                case SceneNameEnvironmentArt:
-                    if (SceneManager.GetActiveScene().name != SceneNamePlayers)
-                    {
-                        AsyncOperation oper = SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
-                        oper.completed += HandleUnloadEnded;
-                    }
-                    else
-                    {
-                        StartCoroutine(ReadyUp());
-                    }
-                    break;
-            }
-        }
-    }
-
-    private void HandleUnloadEnded(AsyncOperation oper)
-    {
-        StartCoroutine(ReadyUp());
-        oper.completed -= HandleUnloadEnded;
-    }
-
-    IEnumerator ReadyUp()
-    {
-        var delay = new WaitForSecondsRealtime(0.2f);
-
-        while (!NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsServer)
-        {
-            yield return delay;
-        }
-
-        yield return delay;
-
-        Debug.Log("MATCH CAN START");
-        MatchManager.Instance.LogAsReadyServerRpc(NetworkManager.Singleton.LocalClientId);
+        //TODO check scene management is set to manual
+        Debug.Assert(!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement);
+        FindObjectOfType<MatchBeginHelper>().BeginMatch();
     }
 
     #endregion

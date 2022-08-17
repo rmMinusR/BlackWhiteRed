@@ -24,9 +24,6 @@ public class MatchManager : NetworkBehaviour
     public int[] teamScores;
     [Space]
     [SerializeField]
-    List<ulong> readyClientIds;
-    [Space]
-    [SerializeField]
     SpawnPointMarker[] spawnPoints;
 
     [Space]
@@ -61,16 +58,19 @@ public class MatchManager : NetworkBehaviour
         spawnPoints = new SpawnPointMarker[2];
     }
 
-    [ServerRpc(Delivery = RpcDelivery.Reliable, RequireOwnership = false)]
-    public void LogAsReadyServerRpc(ulong clientId)
+    private IEnumerator WaitForAllPlayersLoaded()
     {
-        Debug.Log($"Client {clientId} ready");
-        readyClientIds.Add(clientId);
-        if (readyClientIds.Count == LobbyManager.Instance.GetNumberPlayers())
-        {
-            Debug.Log("ALL PLAYERS READY");
-            StartMatch();
-        }
+        MatchBeginHelper handoff = FindObjectOfType<MatchBeginHelper>();
+
+        while (!handoff.AllClientsLoaded && handoff.LoadedClientIds.Count == LobbyManager.Instance.GetNumberPlayers()) yield return new WaitForSecondsRealtime(0.2f);
+
+        Debug.Log("ALL PLAYERS READY");
+        StartMatch();
+    }
+
+    internal void StartWhenPlayersLoaded()
+    {
+        throw new NotImplementedException();
     }
 
     void StartMatch()
@@ -79,7 +79,7 @@ public class MatchManager : NetworkBehaviour
 
         //Randomize Teams
         List<Team> teams = new List<Team>();
-        int playerCount = readyClientIds.Count;
+        int playerCount = NetworkManager.ConnectedClientsIds.Count;
         for (int i = 0; i < playerCount - (playerCount % 2); i++)
         {
             teams.Add((Team)(i % 2));
@@ -99,8 +99,8 @@ public class MatchManager : NetworkBehaviour
         //Assign Player Objects to Teams
         for (int i = 0; i < playerCount; i++)
         {
-            NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoints[(int)teams[i]].transform.position, spawnPoints[(int)teams[i]].look);
-            NetworkManager.Singleton.ConnectedClients[readyClientIds[i]].PlayerObject.GetComponent<PlayerController>().ResetToSpawnPoint();
+            NetworkManager.Singleton.ConnectedClients[NetworkManager.ConnectedClientsIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoints[(int)teams[i]].transform.position, spawnPoints[(int)teams[i]].look);
+            NetworkManager.Singleton.ConnectedClients[NetworkManager.ConnectedClientsIds[i]].PlayerObject.GetComponent<PlayerController>().ResetToSpawnPoint();
         }
 
         //Set Scores
