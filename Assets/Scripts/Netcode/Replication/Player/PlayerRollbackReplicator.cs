@@ -245,12 +245,20 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
             catch (IndexOutOfRangeException) { Debug.LogWarning($"Frame {authorityFrame.time} missing -- overwritten?", this); }
         }
 
+        //Past our last local physics frame is an easy check
         if (n == null && unvalidatedHistory.Tail.value.time < authorityFrame.time)
         {
-            unvalidatedHistory.Enqueue(default);
+            unvalidatedHistory.Enqueue(new PlayerPhysicsFrame
+            {
+                type  = authorityFrame.type,
+                id    = authorityFrame.id,
+                time  = authorityFrame.time,
+                input = authorityFrame.input,
+                look  = authorityFrame.look
+            });
+
             n = unvalidatedHistory.Tail;
             nInd = unvalidatedHistory.Count - 1;
-            Debug.LogWarning($"#{OwnerClientId} Inserting at Tail instead of overwriting, this should never happen!", this);
         }
 
         //Default to first time with good continuity, or if that fails, to Tail
@@ -272,15 +280,14 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         if (n.next != null) RecalcAfter(unvalidatedHistory, n);
 
         //Start cooldown if any part was rejected
-        if (IsHost && reject != 0) rejectCooldownEndTime = authorityFrame.time;
+        if (IsLocalPlayer && reject != 0) rejectCooldownEndTime = authorityFrame.time; //TODO factor in RTT?
         
         //This frame should now be validated from the server's standpoint, anything before is irrelevant
         TrimBefore(unvalidatedHistory, authorityFrame.time);
         
         if (!IsHost || IsLocalPlayer)
         {
-            kinematics.frame              = unvalidatedHistory.Tail.value;
-            kinematics.transform.position = unvalidatedHistory.Tail.value.position; //Force update transform so we can ignore collisions
+            kinematics.frame = unvalidatedHistory.Tail.value;
         }
     }
 
