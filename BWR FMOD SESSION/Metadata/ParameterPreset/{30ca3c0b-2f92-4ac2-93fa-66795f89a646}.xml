@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.01.00">
+	<object class="ParameterPreset" id="{30ca3c0b-2f92-4ac2-93fa-66795f89a646}">
+		<property name="name">
+			<value>MX Volume</value>
+		</property>
+		<relationship name="folder">
+			<destination>{ab2dbbb0-671f-4fce-9322-3cd40430c4f7}</destination>
+		</relationship>
+		<relationship name="parameter">
+			<destination>{acdd1e11-1810-4752-9660-2c50934ed28e}</destination>
+		</relationship>
+	</object>
+	<object class="GameParameter" id="{acdd1e11-1810-4752-9660-2c50934ed28e}">
+		<property name="maximum">
+			<value>100</value>
+		</property>
+		<property name="isGlobal">
+			<value>true</value>
+		</property>
+		<property name="initialValue">
+			<value>100</value>
+		</property>
+		<property name="isExposedRecursively">
+			<value>false</value>
+		</property>
+	</object>
+</objects>
