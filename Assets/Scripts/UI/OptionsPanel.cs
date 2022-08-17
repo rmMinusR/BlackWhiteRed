@@ -30,8 +30,8 @@ public class OptionsPanel : MonoBehaviour
     //Keys for Player Preferences
     public static readonly PlayerPrefOptionsBasis MOUSE_PREF = new PlayerPrefOptionsBasis("MOUSE_SENSITIVITY", 200.0f);
     public static readonly PlayerPrefOptionsBasis SCROLL_PREF = new PlayerPrefOptionsBasis("SCROLL_SENSITIVITY",65.0f);
-    public static readonly PlayerPrefOptionsBasis MUSIC_PREF = new PlayerPrefOptionsBasis("MUSIC_VOLUME", 1.0f);
-    public static readonly PlayerPrefOptionsBasis SFX_PREF = new PlayerPrefOptionsBasis("SFX_VOLUME",1.0f);
+    public static readonly PlayerPrefOptionsBasis MUSIC_PREF = new PlayerPrefOptionsBasis("MUSIC_VOLUME", 100.0f);
+    public static readonly PlayerPrefOptionsBasis SFX_PREF = new PlayerPrefOptionsBasis("SFX_VOLUME",100.0f);
     public static readonly PlayerPrefOptionsBasis FULLSCREEN_PREF = new PlayerPrefOptionsBasis("FULLSCREEN",0.0f);
 
     //Variables
@@ -40,6 +40,12 @@ public class OptionsPanel : MonoBehaviour
     float musicValue;
     float sfxValue;
     float fullscreenValue;
+
+    //FMOD Global Parameters
+    [FMODUnity.ParamRef]
+    public string sfxVolumeParameter;
+    [FMODUnity.ParamRef]
+    public string musicVolumeParameter;
 
     //UI Components
     [SerializeField]
@@ -142,14 +148,14 @@ public class OptionsPanel : MonoBehaviour
 
     void UpdateForMusic()
     {
-        //TODO
         musicSlider.value = musicValue;
+        FMODUnity.RuntimeManager.StudioSystem.setParameterByName(musicVolumeParameter, musicValue);
     }
 
     void UpdateForSfx()
     {
-        //TODO
         sfxSlider.value = sfxValue;
+        FMODUnity.RuntimeManager.StudioSystem.setParameterByName(sfxVolumeParameter, sfxValue);
     }
 
     void UpdateForFullscreen()
