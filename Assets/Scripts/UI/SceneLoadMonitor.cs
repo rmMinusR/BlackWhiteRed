@@ -34,7 +34,7 @@ public sealed class SceneLoadMonitor : MonoBehaviour
         while (watching != null)
         {
             if (progressBar     != null) progressBar.fillAmount = watching.Progress;
-            if (loadTargetText  != null) loadTargetText .text = string.Format(loadTargetFormat , watching.CurrentlyLoading.name);
+            if (loadTargetText  != null) loadTargetText .text = string.Format(loadTargetFormat , watching.CurrentlyLoading);
             if (loadPercentText != null) loadPercentText.text = string.Format(loadPercentFormat, (int)(watching.Progress * 100));
 
             yield return null;

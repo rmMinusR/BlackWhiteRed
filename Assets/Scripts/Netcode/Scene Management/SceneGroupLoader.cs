@@ -17,27 +17,34 @@ public sealed class SceneGroupLoader : MonoBehaviour
 
     private void Awake()
     {
-        Debug.Assert(Instance != null);
+        Debug.Assert(Instance == null);
         Instance = this;
+
+        UnitySceneManager.sceneLoaded -= OnSceneLoaded;
+        UnitySceneManager.sceneLoaded += OnSceneLoaded;
+        UnitySceneManager.sceneUnloaded -= OnSceneUnloaded;
+        UnitySceneManager.sceneUnloaded += OnSceneUnloaded;
     }
 
     private void OnDestroy()
     {
+        UnitySceneManager.sceneLoaded -= OnSceneLoaded;
+        UnitySceneManager.sceneUnloaded -= OnSceneUnloaded;
+
         Debug.Assert(Instance == this);
         Instance = null;
     }
 
     #endregion
 
-    #region Sentinel reporting callbacks
+    #region Scene loading callbacks
 
     [SerializeField] private List<Scene> loaded = new List<Scene>();
 
-    internal void OnSceneLoaded(Scene scene, bool isSingleton)
+    internal void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        bool multipleInstances = loaded.Contains(scene);
+        if (mode == LoadSceneMode.Single) loaded.Clear();
         loaded.Add(scene);
-        if (isSingleton && multipleInstances) throw new InvalidOperationException("Singleton Scene "+scene.name+" loaded multiple times! This is not allowed!");
     }
 
     internal void OnSceneUnloaded(Scene scene)
@@ -52,42 +59,56 @@ public sealed class SceneGroupLoader : MonoBehaviour
 
     private bool isBusy = false;
 
-    public (Task task, LoadOp progress) LoadSceneGroupAsync(params string[] names)
+    public LoadOp LoadSceneGroupAsync(params string[] names)
     {
+        Debug.Log($"Received load command for {names.Length} scenes");
         LoadOp reporting = new LoadOp(names.Length);
-        Task task = AsyncSceneGroupLoadWorker(names.Select(n => UnitySceneManager.GetSceneByName(n)).ToList(), reporting);
-        return (task, reporting);
+        StartCoroutine(AsyncSceneGroupLoadWorker(names.ToList(), reporting));
+        return reporting;
     }
 
-    private async Task AsyncSceneGroupLoadWorker(List<Scene> scenes, LoadOp reporting)
+    private IEnumerator AsyncSceneGroupLoadWorker(List<string> scenes, LoadOp reporting)
     {
-        if (!isBusy) throw new InvalidOperationException("A scene group is already loading!");
+        if (isBusy) throw new InvalidOperationException("A scene group is already loading!");
         isBusy = true;
+
+        yield return null;
+        Debug.Log($"Starting load for {scenes.Count} scenes");
 
         //Mark current root gameobjects for death
         List<GameObject> toKill = new List<GameObject>();
         Scene ddol = GetDDOLScene();
+#if true
+        foreach (Scene s in loaded) toKill.AddRange(s.GetRootGameObjects());
+#else
         foreach (Transform t in FindObjectsOfType<Transform>())
         {
             if (t.parent == null && t.gameObject.scene != ddol) toKill.Add(t.gameObject);
         }
+#endif
+        Debug.Log($"Found {toKill.Count} root objects to destroy");
 
         //Begin loading
         for(int i = 0; i < scenes.Count; ++i)
         {
             //Set up load operation
             reporting.CurrentlyLoading = scenes[i];
-            reporting.currentOp = UnitySceneManager.LoadSceneAsync(reporting.CurrentlyLoading.buildIndex, LoadSceneMode.Additive);
+            Debug.Log($"Loading {reporting.CurrentlyLoading}...");
+            reporting.currentOp = UnitySceneManager.LoadSceneAsync(reporting.CurrentlyLoading, LoadSceneMode.Additive);
 
             //Wait for finish
-            while (!reporting.currentOp.isDone) await Task.Delay(10);
+            while (!reporting.currentOp.isDone) yield return new WaitForSecondsRealtime(0.1f);
+            Debug.Log($"Done loading {reporting.CurrentlyLoading}");
 
             //Report
             reporting.currentlyLoaded++;
         }
 
+        Debug.Log("Finished loading all scene objects");
+
         //Kill marked objects
-        foreach (GameObject k in toKill) Destroy(k);
+        foreach (GameObject k in toKill) if (k.scene != ddol) Destroy(k);
+        Debug.Log("Destroyed all objects from other scenes");
 
         isBusy = false;
 
@@ -113,10 +134,10 @@ public sealed class SceneGroupLoader : MonoBehaviour
         public event Action onComplete;
 
         public float Progress => (currentlyLoaded + currentOp.progress) / totalToLoad;
-        public Scene CurrentlyLoading { get; internal set; }
+        public string CurrentlyLoading { get; internal set; }
     }
 
-    #endregion
+#endregion
 
     /// <summary>
     /// Objects marked with DontDestroyOnLoad go in a special scene at runtime
@@ -124,6 +145,7 @@ public sealed class SceneGroupLoader : MonoBehaviour
     private static Scene GetDDOLScene()
     {
         GameObject temp = new GameObject();
+        DontDestroyOnLoad(temp);
         try
         {
             return temp.scene;

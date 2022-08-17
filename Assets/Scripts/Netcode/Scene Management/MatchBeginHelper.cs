@@ -32,13 +32,13 @@ public class MatchBeginHelper : NetworkBehaviour
 
     private void __HandleMsg_BeginMatch()
     {
-        SceneGroupLoader.LoadOp progress = SceneGroupLoader.Instance.LoadSceneGroupAsync(SceneNameLevelDesign, SceneNameEnvironmentArt, SceneNamePlayers).progress;
+        SceneGroupLoader.LoadOp progress = SceneGroupLoader.Instance.LoadSceneGroupAsync(SceneNamePlayers, SceneNameLevelDesign, SceneNameEnvironmentArt);
 
         if (IsClient) progress.onComplete += () => __ReportLoadCompleteServerRpc();
         if (IsServer) progress.onComplete += () => MatchManager.Instance.StartWhenPlayersLoaded();
 
         //Send progress monitor to UI
-        loadOverlay.Monitor(progress);
+        if (loadOverlay != null) loadOverlay.Monitor(progress);
     }
 
     [SerializeField] private List<ulong> loadedClientIds = new List<ulong>();

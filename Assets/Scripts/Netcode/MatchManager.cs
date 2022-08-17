@@ -58,19 +58,19 @@ public class MatchManager : NetworkBehaviour
         spawnPoints = new SpawnPointMarker[2];
     }
 
+    internal void StartWhenPlayersLoaded()
+    {
+        StartCoroutine(WaitForAllPlayersLoaded());
+    }
+
     private IEnumerator WaitForAllPlayersLoaded()
     {
         MatchBeginHelper handoff = FindObjectOfType<MatchBeginHelper>();
 
-        while (!handoff.AllClientsLoaded && handoff.LoadedClientIds.Count == LobbyManager.Instance.GetNumberPlayers()) yield return new WaitForSecondsRealtime(0.2f);
+        while (!(NetworkManager.IsConnectedClient || NetworkManager.IsServer) && !handoff.AllClientsLoaded && handoff.LoadedClientIds.Count != LobbyManager.Instance.GetNumberPlayers()) yield return new WaitForSecondsRealtime(0.2f);
 
         Debug.Log("ALL PLAYERS READY");
         StartMatch();
-    }
-
-    internal void StartWhenPlayersLoaded()
-    {
-        throw new NotImplementedException();
     }
 
     void StartMatch()
