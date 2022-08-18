@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System;
 using Unity.Netcode.Transports.UTP;
 using Unity.Netcode;
+using System.Linq;
 
 public class GameManager : MonoBehaviour
 {
@@ -88,6 +89,9 @@ public class GameManager : MonoBehaviour
 
     private async void Start()
     {
+        //Fix deferred messages not reaching their targets when loading scenes
+        GetComponent<NetworkManager>().NetworkConfig.SpawnTimeout = 10;
+
         await UnityServices.InitializeAsync();
         await PlayerAuthenticationManager.Instance.AttemptSignIn();
 
@@ -153,6 +157,10 @@ public class GameManager : MonoBehaviour
         RelayManager.Instance.StartAsClient(relayJoinCode);
 
         StartCoroutine(WaitForClientConnection());
+        //Clientside
+        //FIXME kludge
+        //FindObjectOfType<MatchBeginHelper>().BeginMatch();
+        LoadMatch(true, false);
 
     }
 
@@ -173,9 +181,27 @@ public class GameManager : MonoBehaviour
 
     private void WhenAllPlayersConnected()
     {
-        //TODO check scene management is set to manual
+        //Serverside
         Debug.Assert(!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement);
-        FindObjectOfType<MatchBeginHelper>().BeginMatch();
+        //FindObjectOfType<MatchBeginHelper>().BeginMatch();
+        LoadMatch(true, true); //FIXME Correct for dedicated server?
+    }
+
+    [SerializeField] private SceneLoadMonitor loadOverlay;
+
+    const string SceneNamePlayers = "Level3-Area0-Players";
+    const string SceneNameLevelDesign = "Level3-Area0-LevelDesign";
+    const string SceneNameEnvironmentArt = "Level3-Area0-EnvironmentArt";
+
+    public void LoadMatch(bool client, bool server)
+    {
+        SceneGroupLoader.LoadOp progress = SceneGroupLoader.Instance.LoadSceneGroupAsync(SceneNamePlayers, SceneNameLevelDesign, SceneNameEnvironmentArt);
+
+        if (client) progress.onComplete += () => FindObjectOfType<MatchBeginHelper>().ReportLoadComplete(); //MatchManager.Instance.ReportLoadComplete();
+        if (server) progress.onComplete += () => MatchManager.Instance.StartWhenPlayersLoaded();
+
+        //Send progress monitor to UI
+        if (loadOverlay != null) loadOverlay.Monitor(progress);
     }
 
     #endregion

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
@@ -67,7 +68,15 @@ public class MatchManager : NetworkBehaviour
     {
         MatchBeginHelper handoff = FindObjectOfType<MatchBeginHelper>();
 
-        while (!(NetworkManager.IsConnectedClient || NetworkManager.IsServer) && !handoff.AllClientsLoaded && handoff.LoadedClientIds.Count != LobbyManager.Instance.GetNumberPlayers()) yield return new WaitForSecondsRealtime(0.2f);
+        yield return new WaitForSecondsRealtime(5); //FIXME check that all players are actually connected
+
+        WaitForSecondsRealtime delay = new WaitForSecondsRealtime(0.2f);
+
+        while (!NetworkManager.IsServer) yield return delay;
+
+        while (!handoff.NetworkObject.IsSpawned) yield return delay;
+
+        while (!handoff.AllClientsLoaded && handoff.LoadedClientIds.Count != LobbyManager.Instance.GetNumberPlayers()) yield return delay;
 
         Debug.Log("ALL PLAYERS READY");
         StartMatch();
@@ -173,7 +182,7 @@ public class MatchManager : NetworkBehaviour
     #region Round start and end
     public void StartRound()
     {
-        if (!IsServer) throw new AccessViolationException();
+        //if (!IsServer) throw new AccessViolationException();
 
         Debug.Log("[Server] Sending start-round signal");
 

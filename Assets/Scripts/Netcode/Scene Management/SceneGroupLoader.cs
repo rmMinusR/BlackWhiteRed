@@ -7,8 +7,6 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-using UnitySceneManager = UnityEngine.SceneManagement.SceneManager;
-
 public sealed class SceneGroupLoader : MonoBehaviour
 {
     #region Singleton
@@ -20,16 +18,16 @@ public sealed class SceneGroupLoader : MonoBehaviour
         Debug.Assert(Instance == null);
         Instance = this;
 
-        UnitySceneManager.sceneLoaded -= OnSceneLoaded;
-        UnitySceneManager.sceneLoaded += OnSceneLoaded;
-        UnitySceneManager.sceneUnloaded -= OnSceneUnloaded;
-        UnitySceneManager.sceneUnloaded += OnSceneUnloaded;
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+        SceneManager.sceneUnloaded -= OnSceneUnloaded;
+        SceneManager.sceneUnloaded += OnSceneUnloaded;
     }
 
     private void OnDestroy()
     {
-        UnitySceneManager.sceneLoaded -= OnSceneLoaded;
-        UnitySceneManager.sceneUnloaded -= OnSceneUnloaded;
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneUnloaded -= OnSceneUnloaded;
 
         Debug.Assert(Instance == this);
         Instance = null;
@@ -94,7 +92,7 @@ public sealed class SceneGroupLoader : MonoBehaviour
             //Set up load operation
             reporting.CurrentlyLoading = scenes[i];
             Debug.Log($"Loading {reporting.CurrentlyLoading}...");
-            reporting.currentOp = UnitySceneManager.LoadSceneAsync(reporting.CurrentlyLoading, LoadSceneMode.Additive);
+            reporting.currentOp = SceneManager.LoadSceneAsync(reporting.CurrentlyLoading, LoadSceneMode.Additive);
 
             //Wait for finish
             while (!reporting.currentOp.isDone) yield return new WaitForSecondsRealtime(0.1f);

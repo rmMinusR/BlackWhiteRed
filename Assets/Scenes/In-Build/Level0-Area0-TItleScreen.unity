@@ -172,6 +172,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7be4952006fb52c4eab36f1045646411, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  loadOverlay: {fileID: 0}
 --- !u!114 &228246773
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -230,10 +231,35 @@ MonoBehaviour:
       SourceHashToOverride: 0
       OverridingTargetPrefab: {fileID: 0}
     - Override: 0
-      Prefab: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
+      Prefab: {fileID: 4842441920925114126, guid: f99298f932a33954c94e61769201ba4d, type: 3}
       SourcePrefabToOverride: {fileID: 0}
       SourceHashToOverride: 0
       OverridingTargetPrefab: {fileID: 0}
+    - Override: 0
+      Prefab: {fileID: 3692851150469332487, guid: 6eefefe75449d62459ebeae2d08133b2, type: 3}
+      SourcePrefabToOverride: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
+      SourceHashToOverride: 2018596717
+      OverridingTargetPrefab: {fileID: 3692851150469332487, guid: 6eefefe75449d62459ebeae2d08133b2, type: 3}
+    - Override: 2
+      Prefab: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
+      SourcePrefabToOverride: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
+      SourceHashToOverride: 883627990
+      OverridingTargetPrefab: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
+    - Override: 2
+      Prefab: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
+      SourcePrefabToOverride: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
+      SourceHashToOverride: 4289592579
+      OverridingTargetPrefab: {fileID: 5608075666448030099, guid: 76ad20f3600bd98478e5877e8991b911, type: 3}
+    - Override: 2
+      Prefab: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
+      SourcePrefabToOverride: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
+      SourceHashToOverride: 1762610691
+      OverridingTargetPrefab: {fileID: 4842441920925114126, guid: f99298f932a33954c94e61769201ba4d, type: 3}
+    - Override: 2
+      Prefab: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
+      SourcePrefabToOverride: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
+      SourceHashToOverride: 2018596717
+      OverridingTargetPrefab: {fileID: 3692851150469332487, guid: 6eefefe75449d62459ebeae2d08133b2, type: 3}
     TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
@@ -242,7 +268,7 @@ MonoBehaviour:
     TimeResyncInterval: 30
     EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 0
-    ForceSamePrefabs: 1
+    ForceSamePrefabs: 0
     RecycleNetworkIds: 1
     NetworkIdRecycleDelay: 120
     RpcHashSize: 0
@@ -419,7 +445,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 51.95
+  m_fontSize: 48
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

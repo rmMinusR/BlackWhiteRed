@@ -45,7 +45,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 573bf2563409642418bed476f211d3f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  loadOverlay: {fileID: 0}
   loadedClientIds: 
 --- !u!114 &8273907600135199847
 MonoBehaviour:

@@ -169,7 +169,7 @@ public sealed class PlayerRollbackReplicator : NetworkBehaviour
         else
         {
             //Abort if a more recent basis frame has been validated
-            Debug.LogWarning($"Player {src.Receive.SenderClientId} sent a frame ({untrustedFrame.time}) but it was already overwritten ({speculativeFutures.Peek().time})");
+            //Debug.LogWarning($"Player {src.Receive.SenderClientId} sent a frame ({untrustedFrame.time}) but it was already overwritten ({speculativeFutures.Peek().time})");
         }
     }
 

@@ -8,47 +8,51 @@ using UnityEngine;
 
 public class MatchBeginHelper : NetworkBehaviour
 {
-    public SceneLoadMonitor loadOverlay;
-
-    //Single-call RPC idiom
-    public void BeginMatch()
+    private async void Start()
     {
-        if (!IsServer) throw new AccessViolationException();
-
-        //Message all (including self) exactly once
-        __HandleMsg_BeginMatch();
-        __MsgClients_BeginMatchClientRpc();
-    }
-
-    [ClientRpc(Delivery = RpcDelivery.Reliable)]
-    private void __MsgClients_BeginMatchClientRpc()
-    {
-        if (!IsHost) __HandleMsg_BeginMatch();
-    }
-
-    const string SceneNamePlayers = "Level3-Area0-Players";
-    const string SceneNameLevelDesign = "Level3-Area0-LevelDesign";
-    const string SceneNameEnvironmentArt = "Level3-Area0-EnvironmentArt";
-
-    private void __HandleMsg_BeginMatch()
-    {
-        SceneGroupLoader.LoadOp progress = SceneGroupLoader.Instance.LoadSceneGroupAsync(SceneNamePlayers, SceneNameLevelDesign, SceneNameEnvironmentArt);
-
-        if (IsClient) progress.onComplete += () => __ReportLoadCompleteServerRpc();
-        if (IsServer) progress.onComplete += () => MatchManager.Instance.StartWhenPlayersLoaded();
-
-        //Send progress monitor to UI
-        if (loadOverlay != null) loadOverlay.Monitor(progress);
+        while (!IsSpawned)
+        {
+            await Task.Delay(30);
+            if (NetworkManager.Singleton.IsServer)
+            {
+                foreach (NetworkObject o in FindObjectsOfType<NetworkObject>()) if (!o.IsSpawned) o.Spawn(destroyWithScene: true);
+            }
+        }
     }
 
     [SerializeField] private List<ulong> loadedClientIds = new List<ulong>();
     public IReadOnlyList<ulong> LoadedClientIds => loadedClientIds;
-    public bool AllClientsLoaded => NetworkManager.ConnectedClientsIds.All(id => loadedClientIds.Contains(id));
+    public bool AllClientsLoaded => NetworkManager.Singleton?.ConnectedClientsIds.All(id => loadedClientIds.Contains(id)) ?? false;
 
-    [ServerRpc]
-    private void __ReportLoadCompleteServerRpc(ServerRpcParams p = default)
+    public void ReportLoadComplete()
+    {
+        StartCoroutine(__ReportLoadCompleteWorker());
+    }
+
+    private IEnumerator __ReportLoadCompleteWorker()
+    {
+        while(true)
+        {
+            Debug.Log("Sending ready signal...");
+            ReportLoadCompleteServerRpc();
+            yield return new WaitForSecondsRealtime(0.2f);
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void ReportLoadCompleteServerRpc(ServerRpcParams p = default)
     {
         Debug.Log($"Client {p.Receive.SenderClientId} ready");
         loadedClientIds.Add(p.Receive.SenderClientId);
+
+        ConfirmConnectionClientRpc(p.ReturnToSender());
+    }
+
+    [ClientRpc]
+    private void ConfirmConnectionClientRpc(ClientRpcParams p)
+    {
+        Debug.Log("Confirmed connection established");
+        StopAllCoroutines();
+        //FIXME Destroy
     }
 }
