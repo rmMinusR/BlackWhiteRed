@@ -132,4 +132,9 @@ public class MenuManager : MonoBehaviour
         OpenMainMenu();
         eventSystem.SetSelectedGameObject(mainToCreditsButton.gameObject);
     }
+
+    public void OnQuitButton()
+    {
+        Application.Quit();
+    }
 }
