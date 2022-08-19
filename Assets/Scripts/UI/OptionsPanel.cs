@@ -136,7 +136,7 @@ public class OptionsPanel : MonoBehaviour
 
     void UpdateForMouse()
     {
-        PlayerLookController.sensitivity = Vector2.one * mouseValue;
+        PlayerLookController.sensitivity = new Vector2(mouseValue,-mouseValue);
         mouseSlider.value = mouseValue;
     }
 
