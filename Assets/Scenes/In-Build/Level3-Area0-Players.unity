@@ -200,7 +200,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9008643946112205337, guid: 1d47ccde95083c44592aff65e66fd0eb, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.25000006
+      value: -0.24999997
       objectReference: {fileID: 0}
     - target: {fileID: 9008643946112205337, guid: 1d47ccde95083c44592aff65e66fd0eb, type: 3}
       propertyPath: m_LocalRotation.y
@@ -208,7 +208,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9008643946112205337, guid: 1d47ccde95083c44592aff65e66fd0eb, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.066987306
+      value: -0.06698728
       objectReference: {fileID: 0}
     - target: {fileID: 9008643946112205337, guid: 1d47ccde95083c44592aff65e66fd0eb, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -220,7 +220,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9008643946112205337, guid: 1d47ccde95083c44592aff65e66fd0eb, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 30
+      value: -30
       objectReference: {fileID: 0}
     - target: {fileID: 9008643946112205337, guid: 1d47ccde95083c44592aff65e66fd0eb, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
@@ -462,18 +462,18 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 418054236}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0.38268343, w: 0.92387956}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2013065677}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 45}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 10, y: 10}
+  m_SizeDelta: {x: 5, y: 5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &418054238
 MonoBehaviour:
@@ -495,7 +495,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 2d434e642c58b2548adcdc5d69a0a207, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -1959,6 +1959,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Pause Canvas
       objectReference: {fileID: 0}
+    - target: {fileID: 926406483576008324, guid: 9dc232a6b4787438384940f636831837, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1666140168356085285, guid: 9dc232a6b4787438384940f636831837, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -2386,6 +2390,14 @@ PrefabInstance:
     - target: {fileID: 3773689273457772691, guid: 9dc232a6b4787438384940f636831837, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7036552270132969350, guid: 9dc232a6b4787438384940f636831837, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7107836644505411553, guid: 9dc232a6b4787438384940f636831837, type: 3}
+      propertyPath: m_Color.a
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 7527532891870800694, guid: 9dc232a6b4787438384940f636831837, type: 3}
       propertyPath: eventSystem
