@@ -103,7 +103,7 @@ public sealed class CharacterKinematics : NetworkBehaviour
 
     [Header("Collision repsonse")]
     [SerializeField] [Min(0)] private float raycastEpsilon = 0.01f;
-    [SerializeField] private LayerMask ignoredLayers = 1<<6 | 1<<2 | 1<<3; //The Player, Ignore Raycast, and Shade layers. TODO fetch from Physics at runtime
+    [SerializeField] private LayerMask ignoredLayers = 1<<6 | 1<<2 | 1<<3 | 1<<8; //The Player, Ignore Raycast, Shade, and Arrow layers. TODO fetch from Physics at runtime
     private LayerMask InteractableLayers => ~ignoredLayers;
 
     [Pure] //Only if mode != StepMode.Live
