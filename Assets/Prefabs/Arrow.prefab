@@ -59,6 +59,7 @@ MonoBehaviour:
   timeBeforeDespawn: 16
   timeBeforeDespawnOnceLanded: 2
   rb: {fileID: 3055371873543667270}
+  sphereCollider: {fileID: 4804174325223550344}
 --- !u!114 &2627163635325708533
 MonoBehaviour:
   m_ObjectHideFlags: 0
