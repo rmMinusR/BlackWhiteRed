@@ -99,6 +99,11 @@ public class PlayerWeaponHolding : NetworkBehaviour
 
     private void HandleScroll(float delta)
     {
+        if(!PlayerLookController.cursorLocked)
+        {
+            return;
+        }
+
         if (isLocalPlayer)
         {
             scrollAmount += delta;
