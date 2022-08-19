@@ -275,8 +275,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5b36006a0caf4675983fbcf2d7dbdc9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sfxVolumeParameter: Master Volume
-  musicVolumeParameter: MX Volume
+  sfxVolumeParameter: MX Volume
+  musicVolumeParameter: Master Volume
   mouseSlider: {fileID: 5762773589032747866}
   scrollSlider: {fileID: 5762773588115536618}
   musicSlider: {fileID: 5762773588211075717}
