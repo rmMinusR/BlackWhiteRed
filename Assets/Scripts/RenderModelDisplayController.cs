@@ -33,10 +33,15 @@ public class RenderModelDisplayController : MonoBehaviour
     [SerializeField]
     float timeToHoldWeapon;
 
+    [SerializeField]
     bool isDarkMaterial;
+    [SerializeField]
     bool isFading;
+    [SerializeField]
     float materialTimer;
+    [SerializeField]
     float weaponHoldingTimer;
+    [SerializeField]
     Animator anim;
 
     private void Start()
