@@ -66,7 +66,7 @@ public class MatchManager : NetworkBehaviour
 
     private IEnumerator WaitForAllPlayersLoaded()
     {
-        MatchBeginHelper handoff = FindObjectOfType<MatchBeginHelper>();
+        MatchBootstrap handoff = FindObjectOfType<MatchBootstrap>();
 
         yield return new WaitForSecondsRealtime(5); //FIXME check that all players are actually connected
 

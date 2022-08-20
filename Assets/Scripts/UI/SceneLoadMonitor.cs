@@ -8,9 +8,9 @@ using UnityEngine.UI;
 public sealed class SceneLoadMonitor : MonoBehaviour
 {
     [SerializeField] private Image progressBar;
-    [SerializeField] private string loadTargetFormat = "Loading {0}";
+    [SerializeField] private string targetFormat = "{0}ing {1}";
     [SerializeField] private TMP_Text loadTargetText;
-    [SerializeField] private string loadPercentFormat = "{0}%";
+    [SerializeField] private string progressPercentFormat = "{0}%";
     [SerializeField] private TMP_Text loadPercentText;
 
     [Space]
@@ -33,9 +33,9 @@ public sealed class SceneLoadMonitor : MonoBehaviour
     {
         while (watching != null)
         {
-            if (progressBar     != null) progressBar.fillAmount = watching.Progress;
-            if (loadTargetText  != null) loadTargetText .text = string.Format(loadTargetFormat , watching.CurrentlyLoading);
-            if (loadPercentText != null) loadPercentText.text = string.Format(loadPercentFormat, (int)(watching.Progress * 100));
+            if (progressBar     != null) progressBar.fillAmount = watching.LoadProgress;
+            if (loadTargetText  != null) loadTargetText .text = string.Format(targetFormat , watching.current.type, watching.current.target);
+            if (loadPercentText != null) loadPercentText.text = string.Format(progressPercentFormat, (int)(watching.TotalProgress * 100));
 
             yield return null;
         }

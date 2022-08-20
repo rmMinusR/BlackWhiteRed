@@ -197,7 +197,7 @@ public class GameManager : MonoBehaviour
     {
         SceneGroupLoader.LoadOp progress = SceneGroupLoader.Instance.LoadSceneGroupAsync(SceneNamePlayers, SceneNameLevelDesign, SceneNameEnvironmentArt);
 
-        if (client) progress.onComplete += () => FindObjectOfType<MatchBeginHelper>().ReportLoadComplete(); //MatchManager.Instance.ReportLoadComplete();
+        if (client) progress.onComplete += () => FindObjectOfType<MatchBootstrap>().ReportLoadComplete(); //MatchManager.Instance.ReportLoadComplete();
         if (server) progress.onComplete += () => MatchManager.Instance.StartWhenPlayersLoaded();
 
         //Send progress monitor to UI

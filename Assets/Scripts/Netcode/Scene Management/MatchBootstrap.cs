@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 
-public class MatchBeginHelper : NetworkBehaviour
+public class MatchBootstrap : NetworkBehaviour
 {
     private async void Start()
     {
