@@ -8,7 +8,7 @@ public sealed class PlayerLookController : NetworkBehaviour
 {
     [Header("Settings")]
     [SerializeField] private Transform target;
-    [SerializeField] private Vector2 sensitivity = Vector2.one;
+    [SerializeField] public static Vector2 sensitivity = Vector2.one;
     [SerializeField] [Range(-90,  0)] private float minVerticalAngle = -90;
     [SerializeField] [Range(  0, 90)] private float maxVerticalAngle = 90;
 

@@ -59,6 +59,7 @@ MonoBehaviour:
   timeBeforeDespawn: 16
   timeBeforeDespawnOnceLanded: 2
   rb: {fileID: 3055371873543667270}
+  sphereCollider: {fileID: 4804174325223550344}
 --- !u!114 &2627163635325708533
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -100,7 +101,7 @@ SphereCollider:
   m_GameObject: {fileID: 766225312406831875}
   m_Material: {fileID: 0}
   m_IsTrigger: 1
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_Radius: 0.25
   m_Center: {x: 0, y: 0, z: 0}

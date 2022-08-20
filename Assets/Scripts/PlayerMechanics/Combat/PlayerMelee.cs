@@ -51,8 +51,13 @@ public class PlayerMelee : NetworkBehaviour
 
     private void AttemptMelee()
     {
+        if (!PlayerLookController.cursorLocked)
+        {
+            return;
+        }
+
         //Verify that this is the player's character
-        if(!weaponHolding.CanPreform(WeaponHeld.SWORD))
+        if (!weaponHolding.CanPreform(WeaponHeld.SWORD))
         {
             return;
         }

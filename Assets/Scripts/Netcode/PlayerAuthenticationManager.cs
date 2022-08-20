@@ -9,7 +9,7 @@ public class PlayerAuthenticationManager
 {
     //Player Customization
     public const string PLAYER_NAME_KEY = "PLAYERNAME";
-    private FixedString128Bytes playerName = "Shade";
+    private FixedString128Bytes playerName = "Shade_";
 
     //Authentication
     private string playerId = "Not signed in";

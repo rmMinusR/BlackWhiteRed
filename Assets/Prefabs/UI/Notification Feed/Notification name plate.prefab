@@ -109,9 +109,17 @@ PrefabInstance:
       propertyPath: m_SizeDelta.x
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3908490535713517673, guid: bd906471918df9a4ca9e086b45dc78e2, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 3fab84585f41c4df2a62de83dccf33ff, type: 2}
+    - target: {fileID: 3908490535713517673, guid: bd906471918df9a4ca9e086b45dc78e2, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 6553300562361343729, guid: 3fab84585f41c4df2a62de83dccf33ff, type: 2}
     - target: {fileID: 5106905450633587680, guid: bd906471918df9a4ca9e086b45dc78e2, type: 3}
       propertyPath: m_Name
-      value: Action feed name plate
+      value: Notification name plate
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bd906471918df9a4ca9e086b45dc78e2, type: 3}

@@ -71,6 +71,10 @@ public class PlayerBow : MonoBehaviour
 
     private void BowRelease()
     {
+        if (!PlayerLookController.cursorLocked)
+        {
+            return;
+        }
         if (wantsToCharge)
         {
             wantsToCharge = false;
@@ -97,6 +101,10 @@ public class PlayerBow : MonoBehaviour
 
     private void BowCharging()
     {
+        if (!PlayerLookController.cursorLocked)
+        {
+            return;
+        }
         wantsToCharge = true;
         onChargingChange?.Invoke(wantsToCharge);
     }

@@ -90,6 +90,34 @@ public partial class @PlayerFightingInput : IInputActionCollection2, IDisposable
                     ""isPartOfComposite"": false
                 }
             ]
+        },
+        {
+            ""name"": ""Pausing"",
+            ""id"": ""745cb3ba-96e2-4cae-94c5-45ec3f181c71"",
+            ""actions"": [
+                {
+                    ""name"": ""TogglePause"",
+                    ""type"": ""Button"",
+                    ""id"": ""40fe33eb-ac44-44f7-bed8-3749ba483948"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                }
+            ],
+            ""bindings"": [
+                {
+                    ""name"": """",
+                    ""id"": ""5ba6181c-a188-4d96-875f-f0868b6fc8c2"",
+                    ""path"": ""<Keyboard>/escape"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""TogglePause"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                }
+            ]
         }
     ],
     ""controlSchemes"": []
@@ -99,6 +127,9 @@ public partial class @PlayerFightingInput : IInputActionCollection2, IDisposable
         m_Combat_Melee = m_Combat.FindAction("Melee", throwIfNotFound: true);
         m_Combat_BowCharge = m_Combat.FindAction("Bow Charge", throwIfNotFound: true);
         m_Combat_ChangeWeapon = m_Combat.FindAction("Change Weapon", throwIfNotFound: true);
+        // Pausing
+        m_Pausing = asset.FindActionMap("Pausing", throwIfNotFound: true);
+        m_Pausing_TogglePause = m_Pausing.FindAction("TogglePause", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -203,10 +234,47 @@ public partial class @PlayerFightingInput : IInputActionCollection2, IDisposable
         }
     }
     public CombatActions @Combat => new CombatActions(this);
+
+    // Pausing
+    private readonly InputActionMap m_Pausing;
+    private IPausingActions m_PausingActionsCallbackInterface;
+    private readonly InputAction m_Pausing_TogglePause;
+    public struct PausingActions
+    {
+        private @PlayerFightingInput m_Wrapper;
+        public PausingActions(@PlayerFightingInput wrapper) { m_Wrapper = wrapper; }
+        public InputAction @TogglePause => m_Wrapper.m_Pausing_TogglePause;
+        public InputActionMap Get() { return m_Wrapper.m_Pausing; }
+        public void Enable() { Get().Enable(); }
+        public void Disable() { Get().Disable(); }
+        public bool enabled => Get().enabled;
+        public static implicit operator InputActionMap(PausingActions set) { return set.Get(); }
+        public void SetCallbacks(IPausingActions instance)
+        {
+            if (m_Wrapper.m_PausingActionsCallbackInterface != null)
+            {
+                @TogglePause.started -= m_Wrapper.m_PausingActionsCallbackInterface.OnTogglePause;
+                @TogglePause.performed -= m_Wrapper.m_PausingActionsCallbackInterface.OnTogglePause;
+                @TogglePause.canceled -= m_Wrapper.m_PausingActionsCallbackInterface.OnTogglePause;
+            }
+            m_Wrapper.m_PausingActionsCallbackInterface = instance;
+            if (instance != null)
+            {
+                @TogglePause.started += instance.OnTogglePause;
+                @TogglePause.performed += instance.OnTogglePause;
+                @TogglePause.canceled += instance.OnTogglePause;
+            }
+        }
+    }
+    public PausingActions @Pausing => new PausingActions(this);
     public interface ICombatActions
     {
         void OnMelee(InputAction.CallbackContext context);
         void OnBowCharge(InputAction.CallbackContext context);
         void OnChangeWeapon(InputAction.CallbackContext context);
+    }
+    public interface IPausingActions
+    {
+        void OnTogglePause(InputAction.CallbackContext context);
     }
 }

@@ -74,7 +74,7 @@ public class PlayerMoveController : NetworkBehaviour
     {
         //Don't read input if simulating, or if we're a remote player
         //Also suppress if we're teleporting
-        if (mode == CharacterKinematics.StepMode.LiveForward && frame.type == PlayerPhysicsFrame.Type.NormalMove)
+        if (mode == CharacterKinematics.StepMode.LiveForward && frame.type == PlayerPhysicsFrame.Type.NormalMove && PlayerLookController.cursorLocked)
         {
             frame.input.move = moveState; //controlMove.ReadValue<Vector2>();
             frame.input.jump = controlJump.IsPressed();

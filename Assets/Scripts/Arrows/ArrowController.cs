@@ -38,6 +38,9 @@ public class ArrowController : NetworkBehaviour
     [SerializeField]
     Rigidbody rb;
 
+    [SerializeField]
+    SphereCollider sphereCollider;
+
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -75,6 +78,7 @@ public class ArrowController : NetworkBehaviour
             }
         }
 
+        sphereCollider.enabled = true;
     }
 
     private void Update()
@@ -119,6 +123,7 @@ public class ArrowController : NetworkBehaviour
                 StickIntoPlaceClientRpc(hit.ClosestPoint(transform.position));
                 timer = timeBeforeDespawnOnceLanded;
                 landed = true;
+                sphereCollider.enabled = false;
                 break;
             //Players
             case 6:
@@ -136,11 +141,13 @@ public class ArrowController : NetworkBehaviour
                         NetworkManager.Singleton.SpawnManager.SpawnedObjects[shooterId].GetComponent<PlayerController>());
 
                     //Unload
+                    sphereCollider.enabled = false;
                     ArrowPool.Instance.UnloadArrow(gameObject);
                 }
                 break;
             //Bomb
             case 9:
+                sphereCollider.enabled = false;
                 ArrowPool.Instance.UnloadArrow(gameObject);
                 break;
             default:
@@ -152,6 +159,7 @@ public class ArrowController : NetworkBehaviour
     private void StickIntoPlaceClientRpc(Vector3 pos)
     {
         rb.constraints = RigidbodyConstraints.FreezeAll;
+        sphereCollider.enabled = false;
         transform.position = pos;
     }
 }

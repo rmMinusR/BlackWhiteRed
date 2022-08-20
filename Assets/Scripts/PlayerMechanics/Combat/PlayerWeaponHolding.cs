@@ -13,9 +13,7 @@ public enum WeaponHeld
 
 public class PlayerWeaponHolding : NetworkBehaviour
 {
-    [SerializeField]
-    [Min(1)]
-    float scrollThreshold = 1;
+    public static float scrollThreshold = 65.0f;
     [SerializeField]
     [Min(0.01f)]
     float scrollResetTime = 0.1f;
@@ -101,6 +99,11 @@ public class PlayerWeaponHolding : NetworkBehaviour
 
     private void HandleScroll(float delta)
     {
+        if(!PlayerLookController.cursorLocked)
+        {
+            return;
+        }
+
         if (isLocalPlayer)
         {
             scrollAmount += delta;
