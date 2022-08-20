@@ -160,8 +160,7 @@ public class GameManager : MonoBehaviour
         //Clientside
         //FIXME kludge
         //FindObjectOfType<MatchBeginHelper>().BeginMatch();
-        LoadMatch(true, false);
-
+        //LoadMatchScenes(true, false);
     }
 
     IEnumerator WaitForClientConnection()
@@ -181,10 +180,10 @@ public class GameManager : MonoBehaviour
 
     private void WhenAllPlayersConnected()
     {
+        //LoadMatch(true, true); //FIXME Correct for dedicated server?
+
         //Serverside
-        Debug.Assert(!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement);
-        //FindObjectOfType<MatchBeginHelper>().BeginMatch();
-        LoadMatch(true, true); //FIXME Correct for dedicated server?
+        MatchManager.Instance.StartWhenPlayersLoaded();
     }
 
     [SerializeField] private SceneLoadMonitor loadOverlay;
@@ -193,15 +192,18 @@ public class GameManager : MonoBehaviour
     const string SceneNameLevelDesign = "Level3-Area0-LevelDesign";
     const string SceneNameEnvironmentArt = "Level3-Area0-EnvironmentArt";
 
-    public void LoadMatch(bool client, bool server)
+    internal SceneGroupLoader.LoadOp LoadMatchScenes(bool client, bool server)
     {
+        Debug.Assert(!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement);
+
         SceneGroupLoader.LoadOp progress = SceneGroupLoader.Instance.LoadSceneGroupAsync(SceneNamePlayers, SceneNameLevelDesign, SceneNameEnvironmentArt);
 
-        if (client) progress.onComplete += () => FindObjectOfType<MatchBootstrap>().ReportLoadComplete(); //MatchManager.Instance.ReportLoadComplete();
-        if (server) progress.onComplete += () => MatchManager.Instance.StartWhenPlayersLoaded();
+        if (client) progress.onComplete += () => FindObjectOfType<MatchBootstrap>().ReportLoadComplete();
 
-        //Send progress monitor to UI
+        //Send to progress monitor UI
         if (loadOverlay != null) loadOverlay.Monitor(progress);
+
+        return progress;
     }
 
     #endregion

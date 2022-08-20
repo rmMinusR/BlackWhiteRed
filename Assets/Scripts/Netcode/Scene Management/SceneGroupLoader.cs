@@ -129,14 +129,14 @@ public sealed class SceneGroupLoader : MonoBehaviour
 
         //We don't have to lock anything since 'async' is concurrent and not threaded
         internal (AsyncOperation op, OpType type, string target) current;
-        
+
         internal int unloadedNow;
         internal int unloadTarget;
-        public float UnloadProgress => (unloadedNow + current.type==OpType.Unload?current.op?.progress??0:0) / unloadTarget;
+        public float UnloadProgress => (unloadedNow + current.type == OpType.Unload ? current.op?.progress ?? 0 : 0) / unloadTarget;
 
         internal int loadedNow;
         internal int loadTarget;
-        public float LoadProgress => (loadedNow + current.type==OpType.Load?current.op?.progress??0:0) / loadTarget;
+        public float LoadProgress => (loadedNow + current.type == OpType.Load ? current.op?.progress ?? 0 : 0) / loadTarget;
 
         internal LoadOp(int unloadTarget, int loadTarget)
         {
@@ -145,8 +145,14 @@ public sealed class SceneGroupLoader : MonoBehaviour
             this.loadTarget = loadTarget;
         }
 
-        internal void __onComplete() => onComplete?.Invoke();
+        internal void __onComplete()
+        {
+            onComplete?.Invoke();
+            isDone = true;
+        }
+
         public event Action onComplete;
+        public bool isDone { get; private set; }
 
         public float TotalProgress => (unloadedNow + loadedNow + current.op?.progress??0) / (unloadTarget + loadTarget);
     }

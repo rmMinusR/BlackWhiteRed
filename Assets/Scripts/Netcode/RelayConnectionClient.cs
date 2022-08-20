@@ -23,27 +23,11 @@ public sealed class RelayConnectionClient : BaseRelayConnection
     [SerializeField] private Status _status = Status.NotConnected; //TODO make inspector readonly
     public override Status GetStatus() => _status;
 
-    private async void Start()
-    {
-        await ConnectToAllocation();
-        ConnectTransport();
-    }
-
-    private void OnDestroy()
-    {
-        Close();
-    }
-
-    private void OnApplicationQuit()
-    {
-        Close();
-    }
-
     private JoinAllocation allocationConnection = null;
     private string joinCode = null;
     private RelayServerEndpoint endpoint = null;
 
-    private async Task ConnectToAllocation()
+    protected internal override async Task ConnectToAllocation()
     {
         // TODO safety assert, validate that we should create a client connection (aren't already hosting)
 
@@ -74,7 +58,7 @@ public sealed class RelayConnectionClient : BaseRelayConnection
         _status = Status.RelayGood;
     }
 
-    private void ConnectTransport()
+    protected internal override async Task ConnectTransport()
     {
         if (allocationConnection != null && endpoint != null)
         {
@@ -84,6 +68,7 @@ public sealed class RelayConnectionClient : BaseRelayConnection
             ((UnityTransport)NetworkManager.Singleton.NetworkConfig.NetworkTransport).SetClientRelayData(endpoint.Host, (ushort)endpoint.Port, allocationConnection.AllocationIdBytes, allocationConnection.Key, allocationConnection.ConnectionData, allocationConnection.HostConnectionData);
             NetworkManager.Singleton.StartClient();
 
+            while (!NetworkManager.Singleton.IsConnectedClient) await Task.Delay(100);
         }
         else throw new InvalidOperationException("Cannot connect transport before resolving allocation/endpoint!");
     }
@@ -101,7 +86,13 @@ public sealed class RelayConnectionClient : BaseRelayConnection
         } 
     }
 
-    private void Close()
+    protected internal override async Task LoadScenes()
+    {
+        SceneGroupLoader.LoadOp op = GameManager.Instance.LoadMatchScenes(true, false);
+        while (!op.isDone) await Task.Delay(100);
+    }
+
+    protected internal override void Close()
     {
         if (NetworkManager.Singleton)
         {

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Unity.Netcode;
 using Unity.Services.Relay.Models;
 using UnityEngine;
@@ -23,5 +24,27 @@ public abstract class BaseRelayConnection : MonoBehaviour
         NGOGood,
 
         Connected = NGOGood //Tempfix - same state with different name in case we need to add more connection steps
+    }
+
+    internal protected abstract Task ConnectToAllocation();
+    internal protected abstract Task LoadScenes();
+    internal protected abstract Task ConnectTransport();
+    internal protected abstract void Close();
+
+    private async void Start()
+    {
+        await ConnectToAllocation();
+        await LoadScenes();
+        await ConnectTransport();
+    }
+
+    private void OnDestroy()
+    {
+        Close();
+    }
+
+    private void OnApplicationQuit()
+    {
+        Close();
     }
 }
