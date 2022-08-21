@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: S_Bow01_Decal
-  m_Shader: {fileID: -6465566751694194690, guid: 0510a7c2bae78c840a0306d28eb17422, type: 3}
+  m_Shader: {fileID: 4800000, guid: 9cb78bcde4d5fc74a9d6d5ffb21ac0b6, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
