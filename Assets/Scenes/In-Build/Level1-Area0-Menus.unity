@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.49713612, g: 0.49713612, b: 0.49713612, a: 1}
+  m_IndirectSpecularColor: {r: 0.21139996, g: 0.21139996, b: 0.21139996, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -1854,7 +1854,8 @@ MonoBehaviour:
 
     <size=100%><u>Crystal Wong</u>
 
-    <size=80%>Character & VFX Artist'
+    <size=80%>Concept, Character,
+    & VFX Artist'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3fab84585f41c4df2a62de83dccf33ff, type: 2}
   m_sharedMaterial: {fileID: 6553300562361343729, guid: 3fab84585f41c4df2a62de83dccf33ff, type: 2}
