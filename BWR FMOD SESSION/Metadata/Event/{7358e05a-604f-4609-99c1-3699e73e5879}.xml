@@ -31,6 +31,9 @@
 		<relationship name="timeline">
 			<destination>{3a215fd1-f631-464f-897e-bba6e2d6dac2}</destination>
 		</relationship>
+		<relationship name="banks">
+			<destination>{69065604-b22b-41ca-af15-89b059c19690}</destination>
+		</relationship>
 	</object>
 	<object class="EventMixer" id="{014ed5f9-ba79-4ae4-9bed-b7acc9da879c}">
 		<relationship name="masterBus">
@@ -122,6 +125,10 @@
 		<relationship name="effects">
 			<destination>{8085d5fa-8a8e-4fa1-8350-a68774062903}</destination>
 			<destination>{1bf585f3-4a3c-436b-bcff-72500ccd7ff4}</destination>
+			<destination>{471fb5d8-b65c-4e11-8b1a-3ca3336dfe30}</destination>
+			<destination>{b40b845a-73ec-42ec-a9c3-9b0e92fceaf5}</destination>
+			<destination>{eadc83e1-e831-4594-a5a8-c0b250ee4243}</destination>
+			<destination>{444b0a35-2cd2-4091-a133-113e61412b14}</destination>
 		</relationship>
 	</object>
 	<object class="MixerBusPanner" id="{4893a18f-fc20-4555-ac28-5805c3149f6a}" />
@@ -142,6 +149,29 @@
 	<object class="MixerBusPanner" id="{3d789e0e-8781-4fa7-a381-f358e6058a50}" />
 	<object class="MixerBusFader" id="{8085d5fa-8a8e-4fa1-8350-a68774062903}" />
 	<object class="SpatialiserEffect" id="{1bf585f3-4a3c-436b-bcff-72500ccd7ff4}" />
+	<object class="PitchShifterEffect" id="{471fb5d8-b65c-4e11-8b1a-3ca3336dfe30}">
+		<property name="pitch">
+			<value>0.919999957</value>
+		</property>
+	</object>
+	<object class="ThreeEQEffect" id="{b40b845a-73ec-42ec-a9c3-9b0e92fceaf5}">
+		<property name="lowGain">
+			<value>1</value>
+		</property>
+		<property name="midGain">
+			<value>0.5</value>
+		</property>
+	</object>
+	<object class="FlangerEffect" id="{eadc83e1-e831-4594-a5a8-c0b250ee4243}">
+		<property name="mix">
+			<value>28</value>
+		</property>
+	</object>
+	<object class="DistortionEffect" id="{444b0a35-2cd2-4091-a133-113e61412b14}">
+		<property name="level">
+			<value>0.204999998</value>
+		</property>
+	</object>
 	<object class="AutomationCurve" id="{2108569d-e3ff-49f3-af72-51e99dd69567}">
 		<relationship name="parameter">
 			<destination>{3a215fd1-f631-464f-897e-bba6e2d6dac2}</destination>

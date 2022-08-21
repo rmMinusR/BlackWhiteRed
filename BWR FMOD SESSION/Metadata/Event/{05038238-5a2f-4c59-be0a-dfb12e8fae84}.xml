@@ -31,6 +31,9 @@
 		<relationship name="timeline">
 			<destination>{2f38a48c-5f41-4637-a200-3e0f9fe12792}</destination>
 		</relationship>
+		<relationship name="banks">
+			<destination>{69065604-b22b-41ca-af15-89b059c19690}</destination>
+		</relationship>
 	</object>
 	<object class="EventMixer" id="{af1e0518-3f62-43bd-a225-2d9f41b2d8e4}">
 		<relationship name="masterBus">
@@ -122,6 +125,9 @@
 		<relationship name="effects">
 			<destination>{1abd5eed-ba88-4caf-a6f3-8f16d78aac1c}</destination>
 			<destination>{6874e826-b54d-4948-bfda-7f9eb3fb53e7}</destination>
+			<destination>{eca72345-8781-4d48-8742-44b9f19d7883}</destination>
+			<destination>{c6d2aa31-59a6-446f-9c32-257858cffa44}</destination>
+			<destination>{f184b248-b3a6-43b9-a679-94ba38a9256a}</destination>
 		</relationship>
 	</object>
 	<object class="MixerBusPanner" id="{186a264e-4f46-48ac-b37f-42cd470d42ad}" />
@@ -142,6 +148,27 @@
 	<object class="MixerBusPanner" id="{b925b87a-2127-4edb-a778-674ca40f51b6}" />
 	<object class="MixerBusFader" id="{1abd5eed-ba88-4caf-a6f3-8f16d78aac1c}" />
 	<object class="SpatialiserEffect" id="{6874e826-b54d-4948-bfda-7f9eb3fb53e7}" />
+	<object class="PitchShifterEffect" id="{eca72345-8781-4d48-8742-44b9f19d7883}">
+		<property name="pitch">
+			<value>0.949999988</value>
+		</property>
+	</object>
+	<object class="ThreeEQEffect" id="{c6d2aa31-59a6-446f-9c32-257858cffa44}">
+		<property name="lowGain">
+			<value>8.5</value>
+		</property>
+		<property name="midGain">
+			<value>-10.5</value>
+		</property>
+		<property name="highGain">
+			<value>-6.5</value>
+		</property>
+	</object>
+	<object class="DistortionEffect" id="{f184b248-b3a6-43b9-a679-94ba38a9256a}">
+		<property name="level">
+			<value>0.370000005</value>
+		</property>
+	</object>
 	<object class="AutomationCurve" id="{25c6cf00-bb4f-4c3c-8471-78edcfc6115f}">
 		<relationship name="parameter">
 			<destination>{2f38a48c-5f41-4637-a200-3e0f9fe12792}</destination>
