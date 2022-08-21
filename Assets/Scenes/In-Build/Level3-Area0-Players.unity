@@ -1781,6 +1781,7 @@ GameObject:
   - component: {fileID: 2010245352}
   - component: {fileID: 2010245353}
   - component: {fileID: 2010245354}
+  - component: {fileID: 2010245355}
   m_Layer: 0
   m_Name: Match Manager
   m_TagString: Untagged
@@ -1863,6 +1864,18 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &2010245355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2010245350}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c46772a7a6ab4838bcd4be0d8c7a79d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2013065673
 GameObject:
   m_ObjectHideFlags: 0
