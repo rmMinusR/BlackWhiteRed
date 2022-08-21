@@ -11,7 +11,6 @@ public class MakeMaterialUnique : MonoBehaviour
     {
         if (TryGetComponent<MeshRenderer>(out meshRenderer))
         {
-            meshRenderer.material = new Material(meshRenderer.material);
             for (int i = 0; i < meshRenderer.materials.Length; i++)
             {
                 meshRenderer.materials[i] = new Material(meshRenderer.materials[i]);
@@ -20,7 +19,6 @@ public class MakeMaterialUnique : MonoBehaviour
         else
         {
             skinnedMeshRenderer = GetComponent<SkinnedMeshRenderer>();
-            skinnedMeshRenderer.material = new Material(skinnedMeshRenderer.material);
             for (int i = 0; i < skinnedMeshRenderer.materials.Length; i++)
             {
                 skinnedMeshRenderer.materials[i] = new Material(skinnedMeshRenderer.materials[i]);
