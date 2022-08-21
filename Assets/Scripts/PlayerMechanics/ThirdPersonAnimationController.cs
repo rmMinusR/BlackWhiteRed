@@ -16,6 +16,7 @@ public struct MaterialSetUp
 
 public class ThirdPersonAnimationController : NetworkBehaviour
 {
+
     [SerializeField]
     List<MaterialSetUp> materialSetUps;
     [Space]
@@ -37,6 +38,16 @@ public class ThirdPersonAnimationController : NetworkBehaviour
 
     [SerializeField]
     bool isOther;
+
+    [Space]
+    [SerializeField]
+    SkinnedMeshRenderer bowRenderer;
+    [SerializeField]
+    int bowIndex;
+    [SerializeField]
+    MeshRenderer swordRenderer;
+    [SerializeField]
+    int swordIndex;
 
     void Start()
     {
@@ -65,6 +76,11 @@ public class ThirdPersonAnimationController : NetworkBehaviour
         if (playerHealth != null)
         {
             playerHealth.clientside_onHealthChange += HandleHealthChange;
+        }
+
+        if (playerController != null)
+        {
+            playerController.onShadeChange += HandleShadeChange;
         }
     }
 
@@ -148,23 +164,43 @@ public class ThirdPersonAnimationController : NetworkBehaviour
         animator.SetTrigger("Pain");
     }
 
+    private void HandleShadeChange(PlayerStats _value)
+    {
+        int shadeValue = playerController.ShadeValue;
+
+        Material[] tempMaterials;
+        //Bow
+        tempMaterials = bowRenderer.materials;
+        tempMaterials[bowIndex].SetFloat("_Power", 1 - shadeValue / 3.0f);
+        bowRenderer.materials = tempMaterials;
+        //Sword
+        tempMaterials = swordRenderer.materials;
+        tempMaterials[swordIndex].SetFloat("_Power", 1 - shadeValue / 6.0f);
+        swordRenderer.materials = tempMaterials;
+    }
+
     private void SetMaterials()
     {
         Team team = playerController.CurrentTeam;
 
         isOther = playerController != MatchManager.Instance.localPlayerController;
 
+        Material[] tempMaterials;
         foreach(MaterialSetUp e in materialSetUps)
         {
             if (e.meshRenderer != null)
             {
                 if (team == Team.BLACK)
                 {
-                    e.meshRenderer.material = e.ifBlack;
+                    tempMaterials = e.meshRenderer.materials;
+                    tempMaterials[e.materialIndex] = e.ifBlack;
+                    e.meshRenderer.materials = tempMaterials;
                 }
                 else
                 {
-                    e.meshRenderer.material = e.ifWhite;
+                    tempMaterials = e.meshRenderer.materials;
+                    tempMaterials[e.materialIndex] = e.ifWhite;
+                    e.meshRenderer.materials = tempMaterials;
                 }
 
                 e.meshRenderer.enabled = isOther;
@@ -173,11 +209,15 @@ public class ThirdPersonAnimationController : NetworkBehaviour
             {
                 if (team == Team.BLACK)
                 {
-                    e.skinnedMeshRenderer.material = e.ifBlack;
+                    tempMaterials = e.skinnedMeshRenderer.materials;
+                    tempMaterials[e.materialIndex] = e.ifBlack;
+                    e.skinnedMeshRenderer.materials = tempMaterials;
                 }
                 else
                 {
-                    e.skinnedMeshRenderer.material = e.ifWhite;
+                    tempMaterials = e.skinnedMeshRenderer.materials;
+                    tempMaterials[e.materialIndex] = e.ifWhite;
+                    e.skinnedMeshRenderer.materials = tempMaterials;
                 }
 
                 e.skinnedMeshRenderer.enabled = isOther;

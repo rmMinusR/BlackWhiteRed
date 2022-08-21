@@ -362,6 +362,7 @@ GameObject:
   m_Component:
   - component: {fileID: 920364962035549208}
   - component: {fileID: 8985485290707478255}
+  - component: {fileID: 4831447665665298995}
   m_Layer: 0
   m_Name: S_Bow01
   m_TagString: Untagged
@@ -447,6 +448,18 @@ SkinnedMeshRenderer:
     m_Center: {x: 0, y: -0.16707012, z: -0.000045746565}
     m_Extent: {x: 0.02596234, y: 0.2480421, z: 0.63045084}
   m_DirtyAABB: 0
+--- !u!114 &4831447665665298995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8505223480231729758}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de174dd441c404d639f91e734b2a9dd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &8540081673592206387
 GameObject:
   m_ObjectHideFlags: 0

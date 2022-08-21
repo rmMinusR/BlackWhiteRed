@@ -3,15 +3,23 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public class FirstPersonAnimationController : MonoBehaviour
 {
+    [SerializeField]
+    SkinnedMeshRenderer bowRenderer;
+    [SerializeField]
+    int bowIndex;
+    [SerializeField]
+    MeshRenderer swordRenderer;
+    [SerializeField]
+    int swordIndex;
+
     Animator animator;
 
-    [SerializeField]
+    PlayerController playerController;
     PlayerWeaponHolding playerWeaponHolding;
-    [SerializeField]
     PlayerBow playerBow;
-    [SerializeField]
     PlayerMelee playerMelee;
 
     // Start is called before the first frame update
@@ -48,6 +56,11 @@ public class FirstPersonAnimationController : MonoBehaviour
         {
             playerBow.onChargingChange += HandleBowCharging;
         }
+
+        if (playerController != null)
+        {
+            playerController.onShadeChange += HandleShadeChange;
+        }
     }
 
     private void DisablePlayerScripts()
@@ -66,6 +79,11 @@ public class FirstPersonAnimationController : MonoBehaviour
         {
             playerBow.onChargingChange -= HandleBowCharging;
         }
+
+        if (playerController != null)
+        {
+            playerController.onShadeChange -= HandleShadeChange;
+        }
     }
 
     private void HandleBowCharging(bool _value)
@@ -83,8 +101,24 @@ public class FirstPersonAnimationController : MonoBehaviour
         animator.SetBool("Weapon", weaponHeld == WeaponHeld.BOW);
     }
 
+    private void HandleShadeChange(PlayerStats _value)
+    {
+        int shadeValue = playerController.ShadeValue;
+
+        Material[] tempMaterials;
+        //Bow
+        tempMaterials = bowRenderer.materials;
+        tempMaterials[bowIndex].SetFloat("_Power", 1 - shadeValue / 3.0f);
+        bowRenderer.materials = tempMaterials;
+        //Sword
+        tempMaterials = swordRenderer.materials;
+        tempMaterials[swordIndex].SetFloat("_Power", 1 - shadeValue / 6.0f);
+        swordRenderer.materials = tempMaterials;
+    }
+
     private void HandleMatchStart()
     {
+        playerController = MatchManager.Instance.localPlayerController;
         playerWeaponHolding = MatchManager.Instance.localPlayerController.GetComponent<PlayerWeaponHolding>();
         playerMelee = MatchManager.Instance.localPlayerController.GetComponent<PlayerMelee>();
         playerBow = MatchManager.Instance.localPlayerController.GetComponent<PlayerBow>();

@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.49713624, g: 0.49713624, b: 0.49713624, a: 1}
+  m_IndirectSpecularColor: {r: 0.20613039, g: 0.20613039, b: 0.20613039, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -445,6 +445,16 @@ MonoBehaviour:
   m_CameraActivatedEvent:
     m_PersistentCalls:
       m_Calls: []
+--- !u!23 &112070966 stripped
+MeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 5236697657357788470, guid: ebe2d2a50a5863e449f714d391e781d1, type: 3}
+  m_PrefabInstance: {fileID: 112070963}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &112070967 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: 5696562219415749688, guid: ebe2d2a50a5863e449f714d391e781d1, type: 3}
+  m_PrefabInstance: {fileID: 112070963}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &418054236
 GameObject:
   m_ObjectHideFlags: 0
@@ -657,9 +667,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb546c5e4d8cdf54ebdc239e24485bd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerWeaponHolding: {fileID: 0}
-  playerBow: {fileID: 0}
-  playerMelee: {fileID: 0}
+  bowRenderer: {fileID: 112070967}
+  bowIndex: 2
+  swordRenderer: {fileID: 112070966}
+  swordIndex: 1
 --- !u!1001 &750625851
 PrefabInstance:
   m_ObjectHideFlags: 0
