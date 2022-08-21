@@ -63,38 +63,19 @@ public sealed class SceneGroupLoader : MonoBehaviour
     {
         Debug.Log($"Received load command for {names.Length} scenes");
         LoadOp reporting = new LoadOp(loaded.Count, names.Length);
-        StartCoroutine(AsyncSceneGroupLoadWorker(names.ToList(), reporting));
+        StartCoroutine(AsyncSceneGroupLoadWorker(new List<Scene>(loaded), names.ToList(), reporting));
         return reporting;
     }
 
-    private IEnumerator AsyncSceneGroupLoadWorker(List<string> toLoad, LoadOp reporting)
+    private IEnumerator AsyncSceneGroupLoadWorker(List<Scene> toUnload, List<string> toLoad, LoadOp reporting)
     {
         if (isBusy) throw new InvalidOperationException("A scene group is already loading!");
         isBusy = true;
 
         yield return null;
 
-        reporting.unloadTarget = loaded.Count;
+        reporting.unloadTarget = toUnload.Count;
         reporting.  loadTarget = toLoad.Count;
-
-        //Unload what's currently loaded
-        Debug.Log($"Starting unload {loaded.Count} scenes");
-        List<Scene> toUnload = new List<Scene>(loaded);
-        while (toUnload.Count > 0)
-        {
-            //Set up unload operation
-            reporting.current.target = toUnload[0].name;
-            Debug.Log($"Unloading {reporting.current.target}...");
-            AsyncOperation op = SceneManager.UnloadSceneAsync(toUnload[0]);
-
-            //Wait for finish
-            while (!op.isDone) yield return null;
-            toUnload.RemoveAt(0);
-
-            //Report
-            reporting.unloadedNow++;
-        }
-        Debug.Log("Finished unloading all scenes");
 
         //Begin loading new scenes
         Debug.Log($"Starting load for {toLoad.Count} scenes");
@@ -113,6 +94,24 @@ public sealed class SceneGroupLoader : MonoBehaviour
         }
         Debug.Log("Finished loading all scene objects");
 
+        //Unload what was previously loaded
+        Debug.Log($"Starting unload {toUnload.Count} scenes");
+        while (toUnload.Count > 0)
+        {
+            //Set up unload operation
+            reporting.current.target = toUnload[0].name;
+            Debug.Log($"Unloading {reporting.current.target}...");
+            AsyncOperation op = SceneManager.UnloadSceneAsync(toUnload[0]);
+
+            //Wait for finish
+            while (!op.isDone) yield return null;
+            toUnload.RemoveAt(0);
+
+            //Report
+            reporting.unloadedNow++;
+        }
+        Debug.Log("Finished unloading all scenes");
+        
         isBusy = false;
 
         reporting.__onComplete();
