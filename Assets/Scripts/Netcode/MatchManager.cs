@@ -66,17 +66,13 @@ public class MatchManager : NetworkBehaviour
 
     private IEnumerator WaitForAllPlayersLoaded()
     {
-        MatchBootstrap handoff = FindObjectOfType<MatchBootstrap>();
-
         yield return new WaitForSecondsRealtime(5); //FIXME check that all players are actually connected
 
         WaitForSecondsRealtime delay = new WaitForSecondsRealtime(0.2f);
 
         while (!NetworkManager.IsServer) yield return delay;
 
-        while (!handoff.NetworkObject.IsSpawned) yield return delay;
-
-        while (!handoff.AllClientsLoaded && handoff.LoadedClientIds.Count != LobbyManager.Instance.GetNumberPlayers()) yield return delay;
+        while (NetworkManager.ConnectedClients.Count != LobbyManager.Instance.GetNumberPlayers()) yield return delay;
 
         Debug.Log("ALL PLAYERS READY");
         StartMatch();

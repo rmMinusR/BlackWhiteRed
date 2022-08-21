@@ -243,11 +243,6 @@ MonoBehaviour:
     - Override: 2
       Prefab: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
       SourcePrefabToOverride: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
-      SourceHashToOverride: 883627990
-      OverridingTargetPrefab: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
-    - Override: 2
-      Prefab: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
-      SourcePrefabToOverride: {fileID: 8273907600135199846, guid: 3a9a40e5e5799114d8a15610598b77aa, type: 3}
       SourceHashToOverride: 4289592579
       OverridingTargetPrefab: {fileID: 5608075666448030099, guid: 76ad20f3600bd98478e5877e8991b911, type: 3}
     - Override: 2
@@ -445,7 +440,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 48
+  m_fontSize: 38.7
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -1212,7 +1207,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 72
+  m_fontSize: 66.2
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

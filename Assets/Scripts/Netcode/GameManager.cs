@@ -140,15 +140,10 @@ public class GameManager : MonoBehaviour
             temp = (RelayConnectionHost)RelayManager.Instance.Connection;
         }
 
-        LobbyManager.Instance.SetLobbyRelayCode(temp.JoinCode);
+        Task handoff = LobbyManager.Instance.SetLobbyRelayCode(temp.JoinCode);
+        yield return new WaitForTask(handoff);
 
-        while (NetworkManager.Singleton.ConnectedClientsList.Count != LobbyManager.Instance.GetNumberPlayers() - 1)
-        {
-            var delay = new WaitForSecondsRealtime(1.0f);
-            yield return delay;
-        }
-
-        WhenAllPlayersConnected();
+        MatchManager.Instance.StartWhenPlayersLoaded();
     }
 
     public void JoinStartingMatch()
@@ -157,10 +152,6 @@ public class GameManager : MonoBehaviour
         RelayManager.Instance.StartAsClient(relayJoinCode);
 
         StartCoroutine(WaitForClientConnection());
-        //Clientside
-        //FIXME kludge
-        //FindObjectOfType<MatchBeginHelper>().BeginMatch();
-        //LoadMatchScenes(true, false);
     }
 
     IEnumerator WaitForClientConnection()
@@ -178,14 +169,6 @@ public class GameManager : MonoBehaviour
 
     #region game start
 
-    private void WhenAllPlayersConnected()
-    {
-        //LoadMatch(true, true); //FIXME Correct for dedicated server?
-
-        //Serverside
-        MatchManager.Instance.StartWhenPlayersLoaded();
-    }
-
     [SerializeField] private SceneLoadMonitor loadOverlay;
 
     const string SceneNamePlayers = "Level3-Area0-Players";
@@ -197,8 +180,6 @@ public class GameManager : MonoBehaviour
         Debug.Assert(!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement);
 
         SceneGroupLoader.LoadOp progress = SceneGroupLoader.Instance.LoadSceneGroupAsync(SceneNamePlayers, SceneNameLevelDesign, SceneNameEnvironmentArt);
-
-        if (client) progress.onComplete += () => FindObjectOfType<MatchBootstrap>().ReportLoadComplete();
 
         //Send to progress monitor UI
         if (loadOverlay != null) loadOverlay.Monitor(progress);
