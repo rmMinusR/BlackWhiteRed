@@ -60,4 +60,14 @@ public class SpatializedSoundSystem : MonoBehaviour
         instance.start();
         return instance;
     }
+
+    public void PlayReleasedSpatializedSoundAttached(FMODUnity.EventReference eventName, Transform transform)
+    {
+        UnityEngine.Debug.Log(eventName.ToString() + ": played at pos " + transform.position);
+        FMOD.Studio.EventInstance instance = FMODUnity.RuntimeManager.CreateInstance(eventName);
+        FMODUnity.RuntimeManager.AttachInstanceToGameObject(instance, transform);
+        //instance.set3DAttributes(FMODUnity.RuntimeUtils.To3DAttributes(pos));
+        instance.start();
+        instance.release();
+    }
 }

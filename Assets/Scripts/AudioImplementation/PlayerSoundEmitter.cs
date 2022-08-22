@@ -193,6 +193,7 @@ public class PlayerSoundEmitter : NetworkBehaviour
     private void HandlePlayerDeathServer(DamageSource arg1, PlayerController arg2)
     {
         SoundForOthersClientRpc(TeamSoundType.SOMEONE_DIED);
+        SoundForAllClientRpc(TeamSoundType.SOMEONE_DIED);
     }
 
     private void HandlePlayerDeathClient(DamageSource arg1, PlayerController arg2)
@@ -200,6 +201,10 @@ public class PlayerSoundEmitter : NetworkBehaviour
         if (isLocal)
         {
             CallForTeamSound(TeamSoundType.YOU_DIED);
+        }
+        else
+        {
+            CallForTeamSound(TeamSoundType.SOMEONE_DIED);
         }
     }
 
@@ -250,9 +255,9 @@ public class PlayerSoundEmitter : NetworkBehaviour
         if (teamDependentSounds.ContainsKey(type))
         {
             TeamDependentSoundEventReference teamSoundEvent = teamDependentSounds[type];
-            SpatializedSoundSystem.Instance.PlayReleasedSpatializedSound(
+            SpatializedSoundSystem.Instance.PlayReleasedSpatializedSoundAttached(
                 (isAlly ? teamSoundEvent.allyVersion : teamSoundEvent.enemyVersion),
-                transform.position
+                transform
                 );
         }
     }
