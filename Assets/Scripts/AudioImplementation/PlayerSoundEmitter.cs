@@ -330,7 +330,7 @@ public class PlayerSoundEmitter : NetworkBehaviour
         {
             if (kinematics.frame.isGrounded && kinematics.frame.velocity.sqrMagnitude > minimumMovementSoundSpeed * minimumMovementSoundSpeed)
             {
-                movementSoundTimer += 0;
+                movementSoundTimer += Time.deltaTime;
                 if (kinematics.frame.velocity.sqrMagnitude > runningMovementSoundSpeed * runningMovementSoundSpeed
                     && movementSoundTimer > runningTimeBetweenSteps)
                 {
