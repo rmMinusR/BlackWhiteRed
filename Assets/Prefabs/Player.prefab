@@ -656,8 +656,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a25246fa2884c546a292501640898c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseVerticalKnockback: 1
-  baseHorizontalKnockbackOnLand: 100
+  baseVerticalKnockback: 2
+  baseHorizontalKnockbackOnLand: 10
   baseHorizontalKnockbackInAir: 200
 --- !u!114 &1917337575216211240
 MonoBehaviour:
