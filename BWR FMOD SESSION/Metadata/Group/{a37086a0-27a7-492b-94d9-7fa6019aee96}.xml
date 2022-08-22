@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.02.00">
+	<object class="MixerGroup" id="{a37086a0-27a7-492b-94d9-7fa6019aee96}">
+		<property name="name">
+			<value>Portal Stinger</value>
+		</property>
+		<relationship name="effectChain">
+			<destination>{4225c060-ec29-49a3-b5a2-e10b1ba79f3a}</destination>
+		</relationship>
+		<relationship name="panner">
+			<destination>{952168e6-de9b-457a-8b99-4860b2aaf95a}</destination>
+		</relationship>
+		<relationship name="output">
+			<destination>{e919e3b0-3f76-4833-9766-fc2c1328d98f}</destination>
+		</relationship>
+	</object>
+	<object class="MixerBusEffectChain" id="{4225c060-ec29-49a3-b5a2-e10b1ba79f3a}">
+		<relationship name="effects">
+			<destination>{c3838fac-8509-4929-9308-5696d2da08c5}</destination>
+			<destination>{68e736c0-88cb-4b43-bff2-e1f509d2206f}</destination>
+		</relationship>
+	</object>
+	<object class="MixerBusPanner" id="{952168e6-de9b-457a-8b99-4860b2aaf95a}" />
+	<object class="MixerBusFader" id="{c3838fac-8509-4929-9308-5696d2da08c5}" />
+	<object class="Sidechain" id="{68e736c0-88cb-4b43-bff2-e1f509d2206f}">
+		<property name="level">
+			<value>3</value>
+		</property>
+	</object>
+</objects>
