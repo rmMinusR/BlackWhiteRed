@@ -196,7 +196,7 @@ public class PlayerSoundEmitter : NetworkBehaviour
         SoundForAllClientRpc(TeamSoundType.SOMEONE_DIED);
     }
 
-    private void HandlePlayerDeathClient(DamageSource arg1, PlayerController arg2)
+    public void HandlePlayerDeathClient(DamageSource arg1, PlayerController arg2)
     {
         if (isLocal)
         {
