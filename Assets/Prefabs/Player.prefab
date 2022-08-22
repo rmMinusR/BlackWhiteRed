@@ -885,6 +885,27 @@ MonoBehaviour:
         Data3: 792682917
         Data4: -1179137598
       Path: event:/SFX_Stingers and Other/PortalScore_Stinger_Idea1
+  - type: 10
+    allyVersion:
+      Guid:
+        Data1: 423330699
+        Data2: 1316912413
+        Data3: -657726818
+        Data4: 1618206458
+      Path: event:/SFX_Movement/Player/Tile/Movement on Tile
+    enemyVersion:
+      Guid:
+        Data1: 423330699
+        Data2: 1316912413
+        Data3: -657726818
+        Data4: 1618206458
+      Path: event:/SFX_Movement/Player/Tile/Movement on Tile
+  minimumMovementSoundSpeed: 0.2
+  slowWalkingTimeBetweenSteps: 0.8
+  walkingMovementSoundSpeed: 2.5
+  walkingTimeBetweenSteps: 0.4
+  runningMovementSoundSpeed: 4.75
+  runningTimeBetweenSteps: 0.3
 --- !u!1 &2931471490281750658
 GameObject:
   m_ObjectHideFlags: 0

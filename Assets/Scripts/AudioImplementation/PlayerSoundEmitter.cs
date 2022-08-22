@@ -15,7 +15,8 @@ public enum TeamSoundType
     YOU_DIED,
     SOMEONE_DIED,
     SHOT_LANDED,
-    SCORE_STINGER
+    SCORE_STINGER,
+    MOVEMENT
 }
 
 [System.Serializable]
@@ -33,6 +34,21 @@ public class PlayerSoundEmitter : NetworkBehaviour
 
     Dictionary<TeamSoundType, TeamDependentSoundEventReference> teamDependentSounds;
 
+    //Kinematics Movement Params
+    [SerializeField]
+    float minimumMovementSoundSpeed;
+    [SerializeField]
+    float slowWalkingTimeBetweenSteps;
+    [SerializeField]
+    float walkingMovementSoundSpeed;
+    [SerializeField]
+    float walkingTimeBetweenSteps;
+    [SerializeField]
+    float runningMovementSoundSpeed;
+    [SerializeField]
+    float runningTimeBetweenSteps;
+    float movementSoundTimer;
+
     //LogicData
     bool isLocal;
     bool isAlly;
@@ -44,6 +60,7 @@ public class PlayerSoundEmitter : NetworkBehaviour
     PlayerBow playerBow;
     PlayerMelee playerMelee;
     PlayerHealth playerHealth;
+    CharacterKinematics kinematics;
 
     //Bow Charging
     FMOD.Studio.EventInstance bowDrawEventInstance;
@@ -133,6 +150,7 @@ public class PlayerSoundEmitter : NetworkBehaviour
         playerMelee = GetComponent<PlayerMelee>();
         playerBow = GetComponent<PlayerBow>();
         playerHealth = GetComponent<PlayerHealth>();
+        kinematics = GetComponent<CharacterKinematics>();
 
         //Data
         isLocal = playerController == MatchManager.Instance.localPlayerController;
@@ -302,6 +320,52 @@ public class PlayerSoundEmitter : NetworkBehaviour
         else
         {
             bowDrawEventInstance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
+        }
+    }
+
+    private void Update()
+    {
+        if(kinematics != null)
+        {
+            if (kinematics.frame.isGrounded && kinematics.frame.velocity.sqrMagnitude > minimumMovementSoundSpeed * minimumMovementSoundSpeed)
+            {
+                movementSoundTimer += 0;
+                if (kinematics.frame.velocity.sqrMagnitude > runningMovementSoundSpeed * runningMovementSoundSpeed
+                    && movementSoundTimer > runningTimeBetweenSteps)
+                {
+                    movementSoundTimer -= runningTimeBetweenSteps;
+                    PlayMovementSound(2);
+                }
+                else if (kinematics.frame.velocity.sqrMagnitude > walkingMovementSoundSpeed * walkingMovementSoundSpeed
+                    && movementSoundTimer > walkingMovementSoundSpeed)
+                {
+                    PlayMovementSound(0);
+                    movementSoundTimer -= walkingTimeBetweenSteps;
+                }
+                else if (movementSoundTimer > slowWalkingTimeBetweenSteps)
+                {
+                    PlayMovementSound(1);
+                    movementSoundTimer -= slowWalkingTimeBetweenSteps;
+                }
+            }
+            else
+            {
+                movementSoundTimer = 0;
+            }
+        }
+    }
+
+    private void PlayMovementSound(int playerLayer)
+    {
+        if (teamDependentSounds.ContainsKey(TeamSoundType.MOVEMENT))
+        {
+            TeamDependentSoundEventReference teamSoundEvent = teamDependentSounds[TeamSoundType.MOVEMENT];
+            FMOD.Studio.EventInstance instance = SpatializedSoundSystem.Instance.PlayTrackedSpatializedSound(
+                (isAlly ? teamSoundEvent.allyVersion : teamSoundEvent.enemyVersion),
+                transform.position + Vector3.down
+                );
+            instance.setParameterByName("PlayerLayer",playerLayer);
+            instance.release();
         }
     }
 }
