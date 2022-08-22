@@ -1585,7 +1585,12 @@ MonoBehaviour:
     <size=80%>Tesla
     Sinclair
 
-    <size=80%>Liam Parrish'
+    <size=80%>Liam Parrish
+
+    <size=80%>Cat Davey
+
+    <size=80%>Joe
+    Tecce'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3fab84585f41c4df2a62de83dccf33ff, type: 2}
   m_sharedMaterial: {fileID: 6553300562361343729, guid: 3fab84585f41c4df2a62de83dccf33ff, type: 2}
@@ -1765,10 +1770,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   darkTeam:
     color: {r: 0, g: 0, b: 0, a: 1}
-    color2: {r: 0.078431375, g: 0.08627451, b: 0.08235294, a: 0}
+    color2: {r: 0.21568628, g: 0.22745098, b: 0.22352941, a: 0}
   lightTeam:
-    color: {r: 0.29411766, g: 0.29411766, b: 0.29411766, a: 1}
-    color2: {r: 0.7176471, g: 0.7176471, b: 0.7176471, a: 0}
+    color: {r: 0.7372549, g: 0.7372549, b: 0.7372549, a: 1}
+    color2: {r: 1, g: 1, b: 1, a: 0}
   targetMaterial: {fileID: 2100000, guid: c4dcc85c8c03849ac9c3812af3bc1680, type: 2}
   timeInMaterial: 10
   timeToFade: 3
