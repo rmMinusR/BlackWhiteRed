@@ -40,6 +40,7 @@ public class SpatializedSoundSystem : MonoBehaviour
     /// <param name="eventName"></param>
     public void PlayReleasedSpatializedSound(FMODUnity.EventReference eventName, Vector3 pos)
     {
+        UnityEngine.Debug.Log(eventName.ToString() + ": played at pos " + pos);
         FMOD.Studio.EventInstance instance = FMODUnity.RuntimeManager.CreateInstance(eventName);
         instance.set3DAttributes(FMODUnity.RuntimeUtils.To3DAttributes(pos));
         instance.start();
