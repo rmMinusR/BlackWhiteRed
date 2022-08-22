@@ -88,7 +88,7 @@ public class ArrowController : NetworkBehaviour
                 Debug.LogWarning("SphereCastAll distance index "+ i +": "+temp.distance);
                 if (
                     temp.collider.gameObject.layer != 6 || //Isn't a player
-                    temp.collider.gameObject.GetComponent<PlayerController>().CurrentTeam != team //Isn't on the enemy team
+                    temp.collider.gameObject.GetComponent<PlayerController>().CurrentTeam == team //Isn't on the enemy team
                     )
                 {
                     ProcessCollision(temp.collider);
