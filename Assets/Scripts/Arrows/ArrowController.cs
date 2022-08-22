@@ -72,11 +72,28 @@ public class ArrowController : NetworkBehaviour
         if (IsServer || IsHost)
         {
             //Check with a sphere cast for if it has already hit a wall or entity
-            RaycastHit raycastHit;
+            /*RaycastHit raycastHit;
             Ray ray = new Ray(startingPosition, transform.position);
-            if(Physics.SphereCast(ray, .25f, out raycastHit, Vector3.Distance(startingPosition, transform.position), collisionDetectionMask))
+            if (Physics.SphereCast(ray, .25f, out raycastHit, Vector3.Distance(startingPosition, transform.position), collisionDetectionMask))
             {
                 ProcessCollision(raycastHit.collider);
+            }*/
+
+            RaycastHit temp;
+            Ray ray = new Ray(startingPosition, transform.position);
+            RaycastHit[] raycastHits = Physics.SphereCastAll(ray, .25f, Vector3.Distance(startingPosition, transform.position), collisionDetectionMask);
+            for(int i = 0; i < raycastHits.Length; i++)
+            {
+                temp = raycastHits[i];
+                Debug.LogWarning("SphereCastAll distance index "+ i +": "+temp.distance);
+                if (
+                    temp.collider.gameObject.layer != 6 || //Isn't a player
+                    temp.collider.gameObject.GetComponent<PlayerController>().CurrentTeam != team //Isn't on the enemy team
+                    )
+                {
+                    ProcessCollision(temp.collider);
+                    break;
+                }
             }
         }
     }
