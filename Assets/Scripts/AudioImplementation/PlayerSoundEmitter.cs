@@ -45,6 +45,9 @@ public class PlayerSoundEmitter : NetworkBehaviour
     PlayerMelee playerMelee;
     PlayerHealth playerHealth;
 
+    //Bow Charging
+    FMOD.Studio.EventInstance bowDrawEventInstance;
+
     private void Awake()
     {
         teamDependentSounds = new Dictionary<TeamSoundType, TeamDependentSoundEventReference>();
@@ -136,6 +139,10 @@ public class PlayerSoundEmitter : NetworkBehaviour
         isAlly = playerController.CurrentTeam == MatchManager.Instance.localPlayerController.CurrentTeam;
         lastShadeValue = playerController.ShadeValue;
 
+        //Correct bow draw event instance
+        TeamDependentSoundEventReference teamSoundEvent = teamDependentSounds[TeamSoundType.BOW_PULL];
+        bowDrawEventInstance = FMODUnity.RuntimeManager.CreateInstance(isAlly ? teamSoundEvent.allyVersion : teamSoundEvent.enemyVersion);
+
         EnablePlayerScripts();
     }
 
@@ -163,10 +170,15 @@ public class PlayerSoundEmitter : NetworkBehaviour
 
     private void HandleBowCharging(bool _value)
     {
-        
+        if (!IsOwner)
+        {
+            return;
+        }
+
+        ControlBowDraw(_value);
+        BowDrawSettingServerRpc(_value);
     }
 
-    
     private void HandleSwordSwing()
     {
         if(!IsOwner)
@@ -220,6 +232,23 @@ public class PlayerSoundEmitter : NetworkBehaviour
         }
     }
 
+    [ServerRpc(Delivery = RpcDelivery.Reliable, RequireOwnership = true)]
+    private void BowDrawSettingServerRpc(bool _value)
+    {
+        BowDrawSettingClientRpc(_value);
+    }
+
+    [ClientRpc(Delivery = RpcDelivery.Reliable)]
+    private void BowDrawSettingClientRpc(bool _value)
+    {
+        if (IsOwner)
+        {
+            return;
+        }
+
+        ControlBowDraw(_value);
+    }
+
     [ServerRpc(Delivery = RpcDelivery.Reliable,RequireOwnership = true)]
     public void SoundForOthersServerRpc(TeamSoundType type)
     {
@@ -259,6 +288,20 @@ public class PlayerSoundEmitter : NetworkBehaviour
                 (isAlly ? teamSoundEvent.allyVersion : teamSoundEvent.enemyVersion),
                 transform
                 );
+        }
+    }
+
+    private void ControlBowDraw(bool _value)
+    {
+        if (_value)
+        {
+            bowDrawEventInstance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
+            bowDrawEventInstance.start();
+            FMODUnity.RuntimeManager.AttachInstanceToGameObject(bowDrawEventInstance, transform);
+        }
+        else
+        {
+            bowDrawEventInstance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
         }
     }
 }
