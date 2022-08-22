@@ -768,18 +768,18 @@ MonoBehaviour:
   - type: 2
     allyVersion:
       Guid:
-        Data1: -500376939
-        Data2: 1170643526
-        Data3: 1590176190
-        Data4: -683811253
-      Path: event:/SFX_Bow/Bow_Player_Draw1
+        Data1: -1115013870
+        Data2: 1319918324
+        Data3: -1204533338
+        Data4: 1510795011
+      Path: event:/SFX_Bow/Bow_DrawHold Sequence
     enemyVersion:
       Guid:
-        Data1: 84116024
-        Data2: 1280924207
-        Data3: -1310782786
-        Data4: -2068934866
-      Path: event:/SFX_Bow/Bow_Enemy_Draw1
+        Data1: -1115013870
+        Data2: 1319918324
+        Data3: -1204533338
+        Data4: 1510795011
+      Path: event:/SFX_Bow/Bow_DrawHold Sequence
   - type: 3
     allyVersion:
       Guid:
@@ -858,18 +858,18 @@ MonoBehaviour:
   - type: 8
     allyVersion:
       Guid:
-        Data1: -439002074
-        Data2: 1329701400
-        Data3: -972246140
-        Data4: -258669169
-      Path: event:/Test (3D)
+        Data1: 1766754060
+        Data2: 1193026245
+        Data3: -185955678
+        Data4: 2118659379
+      Path: event:/SFX_Bow/Bow_Player_Hit1
     enemyVersion:
       Guid:
-        Data1: -439002074
-        Data2: 1329701400
-        Data3: -972246140
-        Data4: -258669169
-      Path: event:/Test (3D)
+        Data1: 1766754060
+        Data2: 1193026245
+        Data3: -185955678
+        Data4: 2118659379
+      Path: event:/SFX_Bow/Bow_Player_Hit1
   - type: 9
     allyVersion:
       Guid:
