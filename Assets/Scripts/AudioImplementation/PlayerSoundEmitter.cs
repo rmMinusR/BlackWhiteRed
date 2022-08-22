@@ -279,7 +279,7 @@ public class PlayerSoundEmitter : NetworkBehaviour
         CallForTeamSound(type);
     }
 
-    private void CallForTeamSound(TeamSoundType type)
+    public void CallForTeamSound(TeamSoundType type)
     {
         if (teamDependentSounds.ContainsKey(type))
         {

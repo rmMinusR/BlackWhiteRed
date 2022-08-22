@@ -17,6 +17,7 @@ public class PlayerBow : MonoBehaviour
 
     PlayerController playerController;
     PlayerWeaponHolding weaponHolding;
+    PlayerSoundEmitter playerSoundEmitter;
     PlayerFightingInput input;
 
     [SerializeField]
@@ -36,6 +37,7 @@ public class PlayerBow : MonoBehaviour
     {
         playerController = GetComponent<PlayerController>();
         weaponHolding = GetComponent<PlayerWeaponHolding>();
+        playerSoundEmitter = GetComponent<PlayerSoundEmitter>();
     }
 
     private void OnEnable()
@@ -93,6 +95,12 @@ public class PlayerBow : MonoBehaviour
 
                     float timeShot = NetworkManager.Singleton.LocalTime.TimeAsFloat;
 
+                    if(playerSoundEmitter != null)
+                    {
+                        playerSoundEmitter.CallForTeamSound(TeamSoundType.BOW_SHOOT);
+                        playerSoundEmitter.SoundForOthersServerRpc(TeamSoundType.BOW_SHOOT);
+                    }
+                    
                     ArrowPool.Instance.RequestArrowFireServerRpc(playerController.CurrentTeam, playerController.NetworkObjectId, playerController.ShadeValue, pos, dir, pullBack, timeShot);
                 }
             }
