@@ -734,7 +734,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef4198755a5e14069928ac8ebea3c30d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  swordSwing:
+  teamDependentSoundsArray:
+  - type: 0
     allyVersion:
       Guid:
         Data1: 130267905
@@ -749,37 +750,37 @@ MonoBehaviour:
         Data3: -718613333
         Data4: 892666607
       Path: event:/SFX_Sword/Sword_Enemy_Slash Variations
-  swordStab:
+  - type: 1
     allyVersion:
-      Guid:
-        Data1: 202663264
-        Data2: 1302888474
-        Data3: 201349772
-        Data4: -559372499
-      Path: event:/SFX_Sword/Sword_Player_Stab1
-    enemyVersion:
       Guid:
         Data1: -121311444
         Data2: 1228005142
         Data3: -664436333
         Data4: 1339888608
       Path: event:/SFX_Sword/Sword_Enemy_Stab1
-  bowPull:
-    allyVersion:
-      Guid:
-        Data1: -500376939
-        Data2: 1170643526
-        Data3: 1590176190
-        Data4: -683811253
-      Path: event:/SFX_Bow/Bow_Player_Draw1
     enemyVersion:
       Guid:
-        Data1: -500376939
-        Data2: 1170643526
-        Data3: 1590176190
-        Data4: -683811253
-      Path: event:/SFX_Bow/Bow_Player_Draw1
-  bowShoot:
+        Data1: 202663264
+        Data2: 1302888474
+        Data3: 201349772
+        Data4: -559372499
+      Path: event:/SFX_Sword/Sword_Player_Stab1
+  - type: 2
+    allyVersion:
+      Guid:
+        Data1: -1115013870
+        Data2: 1319918324
+        Data3: -1204533338
+        Data4: 1510795011
+      Path: event:/SFX_Bow/Bow_DrawHold Sequence
+    enemyVersion:
+      Guid:
+        Data1: -1115013870
+        Data2: 1319918324
+        Data3: -1204533338
+        Data4: 1510795011
+      Path: event:/SFX_Bow/Bow_DrawHold Sequence
+  - type: 3
     allyVersion:
       Guid:
         Data1: -932840522
@@ -789,12 +790,12 @@ MonoBehaviour:
       Path: event:/SFX_Bow/Bow_Player_Shoot1
     enemyVersion:
       Guid:
-        Data1: -932840522
-        Data2: 1309867698
-        Data3: 292392869
-        Data4: 1222017342
-      Path: event:/SFX_Bow/Bow_Player_Shoot1
-  buffShade:
+        Data1: 1935204442
+        Data2: 1175019599
+        Data3: -1724464743
+        Data4: 2035826407
+      Path: event:/SFX_Bow/Bow_Enemy_Shoot1
+  - type: 4
     allyVersion:
       Guid:
         Data1: 2042126321
@@ -809,7 +810,7 @@ MonoBehaviour:
         Data3: 787620015
         Data4: 1171879992
       Path: event:/SFX_Stingers and Other/Weapon_Switch_Buff1
-  debuffShade:
+  - type: 5
     allyVersion:
       Guid:
         Data1: -851110126
@@ -824,6 +825,88 @@ MonoBehaviour:
         Data3: 231827881
         Data4: 1752539947
       Path: event:/SFX_Stingers and Other/Weapon_Switch_Debuff1
+  - type: 6
+    allyVersion:
+      Guid:
+        Data1: -1419942786
+        Data2: 1232364607
+        Data3: 2035794318
+        Data4: -1265897975
+      Path: event:/SFX_Stingers and Other/Player_Killed_1
+    enemyVersion:
+      Guid:
+        Data1: -1419942786
+        Data2: 1232364607
+        Data3: 2035794318
+        Data4: -1265897975
+      Path: event:/SFX_Stingers and Other/Player_Killed_1
+  - type: 7
+    allyVersion:
+      Guid:
+        Data1: -958540299
+        Data2: 1124163143
+        Data3: -1732900469
+        Data4: 1312909821
+      Path: event:/SFX_Stingers and Other/Player_Death_1
+    enemyVersion:
+      Guid:
+        Data1: -958540299
+        Data2: 1124163143
+        Data3: -1732900469
+        Data4: 1312909821
+      Path: event:/SFX_Stingers and Other/Player_Death_1
+  - type: 8
+    allyVersion:
+      Guid:
+        Data1: 1766754060
+        Data2: 1193026245
+        Data3: -185955678
+        Data4: 2118659379
+      Path: event:/SFX_Bow/Bow_Player_Hit1
+    enemyVersion:
+      Guid:
+        Data1: 1766754060
+        Data2: 1193026245
+        Data3: -185955678
+        Data4: 2118659379
+      Path: event:/SFX_Bow/Bow_Player_Hit1
+  - type: 9
+    allyVersion:
+      Guid:
+        Data1: -1064456622
+        Data2: 1237693765
+        Data3: 792682917
+        Data4: -1179137598
+      Path: event:/SFX_Stingers and Other/PortalScore_Stinger_Idea1
+    enemyVersion:
+      Guid:
+        Data1: -1064456622
+        Data2: 1237693765
+        Data3: 792682917
+        Data4: -1179137598
+      Path: event:/SFX_Stingers and Other/PortalScore_Stinger_Idea1
+  - type: 10
+    allyVersion:
+      Guid:
+        Data1: 423330699
+        Data2: 1316912413
+        Data3: -657726818
+        Data4: 1618206458
+      Path: event:/SFX_Movement/Player/Tile/Movement on Tile
+    enemyVersion:
+      Guid:
+        Data1: 423330699
+        Data2: 1316912413
+        Data3: -657726818
+        Data4: 1618206458
+      Path: event:/SFX_Movement/Player/Tile/Movement on Tile
+  minimumMovementSoundSpeed: 0.2
+  slowWalkingTimeBetweenSteps: 0.8
+  walkingMovementSoundSpeed: 2.5
+  walkingTimeBetweenSteps: 0.4
+  runningMovementSoundSpeed: 4.75
+  runningTimeBetweenSteps: 0.33333334
+  movementSoundTimer: 0
 --- !u!1 &2931471490281750658
 GameObject:
   m_ObjectHideFlags: 0
