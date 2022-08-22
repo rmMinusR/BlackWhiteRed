@@ -905,7 +905,8 @@ MonoBehaviour:
   walkingMovementSoundSpeed: 2.5
   walkingTimeBetweenSteps: 0.4
   runningMovementSoundSpeed: 4.75
-  runningTimeBetweenSteps: 0.3
+  runningTimeBetweenSteps: 0.33333334
+  movementSoundTimer: 0
 --- !u!1 &2931471490281750658
 GameObject:
   m_ObjectHideFlags: 0

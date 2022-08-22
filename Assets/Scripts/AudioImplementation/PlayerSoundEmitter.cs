@@ -47,6 +47,7 @@ public class PlayerSoundEmitter : NetworkBehaviour
     float runningMovementSoundSpeed;
     [SerializeField]
     float runningTimeBetweenSteps;
+    [SerializeField]
     float movementSoundTimer;
 
     //LogicData
@@ -314,8 +315,8 @@ public class PlayerSoundEmitter : NetworkBehaviour
         if (_value)
         {
             bowDrawEventInstance.stop(FMOD.Studio.STOP_MODE.IMMEDIATE);
-            bowDrawEventInstance.start();
             FMODUnity.RuntimeManager.AttachInstanceToGameObject(bowDrawEventInstance, transform);
+            bowDrawEventInstance.start();
         }
         else
         {
@@ -329,7 +330,7 @@ public class PlayerSoundEmitter : NetworkBehaviour
         {
             if (kinematics.frame.isGrounded && kinematics.frame.velocity.sqrMagnitude > minimumMovementSoundSpeed * minimumMovementSoundSpeed)
             {
-                movementSoundTimer += 0;
+                movementSoundTimer += Time.deltaTime;
                 if (kinematics.frame.velocity.sqrMagnitude > runningMovementSoundSpeed * runningMovementSoundSpeed
                     && movementSoundTimer > runningTimeBetweenSteps)
                 {
@@ -362,7 +363,7 @@ public class PlayerSoundEmitter : NetworkBehaviour
             TeamDependentSoundEventReference teamSoundEvent = teamDependentSounds[TeamSoundType.MOVEMENT];
             FMOD.Studio.EventInstance instance = SpatializedSoundSystem.Instance.PlayTrackedSpatializedSound(
                 (isAlly ? teamSoundEvent.allyVersion : teamSoundEvent.enemyVersion),
-                transform.position + Vector3.down
+                transform.position
                 );
             instance.setParameterByName("PlayerLayer",playerLayer);
             instance.release();
