@@ -61,6 +61,7 @@ public class PlayerSoundEmitter : NetworkBehaviour
     PlayerBow playerBow;
     PlayerMelee playerMelee;
     PlayerHealth playerHealth;
+    [SerializeField]
     CharacterKinematics kinematics;
 
     //Bow Charging
@@ -223,12 +224,16 @@ public class PlayerSoundEmitter : NetworkBehaviour
 
     private void HandlePlayerDeathServer(DamageSource arg1, PlayerController arg2)
     {
+        Debug.Log("HandlePlayerDeathServer " + gameObject.name);
         SoundForOthersClientRpc(TeamSoundType.SOMEONE_DIED);
         SoundForAllClientRpc(TeamSoundType.SOMEONE_DIED);
     }
 
     public void HandlePlayerDeathClient(DamageSource arg1, PlayerController arg2)
     {
+        Debug.Log("HandlePlayerDeathClient " + gameObject.name);
+
+
         if (isLocal)
         {
             CallForTeamSound(TeamSoundType.YOU_DIED);
