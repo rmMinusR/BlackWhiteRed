@@ -70,7 +70,7 @@ public class PlayerHealth : NetworkBehaviour
     public void TakeDamage(float attackDamage, DamageSource damageSource, PlayerController attacker = null)
     {
         //RSC: Block clients from calling this
-        if (!IsServer && !IsHost) throw new AccessViolationException(nameof(TakeDamage)+" is only callable by server!");
+        if (!IsServer) throw new AccessViolationException(nameof(TakeDamage)+" is only callable by server!");
 
         //Account for armor lessening damage
         int damage = Mathf.CeilToInt(attackDamage * (1 - PERCENTAGE_PROTECTION * playerController.CurrentStats.armorStrength));
@@ -81,7 +81,7 @@ public class PlayerHealth : NetworkBehaviour
     private void TakeDamageFlat(int damage, DamageSource damageSource = DamageSource.INVALID, PlayerController attacker = null)
     {
         //RSC: Block clients from calling this
-        if (!IsServer && !IsHost) throw new AccessViolationException(nameof(TakeDamage)+" is only callable by server!");
+        if (!IsServer) throw new AccessViolationException(nameof(TakeDamage)+" is only callable by server!");
 
         health.Value = Mathf.Max(health.Value - damage, 0);
 
