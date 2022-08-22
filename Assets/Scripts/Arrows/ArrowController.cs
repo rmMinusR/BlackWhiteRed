@@ -85,12 +85,13 @@ public class ArrowController : NetworkBehaviour
             for(int i = 0; i < raycastHits.Length; i++)
             {
                 temp = raycastHits[i];
-                Debug.LogWarning("SphereCastAll distance index "+ i +": "+temp.distance);
+                Debug.LogWarning("SphereCastAll index "+ i +": "+ temp.collider.name +" "+temp.distance);
                 if (
                     temp.collider.gameObject.layer != 6 || //Isn't a player
-                    temp.collider.gameObject.GetComponent<PlayerController>().CurrentTeam == team //Isn't on the enemy team
+                    temp.collider.gameObject.GetComponent<PlayerController>().CurrentTeam != team //Is on the enemy team
                     )
                 {
+                    Debug.LogWarning("PROCESSING SphereCastAll index " + i + ": " + temp.collider.name + " " + temp.distance);
                     ProcessCollision(temp.collider);
                     break;
                 }
