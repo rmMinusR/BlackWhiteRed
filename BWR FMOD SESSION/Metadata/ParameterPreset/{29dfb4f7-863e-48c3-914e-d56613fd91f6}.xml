@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<objects serializationModel="Studio.02.01.00">
+<objects serializationModel="Studio.02.02.00">
 	<object class="ParameterPreset" id="{29dfb4f7-863e-48c3-914e-d56613fd91f6}">
 		<property name="name">
 			<value>PlayerLayer</value>
@@ -16,7 +16,7 @@
 			<value>1</value>
 		</property>
 		<property name="maximum">
-			<value>7</value>
+			<value>3</value>
 		</property>
 		<property name="initialValue">
 			<value>0</value>

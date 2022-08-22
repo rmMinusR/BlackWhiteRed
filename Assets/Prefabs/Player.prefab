@@ -289,6 +289,7 @@ GameObject:
   - component: {fileID: 5978525050431701936}
   - component: {fileID: -2340775154603896931}
   - component: {fileID: 3040958261952443469}
+  - component: {fileID: 8389003595518449152}
   m_Layer: 6
   m_Name: Player
   m_TagString: Untagged
@@ -721,6 +722,108 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61ee5acc774ba7a449744ed734dec514, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &8389003595518449152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2931471489676092143}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef4198755a5e14069928ac8ebea3c30d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  swordSwing:
+    allyVersion:
+      Guid:
+        Data1: 130267905
+        Data2: 1324332440
+        Data3: -844622925
+        Data4: -1307549780
+      Path: event:/SFX_Sword/Sword_Player_Slash Variations
+    enemyVersion:
+      Guid:
+        Data1: -892944100
+        Data2: 1116604755
+        Data3: -718613333
+        Data4: 892666607
+      Path: event:/SFX_Sword/Sword_Enemy_Slash Variations
+  swordStab:
+    allyVersion:
+      Guid:
+        Data1: 202663264
+        Data2: 1302888474
+        Data3: 201349772
+        Data4: -559372499
+      Path: event:/SFX_Sword/Sword_Player_Stab1
+    enemyVersion:
+      Guid:
+        Data1: -121311444
+        Data2: 1228005142
+        Data3: -664436333
+        Data4: 1339888608
+      Path: event:/SFX_Sword/Sword_Enemy_Stab1
+  bowPull:
+    allyVersion:
+      Guid:
+        Data1: -500376939
+        Data2: 1170643526
+        Data3: 1590176190
+        Data4: -683811253
+      Path: event:/SFX_Bow/Bow_Player_Draw1
+    enemyVersion:
+      Guid:
+        Data1: -500376939
+        Data2: 1170643526
+        Data3: 1590176190
+        Data4: -683811253
+      Path: event:/SFX_Bow/Bow_Player_Draw1
+  bowShoot:
+    allyVersion:
+      Guid:
+        Data1: -932840522
+        Data2: 1309867698
+        Data3: 292392869
+        Data4: 1222017342
+      Path: event:/SFX_Bow/Bow_Player_Shoot1
+    enemyVersion:
+      Guid:
+        Data1: -932840522
+        Data2: 1309867698
+        Data3: 292392869
+        Data4: 1222017342
+      Path: event:/SFX_Bow/Bow_Player_Shoot1
+  buffShade:
+    allyVersion:
+      Guid:
+        Data1: 2042126321
+        Data2: 1179926357
+        Data3: 787620015
+        Data4: 1171879992
+      Path: event:/SFX_Stingers and Other/Weapon_Switch_Buff1
+    enemyVersion:
+      Guid:
+        Data1: 2042126321
+        Data2: 1179926357
+        Data3: 787620015
+        Data4: 1171879992
+      Path: event:/SFX_Stingers and Other/Weapon_Switch_Buff1
+  debuffShade:
+    allyVersion:
+      Guid:
+        Data1: -851110126
+        Data2: 1287573658
+        Data3: 231827881
+        Data4: 1752539947
+      Path: event:/SFX_Stingers and Other/Weapon_Switch_Debuff1
+    enemyVersion:
+      Guid:
+        Data1: -851110126
+        Data2: 1287573658
+        Data3: 231827881
+        Data4: 1752539947
+      Path: event:/SFX_Stingers and Other/Weapon_Switch_Debuff1
 --- !u!1 &2931471490281750658
 GameObject:
   m_ObjectHideFlags: 0

@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Waterfall2
-  m_Shader: {fileID: -6465566751694194690, guid: 4e293fa073f96ac438b141f1c124ed55, type: 3}
+  m_Shader: {fileID: 4800000, guid: 9dbdf3b9c1cfb45a6aa57a7e4cd5138b, type: 3}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
