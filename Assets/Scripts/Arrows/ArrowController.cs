@@ -67,6 +67,8 @@ public class ArrowController : NetworkBehaviour
         appearance.forward = rb.velocity;
         landed = false;
 
+        sphereCollider.enabled = true;
+
         if (IsServer || IsHost)
         {
             //Check with a sphere cast for if it has already hit a wall or entity
@@ -77,8 +79,6 @@ public class ArrowController : NetworkBehaviour
                 ProcessCollision(raycastHit.collider);
             }
         }
-
-        sphereCollider.enabled = true;
     }
 
     private void Update()
