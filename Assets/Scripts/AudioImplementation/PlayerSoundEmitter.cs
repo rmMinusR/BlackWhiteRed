@@ -370,7 +370,7 @@ public class PlayerSoundEmitter : NetworkBehaviour
                 (isAlly ? teamSoundEvent.allyVersion : teamSoundEvent.enemyVersion),
                 transform.position
                 );
-            instance.setParameterByName("PlayerLayer",playerLayer);
+            instance.setParameterByName("PlayerLayerTILE",playerLayer);
             instance.release();
         }
     }
