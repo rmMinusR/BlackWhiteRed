@@ -9,10 +9,18 @@ public class SpawnPointMarker : MonoBehaviour
     [SerializeField]
     public Vector2 look;
 
+    public static IReadOnlyDictionary<Team, SpawnPointMarker> INSTANCES => __INSTANCES;
+    private static Dictionary<Team, SpawnPointMarker> __INSTANCES = new Dictionary<Team, SpawnPointMarker>();
+
     // Start is called before the first frame update
     void Start()
     {
-        MatchManager.Instance.SetSpawnPoint(team, this);
+        __INSTANCES.Add(team, this);
+    }
+
+    private void OnDestroy()
+    {
+        __INSTANCES.Remove(team);
     }
 
     private void OnDrawGizmos()

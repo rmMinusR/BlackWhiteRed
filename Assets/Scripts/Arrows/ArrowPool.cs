@@ -18,16 +18,21 @@ public class ArrowPool : NetworkBehaviour
     List<GameObject> active;
 
     public static ArrowPool Instance;
-    private void Awake()
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+
         if (Instance == null)
         {
             Instance = this;
-            return;
+            Init();
         }
-
-        Debug.LogError("ArrowPool Instance already exists, deleting " + this.name);
-        Destroy(this);
+        else
+        {
+            Debug.LogError($"{nameof(ArrowPool)}.{nameof(Instance)} already exists, deleting {name}");
+            NetworkObject.Despawn();
+            Destroy(gameObject);
+        }
     }
 
     private void OnEnable()

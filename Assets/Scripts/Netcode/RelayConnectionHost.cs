@@ -22,12 +22,6 @@ public sealed class RelayConnectionHost : BaseRelayConnection
     [SerializeField] private Status _status = Status.NotConnected; //TODO make inspector readonly
     public override Status GetStatus() => _status;
 
-    private async void Start()
-    {
-        await ConnectToAllocation();
-        ConnectTransport();
-    }
-
     private void _OnClientConnected(ulong id)
     {
         Debug.Log("Player#"+id+" connected");
@@ -53,7 +47,7 @@ public sealed class RelayConnectionHost : BaseRelayConnection
     public string JoinCode => joinCode;
     private RelayServerEndpoint endpoint = null;
 
-    private async Task ConnectToAllocation()
+    protected internal override async Task ConnectToAllocation()
     {
         // TODO safety assert, validate that we should be the host
 
@@ -94,7 +88,13 @@ public sealed class RelayConnectionHost : BaseRelayConnection
         _status = Status.RelayGood;
     }
 
-    private void ConnectTransport()
+    protected internal override async Task LoadScenes()
+    {
+        SceneGroupLoader.LoadOp op = GameManager.Instance.LoadMatchScenes(true, true);
+        while (!op.isDone) await Task.Delay(100);
+    }
+
+    protected internal override async Task ConnectTransport()
     {
         if (allocation != null && endpoint != null)
         {
@@ -113,6 +113,8 @@ public sealed class RelayConnectionHost : BaseRelayConnection
             ((UnityTransport) NetworkManager.Singleton.NetworkConfig.NetworkTransport).SetHostRelayData(endpoint.Host, (ushort)endpoint.Port, allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData);
 
             NetworkManager.Singleton.StartHost();
+
+            while (!NetworkManager.Singleton.IsServer) await Task.Delay(100);
         }
         else throw new InvalidOperationException("Cannot connect transport before resolving allocation/endpoint!");
     }
@@ -128,7 +130,7 @@ public sealed class RelayConnectionHost : BaseRelayConnection
         response.CreatePlayerObject = true;
     }
 
-    private void Close()
+    protected internal override void Close()
     {
         if (NetworkManager.Singleton)
         {

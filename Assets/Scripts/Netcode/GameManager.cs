@@ -12,16 +12,13 @@ using System.Threading.Tasks;
 using System;
 using Unity.Netcode.Transports.UTP;
 using Unity.Netcode;
+using System.Linq;
 
 public class GameManager : MonoBehaviour
 {
     public const int MAX_PLAYERS = 10;
 
     private Dictionary<string, Coroutine> coroutines;
-
-    const string SceneNamePlayers = "Level3-Area0-Players";
-    const string SceneNameLevelDesign = "Level3-Area0-LevelDesign";
-    const string SceneNameEnvironmentArt = "Level3-Area0-EnvironmentArt";
 
     public static GameManager Instance;
 
@@ -92,6 +89,9 @@ public class GameManager : MonoBehaviour
 
     private async void Start()
     {
+        //Fix deferred messages not reaching their targets when loading scenes
+        GetComponent<NetworkManager>().NetworkConfig.SpawnTimeout = 10;
+
         await UnityServices.InitializeAsync();
         await PlayerAuthenticationManager.Instance.AttemptSignIn();
 
@@ -106,7 +106,6 @@ public class GameManager : MonoBehaviour
     private void OnDisable()
     {
         LobbyManager.Instance.onGameStartChanged -= JoinStartingMatch;
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted -= HandleSceneLoadEventCompleted;
     }
 
     #region lobby relay
@@ -141,15 +140,11 @@ public class GameManager : MonoBehaviour
             temp = (RelayConnectionHost)RelayManager.Instance.Connection;
         }
 
-        LobbyManager.Instance.SetLobbyRelayCode(temp.JoinCode);
+        Task handoff = LobbyManager.Instance.SetLobbyRelayCode(temp.JoinCode);
+        yield return new WaitForTask(handoff);
 
-        while (NetworkManager.Singleton.ConnectedClientsList.Count != LobbyManager.Instance.GetNumberPlayers() - 1)
-        {
-            var delay = new WaitForSecondsRealtime(1.0f);
-            yield return delay;
-        }
-
-        WhenAllPlayersConnected();
+        //RSC: Bootstrap is automatically handled by matchmanager on startup
+        //MatchManager.Instance.StartWhenPlayersLoaded();
     }
 
     public void JoinStartingMatch()
@@ -158,7 +153,6 @@ public class GameManager : MonoBehaviour
         RelayManager.Instance.StartAsClient(relayJoinCode);
 
         StartCoroutine(WaitForClientConnection());
-
     }
 
     IEnumerator WaitForClientConnection()
@@ -170,89 +164,28 @@ public class GameManager : MonoBehaviour
             yield return null;
             temp = (RelayConnectionClient)RelayManager.Instance.Connection;
         }
-
-        NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Single);
-        NetworkManager.Singleton.SceneManager.OnLoadComplete += HandleSceneLoadCompleted;
     }
 
     #endregion
 
     #region game start
 
-    private void WhenAllPlayersConnected()
+    [SerializeField] private SceneLoadMonitor loadOverlay;
+
+    const string SceneNamePlayers = "Level3-Area0-Players";
+    const string SceneNameLevelDesign = "Level3-Area0-LevelDesign";
+    const string SceneNameEnvironmentArt = "Level3-Area0-EnvironmentArt";
+
+    internal SceneGroupLoader.LoadOp LoadMatchScenes(bool client, bool server)
     {
-        NetworkManager.Singleton.SceneManager.OnLoadEventCompleted += HandleSceneLoadEventCompleted;
-        NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Single);
-        NetworkManager.Singleton.SceneManager.LoadScene(SceneNamePlayers,LoadSceneMode.Single);
-    }
+        Debug.Assert(!NetworkManager.Singleton.NetworkConfig.EnableSceneManagement);
 
-    private void HandleSceneLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
-    {
-        Debug.LogWarning("HandleSceneLoadEventCompleted " + sceneName);
+        SceneGroupLoader.LoadOp progress = SceneGroupLoader.Instance.LoadSceneGroupAsync(SceneNamePlayers, SceneNameLevelDesign, SceneNameEnvironmentArt);
 
-        if (NetworkManager.Singleton.IsHost)
-        {
-            switch (sceneName)
-            {
-                case SceneNamePlayers:
-                    NetworkManager.Singleton.SceneManager.LoadScene(SceneNameLevelDesign, LoadSceneMode.Additive);
-                    break;
-                case SceneNameLevelDesign:
-                    NetworkManager.Singleton.SceneManager.LoadScene(SceneNameEnvironmentArt, LoadSceneMode.Additive);
-                    break;
-                case SceneNameEnvironmentArt:
-                    StartCoroutine(ReadyUp());
-                    break;
-            }
-        }
-    }
+        //Send to progress monitor UI
+        if (loadOverlay != null) loadOverlay.Monitor(progress);
 
-    private void HandleSceneLoadCompleted(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
-    {
-        Debug.LogWarning("HandleSceneLoadCompleted " + sceneName);
-
-        if (!NetworkManager.Singleton.IsHost)
-        {
-            switch (sceneName)
-            {
-                case SceneNamePlayers:
-                case SceneNameLevelDesign:
-                    //NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
-                    break;
-                case SceneNameEnvironmentArt:
-                    if (SceneManager.GetActiveScene().name != SceneNamePlayers)
-                    {
-                        AsyncOperation oper = SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
-                        oper.completed += HandleUnloadEnded;
-                    }
-                    else
-                    {
-                        StartCoroutine(ReadyUp());
-                    }
-                    break;
-            }
-        }
-    }
-
-    private void HandleUnloadEnded(AsyncOperation oper)
-    {
-        StartCoroutine(ReadyUp());
-        oper.completed -= HandleUnloadEnded;
-    }
-
-    IEnumerator ReadyUp()
-    {
-        var delay = new WaitForSecondsRealtime(0.2f);
-
-        while (!NetworkManager.Singleton.IsConnectedClient && !NetworkManager.Singleton.IsServer)
-        {
-            yield return delay;
-        }
-
-        yield return delay;
-
-        Debug.Log("MATCH CAN START");
-        MatchManager.Instance.LogAsReadyServerRpc(NetworkManager.Singleton.LocalClientId);
+        return progress;
     }
 
     #endregion
