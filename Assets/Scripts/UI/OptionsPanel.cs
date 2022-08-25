@@ -17,22 +17,26 @@ public struct PlayerPrefOptionsBasis
 {
     public string preferenceKey;
     public float defaultValue;
+    public float min;
+    public float max;
 
-    public PlayerPrefOptionsBasis(string _key, float _value)
+    public PlayerPrefOptionsBasis(string _key, float defaultValue, float min = float.NegativeInfinity, float max = float.PositiveInfinity)
     {
         preferenceKey = _key;
-        defaultValue = _value;
+        this.defaultValue = defaultValue;
+        this.min = min;
+        this.max = max;
     }
 }
 
 public class OptionsPanel : MonoBehaviour
 {
     //Keys for Player Preferences
-    public static readonly PlayerPrefOptionsBasis MOUSE_PREF = new PlayerPrefOptionsBasis("MOUSE_SENSITIVITY", 200.0f);
-    public static readonly PlayerPrefOptionsBasis SCROLL_PREF = new PlayerPrefOptionsBasis("SCROLL_SENSITIVITY",65.0f);
-    public static readonly PlayerPrefOptionsBasis MUSIC_PREF = new PlayerPrefOptionsBasis("MUSIC_VOLUME", 100.0f);
-    public static readonly PlayerPrefOptionsBasis SFX_PREF = new PlayerPrefOptionsBasis("SFX_VOLUME",100.0f);
-    public static readonly PlayerPrefOptionsBasis FULLSCREEN_PREF = new PlayerPrefOptionsBasis("FULLSCREEN",0.0f);
+    public static readonly PlayerPrefOptionsBasis      MOUSE_PREF = new PlayerPrefOptionsBasis( "MOUSE_SENSITIVITY", 200.0f);
+    public static readonly PlayerPrefOptionsBasis     SCROLL_PREF = new PlayerPrefOptionsBasis("SCROLL_SENSITIVITY",  65.0f, min: 1);
+    public static readonly PlayerPrefOptionsBasis      MUSIC_PREF = new PlayerPrefOptionsBasis(      "MUSIC_VOLUME", 100.0f);
+    public static readonly PlayerPrefOptionsBasis        SFX_PREF = new PlayerPrefOptionsBasis(        "SFX_VOLUME", 100.0f);
+    public static readonly PlayerPrefOptionsBasis FULLSCREEN_PREF = new PlayerPrefOptionsBasis(        "FULLSCREEN",   0.0f);
 
     //Variables
     float mouseValue;
@@ -71,12 +75,14 @@ public class OptionsPanel : MonoBehaviour
 
     void OnDisable()
     {
-        PlayerPrefs.SetFloat(MOUSE_PREF.preferenceKey, mouseValue);
-        PlayerPrefs.SetFloat(SCROLL_PREF.preferenceKey, scrollValue);
-        PlayerPrefs.SetFloat(MUSIC_PREF.preferenceKey, musicValue);
-        PlayerPrefs.SetFloat(SFX_PREF.preferenceKey, sfxValue);
-        PlayerPrefs.SetFloat(FULLSCREEN_PREF.preferenceKey, fullscreenValue);
+        Prefs_SetFloat(     MOUSE_PREF,      mouseValue);
+        Prefs_SetFloat(    SCROLL_PREF,     scrollValue);
+        Prefs_SetFloat(     MUSIC_PREF,      musicValue);
+        Prefs_SetFloat(       SFX_PREF,        sfxValue);
+        Prefs_SetFloat(FULLSCREEN_PREF, fullscreenValue);
     }
+
+    private static void Prefs_SetFloat(PlayerPrefOptionsBasis pref, float value) => PlayerPrefs.SetFloat(pref.preferenceKey, Mathf.Clamp(value, pref.min, pref.max));
 
     void CheckForPrefs()
     {
@@ -103,14 +109,9 @@ public class OptionsPanel : MonoBehaviour
 
     void CheckPref(PlayerPrefOptionsBasis basis, ref float value)
     {
-        if (PlayerPrefs.HasKey(basis.preferenceKey))
-        {
-            value = PlayerPrefs.GetFloat(basis.preferenceKey);
-        }
-        else
-        {
-            PlayerPrefs.SetFloat(basis.preferenceKey, basis.defaultValue);
-        }
+        if (!PlayerPrefs.HasKey(basis.preferenceKey)) Prefs_SetFloat(basis, basis.defaultValue);
+        
+        value = Mathf.Clamp(PlayerPrefs.GetFloat(basis.preferenceKey), basis.min, basis.max);
     }
 
     void SetValue(float newValue, ref float toSet, OptionsType optionsType)
