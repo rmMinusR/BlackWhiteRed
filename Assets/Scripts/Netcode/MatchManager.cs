@@ -23,9 +23,6 @@ public class MatchManager : NetworkBehaviour
     [SerializeField]
     [InspectorReadOnly]
     public int[] teamScores;
-    [Space]
-    [SerializeField]
-    SpawnPointMarker[] spawnPoints;
 
     [Space]
     [SerializeField]
@@ -60,7 +57,6 @@ public class MatchManager : NetworkBehaviour
 
     private void Init()
     {
-        spawnPoints = new SpawnPointMarker[2];
         StartCoroutine(WaitForAllPlayersLoaded()); //Bootstrap
     }
 
@@ -114,7 +110,8 @@ public class MatchManager : NetworkBehaviour
                 playerObj.SpawnAsPlayerObject(client.ClientId);
             }
 
-            playerObj.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoints[(int)teams[i]].transform.position, spawnPoints[(int)teams[i]].look);
+            SpawnPointMarker spawnPoint = SpawnPointMarker.INSTANCES[teams[i]];
+            playerObj.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoint.transform.position, spawnPoint.look);
             playerObj.GetComponent<PlayerController>().ResetToSpawnPoint();
         }
 
@@ -124,16 +121,6 @@ public class MatchManager : NetworkBehaviour
         OnMatchStartClientRpc();
         StartRound();
         //FIXME: This is technically a race condition!
-    }
-
-    public void SetSpawnPoint(Team team, SpawnPointMarker point)
-    {
-        if (team == Team.INVALID)
-        {
-            return;
-        }
-
-        spawnPoints[(int)team] = point;
     }
 
     [ClientRpc(Delivery = RpcDelivery.Reliable)]
