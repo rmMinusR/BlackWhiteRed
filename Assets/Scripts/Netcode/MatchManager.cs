@@ -41,43 +41,44 @@ public class MatchManager : NetworkBehaviour
     public static event Action<Team>             serverside_onTeamWin;
 
     public static MatchManager Instance;
-    private void Awake()
+    public override void OnNetworkSpawn()
     {
+        base.OnNetworkSpawn();
+
         if (Instance == null)
         {
             Instance = this;
             Init();
-            return;
         }
-
-        Debug.LogError("Match Manager Instance already exists, deleting " + this.name);
-        Destroy(this);
+        else
+        {
+            Debug.LogError($"{nameof(MatchManager)}.{nameof(Instance)} already exists, deleting {name}");
+            NetworkObject.Despawn();
+            Destroy(gameObject);
+        }
     }
 
     private void Init()
     {
         spawnPoints = new SpawnPointMarker[2];
-    }
-
-    internal void StartWhenPlayersLoaded()
-    {
-        StartCoroutine(WaitForAllPlayersLoaded());
+        StartCoroutine(WaitForAllPlayersLoaded()); //Bootstrap
     }
 
     private IEnumerator WaitForAllPlayersLoaded()
     {
-        yield return new WaitForSecondsRealtime(5); //FIXME check that all players are actually connected
-
         WaitForSecondsRealtime delay = new WaitForSecondsRealtime(0.2f);
 
         while (!NetworkManager.IsServer) yield return delay;
 
         while (NetworkManager.ConnectedClients.Count != LobbyManager.Instance.GetNumberPlayers()) yield return delay;
 
+        yield return new WaitForSecondsRealtime(1); //Avoid race condition: Wait for objects to spawn
+
         Debug.Log("ALL PLAYERS READY");
         StartMatch();
     }
 
+    [SerializeField] private NetworkObject playerPrefab;
     void StartMatch()
     {
         Debug.Log("Starting match");
@@ -102,10 +103,19 @@ public class MatchManager : NetworkBehaviour
         }
 
         //Assign Player Objects to Teams
-        for (int i = 0; i < playerCount; i++)
+        for (int i = 0; i < NetworkManager.Singleton.ConnectedClients.Count; ++i)
         {
-            NetworkManager.Singleton.ConnectedClients[NetworkManager.ConnectedClientsIds[i]].PlayerObject.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoints[(int)teams[i]].transform.position, spawnPoints[(int)teams[i]].look);
-            NetworkManager.Singleton.ConnectedClients[NetworkManager.ConnectedClientsIds[i]].PlayerObject.GetComponent<PlayerController>().ResetToSpawnPoint();
+            NetworkClient client = NetworkManager.Singleton.ConnectedClientsList[i];
+            NetworkObject playerObj = client.PlayerObject;
+
+            if (playerObj == null)
+            {
+                playerObj = Instantiate(playerPrefab);
+                playerObj.SpawnAsPlayerObject(client.ClientId);
+            }
+
+            playerObj.GetComponent<PlayerController>().AssignTeamClientRpc(teams[i], spawnPoints[(int)teams[i]].transform.position, spawnPoints[(int)teams[i]].look);
+            playerObj.GetComponent<PlayerController>().ResetToSpawnPoint();
         }
 
         //Set Scores
@@ -188,7 +198,7 @@ public class MatchManager : NetworkBehaviour
     }
 
     [ClientRpc(Delivery = RpcDelivery.Reliable)]
-    private void __MsgClients_StartRoundClientRpc()
+    private void __MsgClients_StartRoundClientRpc(ClientRpcParams p = default) //Broadcast
     {
         if (!IsHost) __HandleMsg_StartRound();
     }
@@ -207,10 +217,11 @@ public class MatchManager : NetworkBehaviour
     #region 'Work' functions called from AnimationClips
 
     [Header("Announcements")]
-    [SerializeField] private AnnouncementBannerDriver announcementBanner;
     [SerializeField] private string announcementTeamScored = "{0} team scored!";
     [SerializeField] private string announcementTeamWon = "{0} team won!";
     [SerializeField] [Min(0)] private float announcementCountdownShowTime = 1f;
+    private AnnouncementBannerDriver __announcementBanner;
+    private AnnouncementBannerDriver announcementBanner => __announcementBanner != null ? __announcementBanner : (__announcementBanner = FindObjectOfType<AnnouncementBannerDriver>());
 
     /// <summary>
     /// State change requires server authority - does nothing if not server

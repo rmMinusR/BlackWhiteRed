@@ -143,7 +143,8 @@ public class GameManager : MonoBehaviour
         Task handoff = LobbyManager.Instance.SetLobbyRelayCode(temp.JoinCode);
         yield return new WaitForTask(handoff);
 
-        MatchManager.Instance.StartWhenPlayersLoaded();
+        //RSC: Bootstrap is automatically handled by matchmanager on startup
+        //MatchManager.Instance.StartWhenPlayersLoaded();
     }
 
     public void JoinStartingMatch()
