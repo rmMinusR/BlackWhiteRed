@@ -34,27 +34,27 @@ public class DottedScoreboardDisplayController : MonoBehaviour
     private void OnEnable()
     {
         MatchManager.onMatchStart += HandleMatchStart;
-        MatchManager.onTeamScore += HandleTeamScore;
-        MatchManager.onTeamWin += HandleTeamScore;
+        MatchManager.clientside_onTeamScore += HandleTeamScore;
+        MatchManager.clientside_onTeamWin += HandleTeamWin;
     }
 
     private void OnDisable()
     {
         MatchManager.onMatchStart -= HandleMatchStart;
-        MatchManager.onTeamScore -= HandleTeamScore;
-        MatchManager.onTeamWin -= HandleTeamScore;
+        MatchManager.clientside_onTeamScore -= HandleTeamScore;
+        MatchManager.clientside_onTeamWin -= HandleTeamWin;
     }
 
-    private void HandleTeamScore(Team team)
+    private void HandleTeamScore(PlayerController whoScored)
     {
-        if(team == Team.BLACK)
-        {
-            ScoreBlack();
-        }
-        else
-        {
-            ScoreWhite();
-        }
+        if(whoScored.CurrentTeam == Team.BLACK) ScoreBlack();
+        else ScoreWhite();
+    }
+
+    private void HandleTeamWin(Team whoScored)
+    {
+        if(whoScored == Team.BLACK) ScoreBlack();
+        else ScoreWhite();
     }
 
     private void HandleMatchStart()

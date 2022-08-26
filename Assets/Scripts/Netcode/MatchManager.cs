@@ -31,9 +31,8 @@ public class MatchManager : NetworkBehaviour
     public delegate void TriggerEvent();
     public static event TriggerEvent onMatchStart;
 
-    public delegate void TeamEvent(Team team);
-    public static event TeamEvent onTeamScore;
-    public static event TeamEvent onTeamWin;
+    public static event Action<PlayerController> clientside_onTeamScore;
+    public static event Action<Team>             clientside_onTeamWin;
     public static event Action<PlayerController> serverside_onScore;
     public static event Action<Team>             serverside_onTeamWin;
 
@@ -157,8 +156,8 @@ public class MatchManager : NetworkBehaviour
         mostRecentlyScored = (whoScored, team);
 
         //Run callbacks
-        if (newScore < scoreToWin) onTeamScore?.Invoke(team);
-        else                       onTeamWin  ?.Invoke(team);
+        if (newScore < scoreToWin) clientside_onTeamScore?.Invoke(whoScored);
+        else                       clientside_onTeamWin  ?.Invoke(team);
 
         //Start round-end animation
         EndRound();

@@ -77,7 +77,7 @@ public class PlayerHealth : NetworkBehaviour
         ChangeHealthClientRpc(health.Value, -damage, damageSource, attacker, ClientIDCache.Narrowcast(OwnerClientId)); //Should we broadcast instead?
         
         //If we're out of health, die
-        if (health.Value <= 0) Kill();
+        if (health.Value <= 0) Kill(damageSource, attacker);
     }
 
     [ClientRpc]

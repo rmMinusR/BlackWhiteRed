@@ -79,14 +79,14 @@ public class PlayerSoundEmitter : NetworkBehaviour
     private void OnEnable()
     {
         MatchManager.onMatchStart += HandleMatchStart;
-        MatchManager.onTeamScore += HandleTeamScore;
+        MatchManager.clientside_onTeamScore += HandleTeamScore;
         EnablePlayerScripts();
     }
 
     private void OnDisable()
     {
         MatchManager.onMatchStart -= HandleMatchStart;
-        MatchManager.onTeamScore -= HandleTeamScore;
+        MatchManager.clientside_onTeamScore -= HandleTeamScore;
         DisablePlayerScripts();
     }
 
@@ -244,13 +244,13 @@ public class PlayerSoundEmitter : NetworkBehaviour
         }
     }
 
-    private void HandleTeamScore(Team team)
+    private void HandleTeamScore(PlayerController whoScored)
     {
         if (isLocal)
         {
             TeamDependentSoundEventReference teamSoundEvent = teamDependentSounds[TeamSoundType.SCORE_STINGER];
             SpatializedSoundSystem.Instance.PlayReleasedSpatializedSound(
-                (team == playerController.CurrentTeam ? teamSoundEvent.allyVersion : teamSoundEvent.enemyVersion),
+                (whoScored.CurrentTeam == playerController.CurrentTeam ? teamSoundEvent.allyVersion : teamSoundEvent.enemyVersion),
                 transform.position
                 );
         }

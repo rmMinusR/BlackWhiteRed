@@ -15,14 +15,11 @@ public class PlayerHealthUINotifier : NetworkBehaviour
         src = GetComponent<PlayerHealth>();
         kinematics = GetComponent<CharacterKinematics>();
 
-        if (IsServer)
-        {
-            src.serverside_onHealthChange -= RecordDamager;
-            src.serverside_onHealthChange += RecordDamager;
+        src.serverside_onHealthChange -= RecordDamager;
+        src.serverside_onHealthChange += RecordDamager;
 
-            src.serverside_onPlayerDeath -= OnDeath;
-            src.serverside_onPlayerDeath += OnDeath;
-        }
+        src.serverside_onPlayerDeath -= ForwardDeathToClientUIs;
+        src.serverside_onPlayerDeath += ForwardDeathToClientUIs;
     }
 
     public override void OnNetworkDespawn()
@@ -30,7 +27,7 @@ public class PlayerHealthUINotifier : NetworkBehaviour
         base.OnNetworkDespawn();
 
         src.serverside_onHealthChange -= RecordDamager;
-        src.serverside_onPlayerDeath -= OnDeath;
+        src.serverside_onPlayerDeath -= ForwardDeathToClientUIs;
     }
 
     private (DamageSource src, PlayerController who)? recordedLastDamage; //Cleared when touching ground
@@ -45,7 +42,7 @@ public class PlayerHealthUINotifier : NetworkBehaviour
         if (kinematics.frame.isGrounded) recordedLastDamage = null;
     }
 
-    private void OnDeath(DamageSource damageSource, PlayerController killer)
+    private void ForwardDeathToClientUIs(DamageSource damageSource, PlayerController killer)
     {
         Debug.Log("Notifying of death", this);
 
@@ -55,6 +52,9 @@ public class PlayerHealthUINotifier : NetworkBehaviour
             killer = recordedLastDamage.Value.who;
         }
 
-        NotificationFeed.Instance.BroadcastDeathMessage(killer, src.GetComponent<PlayerController>(), damageSource);
+        BroadcastDeathMessageToUI_ClientRpc(killer, damageSource);
     }
+
+    [ClientRpc]
+    private void BroadcastDeathMessageToUI_ClientRpc(PlayerController killer, DamageSource damageSource, ClientRpcParams p = default) => NotificationFeed.Instance.ShowDeathMessage(killer, src.GetComponent<PlayerController>(), damageSource);
 }

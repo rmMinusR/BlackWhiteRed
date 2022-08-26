@@ -55,11 +55,11 @@ MonoBehaviour:
   contentRoot: {fileID: 1333232681419226411}
   layout: {fileID: 1333232681419226410}
   entries: []
-  swordKillIcon: {fileID: 21300000, guid: d9dbeba56e2be9e4bbbbf0f5e2ffc7a6, type: 3}
-  bowKillIcon: {fileID: 21300000, guid: 452e6ed11730e04479556d42ac88e6b2, type: 3}
-  fellOffIcon: {fileID: 21300000, guid: 8f56d994b6d39c84c9869b7f64438f52, type: 3}
+  swordKillIcon: {fileID: 21300000, guid: 153f4fee14a7044cb9cc65af819284f0, type: 3}
+  bowKillIcon: {fileID: 21300000, guid: ed771ef6f41ca4453a78b53bd4d45dff, type: 3}
+  fellOffIcon: {fileID: 21300000, guid: 959a48d0d444e4235951493e3377124b, type: 3}
   explosionIcon: {fileID: 0}
-  scoredIcon: {fileID: 21300000, guid: be340a165cb9c8d4cb50f1deeb51d4ea, type: 3}
+  scoredIcon: {fileID: 21300000, guid: 10c5f488ad02949e6b66934cdcffd14b, type: 3}
 --- !u!114 &1333232681419226410
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -5,15 +5,15 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public sealed class NotificationFeed : NetworkBehaviour
+public sealed class NotificationFeed : MonoBehaviour
 {
     [SerializeField] private Notification entryPrefab;
 
     [Space]
     [SerializeField] [Min(0.5f)] private float entryDisplayTime = 2.5f;
     [SerializeField] private RectTransform contentRoot;
-    [SerializeField] private VerticalLayoutGroup layout;
     internal RectTransform ContentRoot => contentRoot;
+    [SerializeField] private VerticalLayoutGroup layout;
     [SerializeField] private List<Notification> entries;
 
     private (float, int) __maxDisplay; //Flyweight
@@ -42,26 +42,14 @@ public sealed class NotificationFeed : NetworkBehaviour
     [SerializeField] private Sprite explosionIcon;
     [SerializeField] private Sprite    scoredIcon;
 
-    //Helpers
-    private void EnsureHasSpawnPermission()
-    {
-        if (NetworkManager == null || !(NetworkManager.IsServer || NetworkManager.IsClient)) throw new InvalidOperationException("Not connected!");
-        if (!IsServer) throw new AccessViolationException("Only server may send notifications!");
-    }
-
     #region Death message
 
-    public void BroadcastDeathMessage(PlayerController killer, PlayerController killed, DamageSource killSource)
+    public void ShowDeathMessage(PlayerController killer, PlayerController killed, DamageSource killSource)
     {
-        EnsureHasSpawnPermission();
-        DONOTCALL_ShowDeathMessage_ClientRpc(killer, killed, killSource); //Broadcast to all
-    }
-
-    [ClientRpc]
-    private void DONOTCALL_ShowDeathMessage_ClientRpc(PlayerController killer, PlayerController killed, DamageSource killSource, ClientRpcParams p = default)
-    {
-        Notification notif = Add().Background(killer != null && killer.OwnerClientId == NetworkManager.LocalClientId);
+        Notification notif = Add().Background(killer != null && killer.OwnerClientId == NetworkManager.Singleton.LocalClientId);
         if (killer != null) notif.WithPlayer(killer);
+
+        Debug.Log($"Received death message: {killer}->{killed} by {killSource}");
 
         //Write relevant icons
         if (killSource.HasFlag(DamageSource.SWORD    )) notif.WithIcon(swordKillIcon);
@@ -76,17 +64,10 @@ public sealed class NotificationFeed : NetworkBehaviour
 
     #region Scored message
 
-    public void BroadcastScoredMessage(PlayerController whoScored)
-    {
-        EnsureHasSpawnPermission();
-        DONOTCALL_ShowScoredMessage_ClientRpc(whoScored); //Broadcast to all
-    }
-
-    [ClientRpc]
-    private void DONOTCALL_ShowScoredMessage_ClientRpc(PlayerController whoScored, ClientRpcParams p = default)
+    public void ShowScoredMessage(PlayerController whoScored)
     {
         Add()
-            .Background(whoScored.OwnerClientId == NetworkManager.LocalClientId)
+            .Background(whoScored.OwnerClientId == NetworkManager.Singleton.LocalClientId)
             .WithPlayer(whoScored)
             .WithIcon(scoredIcon);
     }
@@ -138,14 +119,14 @@ public sealed class NotificationFeed : NetworkBehaviour
     {
         Instance = this;
 
-        MatchManager.serverside_onScore -= BroadcastScoredMessage;
-        MatchManager.serverside_onScore += BroadcastScoredMessage;
+        MatchManager.clientside_onTeamScore -= ShowScoredMessage;
+        MatchManager.clientside_onTeamScore += ShowScoredMessage;
     }
 
     private void OnDisable()
     {
         Instance = null;
 
-        MatchManager.serverside_onScore -= BroadcastScoredMessage;
+        MatchManager.clientside_onTeamScore -= ShowScoredMessage;
     }
 }
