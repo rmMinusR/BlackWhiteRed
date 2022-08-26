@@ -53,20 +53,6 @@ public class PlayerHealth : NetworkBehaviour
         }
     }
 
-    private void OnEnable()
-    {
-        health.OnValueChanged += OnHealthChange;
-        MatchManager.onTeamScore += HandleTeamScore;
-        MatchManager.onTeamWin += HandleTeamScore;
-    }
-
-    private void OnDisable()
-    {
-        health.OnValueChanged -= OnHealthChange;
-        MatchManager.onTeamScore -= HandleTeamScore;
-        MatchManager.onTeamWin -= HandleTeamScore;
-    }
-
     public void TakeDamage(float attackDamage, DamageSource damageSource, PlayerController attacker = null)
     {
         //RSC: Block clients from calling this
@@ -81,49 +67,53 @@ public class PlayerHealth : NetworkBehaviour
     private void TakeDamageFlat(int damage, DamageSource damageSource = DamageSource.INVALID, PlayerController attacker = null)
     {
         //RSC: Block clients from calling this
-        if (!IsServer) throw new AccessViolationException(nameof(TakeDamage)+" is only callable by server!");
+        if (!IsServer) throw new AccessViolationException(nameof(TakeDamageFlat)+" is only callable by server!");
 
         health.Value = Mathf.Max(health.Value - damage, 0);
 
         //Fire callbacks
+        Debug.Log("Damaging player (clientside) - new HP="+health.Value);
         serverside_onHealthChange?.Invoke(health.Value, damageSource, attacker);
         ChangeHealthClientRpc(health.Value, -damage, damageSource, attacker, ClientIDCache.Narrowcast(OwnerClientId)); //Should we broadcast instead?
-
-        if (health.Value == 0) //RSC - TODO: add IsDead to prevent duplicates
-        {
-            //Fire callbacks
-            serverside_onPlayerDeath?.Invoke(damageSource, attacker);
-            OnDeathClientRpc(damageSource, attacker, default); //Broadcast
-
-            playerController.ResetToSpawnPoint();
-            HandleTeamScore(Team.INVALID);
-        }
+        
+        //If we're out of health, die
+        if (health.Value <= 0) Kill();
     }
 
     [ClientRpc]
     private void ChangeHealthClientRpc(int newHealth, int delta, DamageSource deltaSource, PlayerController deltaActor, ClientRpcParams p)
     {
+        Debug.Log("Damaging player (clientside)");
         clientside_onHealthChange?.Invoke(newHealth, deltaSource, deltaActor);
+    }
+
+    private void Kill(DamageSource damageSource = DamageSource.INVALID, PlayerController attacker = null)
+    {
+        //RSC: Block clients from calling this
+        if (!IsServer) throw new AccessViolationException(nameof(Kill)+" is only callable by server!");
+        
+        //Fire callbacks
+        Debug.Log("Killing player (serverside)", this);
+        serverside_onPlayerDeath?.Invoke(damageSource, attacker);
+        OnDeathClientRpc(damageSource, attacker, default); //Broadcast
+
+        //This call could be delayed in future
+        OnRespawn();
     }
 
     [ClientRpc]
     private void OnDeathClientRpc(DamageSource finalBlow, PlayerController finalBlowDealer, ClientRpcParams p)
     {
+        Debug.Log("Killing player (clientside)", this);
         clientside_onPlayerDeath?.Invoke(finalBlow, finalBlowDealer);
     }
 
-    private void OnHealthChange(int oldValue, int newValue)
+    private void OnRespawn()
     {
-        if (newValue == 0)
-        {
-            //RSC: This probably should be done server side only (similar to Teleport)
-            playerController.ResetToSpawnPoint();
-            HandleTeamScore(Team.INVALID);
-        }
-    }
+        //RSC: Block clients from calling this
+        if (!IsServer) throw new AccessViolationException(nameof(OnRespawn)+" is only callable by server!");
 
-    private void HandleTeamScore(Team team) //RSC - TODO needs to be renamed
-    {
+        playerController.ResetToSpawnPoint();
         health.Value = MAX_HEALTH;
     }
 
