@@ -414,8 +414,8 @@ MonoBehaviour:
   unvalidatedHistory:
     _serializedRepr: []
   txFreq: 5
-  txAdj: -0.25
-  rxAdj: 0.25
+  txAdj: 0
+  rxAdj: 0
   positionForgiveness: 0.3
   velocityForgiveness: 0.3
   showFutures: 0
